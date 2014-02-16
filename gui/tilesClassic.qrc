@@ -1,0 +1,28 @@
+<RCC>
+    <qresource prefix="/tile/BaseGame">
+        <file alias="A">img/classic/base/A.jpg</file>
+        <file alias="B">img/classic/base/B.jpg</file>
+        <file alias="C">img/classic/base/C.jpg</file>
+        <file alias="D">img/classic/base/D.jpg</file>
+        <file alias="E">img/classic/base/E.jpg</file>
+        <file alias="F">img/classic/base/F.jpg</file>
+        <file alias="G">img/classic/base/G.jpg</file>
+        <file alias="H">img/classic/base/H.jpg</file>
+        <file alias="I">img/classic/base/I.jpg</file>
+        <file alias="J">img/classic/base/J.jpg</file>
+        <file alias="K">img/classic/base/K.jpg</file>
+        <file alias="L">img/classic/base/L.jpg</file>
+        <file alias="M">img/classic/base/M.jpg</file>
+        <file alias="N">img/classic/base/N.jpg</file>
+        <file alias="O">img/classic/base/O.jpg</file>
+        <file alias="P">img/classic/base/P.jpg</file>
+        <file alias="Q">img/classic/base/Q.jpg</file>
+        <file alias="R">img/classic/base/R.jpg</file>
+        <file alias="S">img/classic/base/S.jpg</file>
+        <file alias="T">img/classic/base/T.jpg</file>
+        <file alias="U">img/classic/base/U.jpg</file>
+        <file alias="V">img/classic/base/V.jpg</file>
+        <file alias="W">img/classic/base/W.jpg</file>
+        <file alias="X">img/classic/base/X.jpg</file>
+    </qresource>
+</RCC>

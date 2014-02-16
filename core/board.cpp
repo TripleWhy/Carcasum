@@ -1,0 +1,120 @@
+#include "board.h"
+
+Board::Board(const uint s)
+	: size(s * 2 - 1)//,
+//	  offset(s - 1)
+{
+	board = new Tile ** [size];
+	for (uint y = 0; y < size; ++y)
+		board[y] = new Tile * [size]();
+
+	//	board[offset][offset] = tiles.takeFirst();
+}
+
+Board::~Board()
+{
+	for (uint y = 0; y < size; ++y)
+	{
+		for (uint x = 0; x < size; ++x)
+			delete board[x][y];
+		delete[] board[y];
+	}
+	delete[] board;
+}
+
+Tile * Board::getTile(uint x, uint y)
+{
+//	return board[x + offset][y + offset];
+	return board[x][y];
+}
+
+Tile const * Board::getTile(uint x, uint y) const
+{
+	return board[x][y];
+}
+
+void Board::setStartTile(Tile * tile)
+{
+	int offset = size / 2;
+	board[offset][offset] = tile;
+
+	open.insert(QPoint(offset - 1, offset), TerrainWrapper(None, None, tile->getEdge(Tile::left), None));
+	open.insert(QPoint(offset + 1, offset), TerrainWrapper(tile->getEdge(Tile::right), None, None, None));
+	open.insert(QPoint(offset, offset - 1), TerrainWrapper(None, None, None, tile->getEdge(Tile::up)));
+	open.insert(QPoint(offset, offset + 1), TerrainWrapper(None, tile->getEdge(Tile::down), None, None));
+//	open.insert(QPoint(-1,  0));
+//	open.insert(QPoint(+1,  0));
+//	open.insert(QPoint( 0, -1));
+//	open.insert(QPoint( 0, +1));
+}
+
+void Board::addTile(uint x, uint y, Tile * tile)
+{
+	int xo = x;// + offset;
+	int yo = y;// + offset;
+
+	Q_ASSERT_X(board[xo][yo] == 0, "addTile", "position not empty");
+
+	board[xo][yo] = tile;
+	open.remove(QPoint(x, y));
+
+	if (board[xo - 1][yo] == 0)
+		open[QPoint(xo - 1,  yo)].t[Tile::right] = tile->getEdge(Tile::left);
+	else
+		board[xo - 1][yo]->connect(Tile::right, tile);
+
+	if (board[xo + 1][yo] == 0)
+		open[QPoint(xo + 1,  yo)].t[Tile::left] = tile->getEdge(Tile::right);
+	else
+		board[xo + 1][yo]->connect(Tile::left, tile);
+
+	if (board[xo][yo - 1] == 0)
+		open[QPoint(xo,  yo - 1)].t[Tile::down] = tile->getEdge(Tile::up);
+	else
+		board[xo][yo - 1]->connect(Tile::down, tile);
+
+	if (board[xo][yo + 1] == 0)
+		open[QPoint(xo,  yo + 1)].t[Tile::up] = tile->getEdge(Tile::down);
+	else
+		board[xo][yo + 1]->connect(Tile::up, tile);
+}
+
+int Board::getInternalSize() const
+{
+	return size;
+}
+
+QList<Board::TilePlacement> Board::getPossibleTilePlacements(const Tile * tile) const
+{
+	QList<TilePlacement> possible;
+	TerrainType edges[4];
+	quint32 rotations[4] = {0, 0, 0, 0};
+	for (int orientation = 0; orientation < 4; ++orientation)
+	{
+		quint32 & r = rotations[orientation];
+		for (int i = 0; i < 4; ++i)
+		{
+			TerrainType t = tile->getEdge((Tile::Side)i, (Tile::Side)orientation);
+			edges[i] = t;
+			r = (r << 8) | (quint32(t) & quint32(255));
+		}
+		for (int i = 0; i < orientation; ++i)
+			if (r == rotations[i])
+				goto hell2;
+
+		for (QHash<QPoint, TerrainWrapper>::const_iterator it = open.constBegin(); it != open.constEnd(); ++it)
+		{
+			TerrainType const (&openTypes)[4] = it.value().t;
+			for (int i = 0; i < 4; ++i)
+			{
+				if (openTypes[i] != None && openTypes[i] != edges[i])
+					goto hell;
+			}
+			possible.append(TilePlacement{uint(it.key().x()), uint(it.key().y()), (Tile::Side)orientation});
+			hell:;
+		}
+		hell2:;
+	}
+
+	return possible;
+}

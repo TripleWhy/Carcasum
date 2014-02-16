@@ -1,0 +1,28 @@
+<RCC>
+    <qresource prefix="/tile/BaseGame">
+        <file alias="A">img/jczf/A.png</file>
+        <file alias="B">img/jczf/B.png</file>
+        <file alias="C">img/jczf/C.png</file>
+        <file alias="D">img/jczf/D.png</file>
+        <file alias="E">img/jczf/E.png</file>
+        <file alias="F">img/jczf/F.png</file>
+        <file alias="G">img/jczf/G.png</file>
+        <file alias="H">img/jczf/H.png</file>
+        <file alias="I">img/jczf/I.png</file>
+        <file alias="J">img/jczf/J.png</file>
+        <file alias="K">img/jczf/K.png</file>
+        <file alias="L">img/jczf/L.png</file>
+        <file alias="M">img/jczf/M.png</file>
+        <file alias="N">img/jczf/N.png</file>
+        <file alias="O">img/jczf/O.png</file>
+        <file alias="P">img/jczf/P.png</file>
+        <file alias="Q">img/jczf/Q.png</file>
+        <file alias="R">img/jczf/R.png</file>
+        <file alias="S">img/jczf/S.png</file>
+        <file alias="T">img/jczf/T.png</file>
+        <file alias="U">img/jczf/U.png</file>
+        <file alias="V">img/jczf/V.png</file>
+        <file alias="W">img/jczf/W.png</file>
+        <file alias="X">img/jczf/X.png</file>
+    </qresource>
+</RCC>
