@@ -118,3 +118,8 @@ QList<Board::TilePlacement> Board::getPossibleTilePlacements(const Tile * tile) 
 
 	return possible;
 }
+
+QList<QPoint> Board::getOpenPlaces() const
+{
+	return open.keys();
+}

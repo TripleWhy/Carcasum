@@ -2,8 +2,12 @@
 
 #include <QDebug>
 
-Tile::Tile(TileSet tileSet, int tileType, TerrainType const edges[4])
+//int Node::nextId = 0;
+
+Tile::Tile(TileSet tileSet, int tileType, TerrainType const edges[4], int const nodeCount, Node ** nodes)
 	: edges(edges),
+	  nodeCount(nodeCount),
+	  nodes(nodes),
 	  tileSet(tileSet),
 	  tileType(tileType)
 {
@@ -11,18 +15,24 @@ Tile::Tile(TileSet tileSet, int tileType, TerrainType const edges[4])
 	edgeNodes[up] = createEdgeList(edges[up]);
 	edgeNodes[right] = createEdgeList(edges[right]);
 	edgeNodes[down] = createEdgeList(edges[down]);
+
+	for (int i = 0; i < nodeCount; ++i)
+		nodes[i]->pointers.append(nodes + i);
 }
 
-Tile::Tile(const Tile & t)
-	: edges(t.edges),
-	  tileSet(t.tileSet),
-	  tileType(t.tileType)
-{
-	//TODO
-}
+//Tile::Tile(const Tile & t)
+//	: edges(t.edges),
+//	  tileSet(t.tileSet),
+//	  tileType(t.tileType),
+//	  nodes(new Node*[t.nodeCount]),
+//	  nodeCount(nodeCount)
+//{
+//	//TODO
+//}
 
 Tile::~Tile()
 {
+	delete[] nodes;
 	delete[] edgeNodes[left];
 	delete[] edgeNodes[up];
 	delete[] edgeNodes[right];
@@ -48,39 +58,55 @@ bool Tile::connect(Tile::Side side, Tile * other)
 //	if (t != other->getEdge(otherSide))
 //		return false;
 
-	Node ** nodeList = getEdgeNodes(side);
-	Node ** otherNodeList = other->getEdgeNodes(otherSide);
+	EdgeType * nodeList = getEdgeNodes(side);
+	EdgeType * otherNodeList = other->getEdgeNodes(otherSide);
 	int const nodeCount = edgeNodeCount(t);
 	for (int i = 0; i < nodeCount; ++i)
 	{
-		Node * otherNode = otherNodeList[i];
-		Node * thisNode = nodeList[nodeCount - i - 1];
+		EdgeType otherNode = otherNodeList[i];
+		EdgeType thisNode = nodeList[nodeCount - i - 1];
 
-		if (thisNode->connect(otherNode))
-		{
-			other->nodes.removeOne(otherNode);
-			otherNodeList[i] = thisNode;
-			other->nodes.append(thisNode);
-		}
+#if NODE_VARIANT
+		(*thisNode)->connect(*otherNode);
+#else
+		thisNode->connect(otherNode);
+#endif
 	}
 
 	return true;
 }
 
-Node ** Tile::getEdgeNodes(Tile::Side side)
+Tile::EdgeType * Tile::getEdgeNodes(Tile::Side side)
 {
 	return edgeNodes[(4 + side - orientation) % 4];
 }
 
-Node **Tile::createEdgeList(TerrainType t)
+void Tile::setEdgeNode(Tile::Side side, int index, Node *& n)
+{
+#if NODE_VARIANT
+	for (int i = 0; i < nodeCount; ++i)
+	{
+		if (nodes[i] == n)
+		{
+			edgeNodes[side][index] = nodes + i;
+			break;
+		}
+	}
+#else
+	edgeNodes[side][index] = n;
+	n->pointers.append(&(edgeNodes[side][index]));
+#endif
+}
+
+Tile::EdgeType * Tile::createEdgeList(TerrainType t)
 {
 	switch (t)
 	{
 		case Field:
 		case City:
-			return new Node*[1];
+			return new EdgeType[1];
 		case Road:
-			return new Node*[3];
+			return new EdgeType[3];
 		case None:
 		case Cloister:
 			break;
@@ -150,7 +176,11 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 				{
 					// quick and dirty
 					Tile * t = createTile(s, type + 1);
-					static_cast<CityNode*>(t->edgeNodes[Tile::up][0])->score = 2;
+#if NODE_VARIANT
+					static_cast<CityNode*>(*(t->edgeNodes[Tile::left][0]))->score = 2;
+#else
+					static_cast<CityNode*>(t->edgeNodes[Tile::left][0])->score = 2;
+#endif
 					return t;
 				}
 				case 0: //A
@@ -160,17 +190,14 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * road = newRoadNode();
 					Node * field = newFieldNode();
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(cloister);
-					t->nodes.append(road);
-					t->nodes.append(field);
+					Tile * t = new Tile(s, type, e, 3, new Node*[3]{cloister, road, field});
 
-					t->edgeNodes[Tile::left][0] = field;
-					t->edgeNodes[Tile::up][0] = field;
-					t->edgeNodes[Tile::right][0] = field;
-					t->edgeNodes[Tile::down][0] = field;
-					t->edgeNodes[Tile::down][1] = road;
-					t->edgeNodes[Tile::down][2] = field;
+					t->setEdgeNode(Tile::left,  0, field);
+					t->setEdgeNode(Tile::up,    0, field);
+					t->setEdgeNode(Tile::right, 0, field);
+					t->setEdgeNode(Tile::down,  0, field);
+					t->setEdgeNode(Tile::down,  1, road);
+					t->setEdgeNode(Tile::down,  2, field);
 
 					return t;
 				}
@@ -180,14 +207,12 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * cloister = newCloisterNode();
 					Node * field = newFieldNode();
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(cloister);
-					t->nodes.append(field);
+					Tile * t = new Tile(s, type, e, 2, new Node*[2]{cloister, field});
 
-					t->edgeNodes[Tile::left][0] = field;
-					t->edgeNodes[Tile::up][0] = field;
-					t->edgeNodes[Tile::right][0] = field;
-					t->edgeNodes[Tile::down][0] = field;
+					t->setEdgeNode(Tile::left,  0, field);
+					t->setEdgeNode(Tile::up,    0, field);
+					t->setEdgeNode(Tile::right, 0, field);
+					t->setEdgeNode(Tile::down,  0, field);
 
 					return t;
 				}
@@ -196,11 +221,10 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					static TerrainType e[4] = { City, City, City, City };
 					Node * city = newCityNode(4, 2);
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(city);
+					Tile * t = new Tile(s, type, e, 1, new Node*[1]{city});
 
 					for (int i = 0; i < 4; i++)
-						t->edgeNodes[i][0] = city;
+						t->setEdgeNode((Tile::Side)i, 0, city);
 
 					return t;
 				}
@@ -212,20 +236,16 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * field1 = newFieldNode();
 					Node * field2 = newFieldNode();
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(city);
-					t->nodes.append(road);
-					t->nodes.append(field1);
-					t->nodes.append(field2);
+					Tile * t = new Tile(s, type, e, 4, new Node*[4]{city, road, field1, field2});
 
-					t->edgeNodes[Tile::left][0] = field1;
-					t->edgeNodes[Tile::up][0] = field2;
-					t->edgeNodes[Tile::up][1] = road;
-					t->edgeNodes[Tile::up][2] = field1;
-					t->edgeNodes[Tile::right][0] = city;
-					t->edgeNodes[Tile::down][0] = field1;
-					t->edgeNodes[Tile::down][1] = road;
-					t->edgeNodes[Tile::down][2] = field2;
+					t->setEdgeNode(Tile::left,  0, field1);
+					t->setEdgeNode(Tile::up,    0, field2);
+					t->setEdgeNode(Tile::up,    1, road);
+					t->setEdgeNode(Tile::up,    2, field1);
+					t->setEdgeNode(Tile::right, 0, city);
+					t->setEdgeNode(Tile::down,  0, field1);
+					t->setEdgeNode(Tile::down,  1, road);
+					t->setEdgeNode(Tile::down,  2, field2);
 
 					return t;
 				}
@@ -235,14 +255,12 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * city = newCityNode(1);
 					Node * field = newFieldNode();
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(city);
-					t->nodes.append(field);
+					Tile * t = new Tile(s, type, e, 2, new Node*[2]{city, field});
 
-					t->edgeNodes[Tile::left][0] = field;
-					t->edgeNodes[Tile::up][0] = city;
-					t->edgeNodes[Tile::right][0] = field;
-					t->edgeNodes[Tile::down][0] = field;
+					t->setEdgeNode(Tile::left,  0, field);
+					t->setEdgeNode(Tile::up,    0, city);
+					t->setEdgeNode(Tile::right, 0, field);
+					t->setEdgeNode(Tile::down,  0, field);
 
 					return t;
 				}
@@ -253,15 +271,12 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * field1 = newFieldNode();
 					Node * field2 = newFieldNode();
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(city);
-					t->nodes.append(field1);
-					t->nodes.append(field2);
+					Tile * t = new Tile(s, type, e, 3, new Node*[3]{city, field1, field2});
 
-					t->edgeNodes[Tile::left][0] = city;
-					t->edgeNodes[Tile::up][0] = field1;
-					t->edgeNodes[Tile::right][0] = city;
-					t->edgeNodes[Tile::down][0] = field2;
+					t->setEdgeNode(Tile::left,  0, city);
+					t->setEdgeNode(Tile::up,    0, field1);
+					t->setEdgeNode(Tile::right, 0, city);
+					t->setEdgeNode(Tile::down,  0, field2);
 
 					return t;
 				}
@@ -272,15 +287,12 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * city2 = newCityNode(1);
 					Node * field = newFieldNode();
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(city1);
-					t->nodes.append(city2);
-					t->nodes.append(field);
+					Tile * t = new Tile(s, type, e, 3, new Node*[3]{city1, city2, field});
 
-					t->edgeNodes[Tile::left][0] = city2;
-					t->edgeNodes[Tile::up][0] = field;
-					t->edgeNodes[Tile::right][0] = city1;
-					t->edgeNodes[Tile::down][0] = field;
+					t->setEdgeNode(Tile::left,  0, city2);
+					t->setEdgeNode(Tile::up,    0, field);
+					t->setEdgeNode(Tile::right, 0, city1);
+					t->setEdgeNode(Tile::down,  0, field);
 
 					return t;
 				}
@@ -291,15 +303,12 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * city2 = newCityNode(1);
 					Node * field = newFieldNode();
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(city1);
-					t->nodes.append(city2);
-					t->nodes.append(field);
+					Tile * t = new Tile(s, type, e, 3, new Node*[3]{city1, city2, field});
 
-					t->edgeNodes[Tile::left][0] = field;
-					t->edgeNodes[Tile::up][0] = field;
-					t->edgeNodes[Tile::right][0] = city1;
-					t->edgeNodes[Tile::down][0] = city2;
+					t->setEdgeNode(Tile::left,  0, field);
+					t->setEdgeNode(Tile::up,    0, field);
+					t->setEdgeNode(Tile::right, 0, city1);
+					t->setEdgeNode(Tile::down,  0, city2);
 
 					return t;
 				}
@@ -311,20 +320,16 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * field1 = newFieldNode();
 					Node * field2 = newFieldNode();
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(city);
-					t->nodes.append(road);
-					t->nodes.append(field1);
-					t->nodes.append(field2);
+					Tile * t = new Tile(s, type, e, 4, new Node*[4]{city, road, field1, field2});
 
-					t->edgeNodes[Tile::left][0] = field1;
-					t->edgeNodes[Tile::up][0] = city;
-					t->edgeNodes[Tile::right][0] = field2;
-					t->edgeNodes[Tile::right][1] = road;
-					t->edgeNodes[Tile::right][2] = field1;
-					t->edgeNodes[Tile::down][0] = field1;
-					t->edgeNodes[Tile::down][1] = road;
-					t->edgeNodes[Tile::down][2] = field2;
+					t->setEdgeNode(Tile::left,  0, field1);
+					t->setEdgeNode(Tile::up,    0, city);
+					t->setEdgeNode(Tile::right, 0, field2);
+					t->setEdgeNode(Tile::right, 1, road);
+					t->setEdgeNode(Tile::right, 2, field1);
+					t->setEdgeNode(Tile::down,  0, field1);
+					t->setEdgeNode(Tile::down,  1, road);
+					t->setEdgeNode(Tile::down,  2, field2);
 
 					return t;
 				}
@@ -336,20 +341,16 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * field1 = newFieldNode();
 					Node * field2 = newFieldNode();
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(city);
-					t->nodes.append(road);
-					t->nodes.append(field1);
-					t->nodes.append(field2);
+					Tile * t = new Tile(s, type, e, 4, new Node*[4]{city, road, field1, field2});
 
-					t->edgeNodes[Tile::left][0] = field1;
-					t->edgeNodes[Tile::left][1] = road;
-					t->edgeNodes[Tile::left][2] = field2;
-					t->edgeNodes[Tile::up][0] = field2;
-					t->edgeNodes[Tile::up][1] = road;
-					t->edgeNodes[Tile::up][2] = field1;
-					t->edgeNodes[Tile::right][0] = city;
-					t->edgeNodes[Tile::down][0] = field1;
+					t->setEdgeNode(Tile::left,  0, field1);
+					t->setEdgeNode(Tile::left,  1, road);
+					t->setEdgeNode(Tile::left,  2, field2);
+					t->setEdgeNode(Tile::up,    0, field2);
+					t->setEdgeNode(Tile::up,    1, road);
+					t->setEdgeNode(Tile::up,    2, field1);
+					t->setEdgeNode(Tile::right, 0, city);
+					t->setEdgeNode(Tile::down,  0, field1);
 
 					return t;
 				}
@@ -364,25 +365,18 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * field2 = newFieldNode();
 					Node * field3 = newFieldNode();
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(city);
-					t->nodes.append(road1);
-					t->nodes.append(road2);
-					t->nodes.append(road3);
-					t->nodes.append(field1);
-					t->nodes.append(field2);
-					t->nodes.append(field3);
+					Tile * t = new Tile(s, type, e, 7, new Node*[7]{city, road1, road2, road3, field1, field2, field3});
 
-					t->edgeNodes[Tile::left][0] = field3;
-					t->edgeNodes[Tile::left][1] = road3;
-					t->edgeNodes[Tile::left][2] = field2;
-					t->edgeNodes[Tile::up][0] = field1;
-					t->edgeNodes[Tile::up][1] = road1;
-					t->edgeNodes[Tile::up][2] = field3;
-					t->edgeNodes[Tile::right][0] = city;
-					t->edgeNodes[Tile::down][0] = field2;
-					t->edgeNodes[Tile::down][1] = road2;
-					t->edgeNodes[Tile::down][2] = field1;
+					t->setEdgeNode(Tile::left,  0, field3);
+					t->setEdgeNode(Tile::left,  1, road3);
+					t->setEdgeNode(Tile::left,  2, field2);
+					t->setEdgeNode(Tile::up,    0, field1);
+					t->setEdgeNode(Tile::up,    1, road1);
+					t->setEdgeNode(Tile::up,    2, field3);
+					t->setEdgeNode(Tile::right, 0, city);
+					t->setEdgeNode(Tile::down,  0, field2);
+					t->setEdgeNode(Tile::down,  1, road2);
+					t->setEdgeNode(Tile::down,  2, field1);
 
 					return t;
 				}
@@ -392,14 +386,12 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * city = newCityNode(2);
 					Node * field = newFieldNode();
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(city);
-					t->nodes.append(field);
+					Tile * t = new Tile(s, type, e, 2, new Node*[2]{city, field});
 
-					t->edgeNodes[Tile::left][0] = city;
-					t->edgeNodes[Tile::up][0] = city;
-					t->edgeNodes[Tile::right][0] = field;
-					t->edgeNodes[Tile::down][0] = field;
+					t->setEdgeNode(Tile::left,  0, city);
+					t->setEdgeNode(Tile::up,    0, city);
+					t->setEdgeNode(Tile::right, 0, field);
+					t->setEdgeNode(Tile::down,  0, field);
 
 					return t;
 				}
@@ -411,20 +403,16 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * field1 = newFieldNode();
 					Node * field2 = newFieldNode();
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(city);
-					t->nodes.append(road);
-					t->nodes.append(field1);
-					t->nodes.append(field2);
+					Tile * t = new Tile(s, type, e, 4, new Node*[4]{city, road, field1, field2});
 
-					t->edgeNodes[Tile::left][0] = city;
-					t->edgeNodes[Tile::up][0] = city;
-					t->edgeNodes[Tile::right][0] = field2;
-					t->edgeNodes[Tile::right][1] = road;
-					t->edgeNodes[Tile::right][2] = field1;
-					t->edgeNodes[Tile::down][0] = field1;
-					t->edgeNodes[Tile::down][1] = road;
-					t->edgeNodes[Tile::down][2] = field2;
+					t->setEdgeNode(Tile::left,  0, city);
+					t->setEdgeNode(Tile::up,    0, city);
+					t->setEdgeNode(Tile::right, 0, field2);
+					t->setEdgeNode(Tile::right, 1, road);
+					t->setEdgeNode(Tile::right, 2, field1);
+					t->setEdgeNode(Tile::down,  0, field1);
+					t->setEdgeNode(Tile::down,  1, road);
+					t->setEdgeNode(Tile::down,  2, field2);
 
 					return t;
 				}
@@ -434,14 +422,12 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * field = newFieldNode();
 					Node * city = newCityNode(3);
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(field);
-					t->nodes.append(city);
+					Tile * t = new Tile(s, type, e, 2, new Node*[2]{field, city});
 
-					t->edgeNodes[Tile::left][0] = city;
-					t->edgeNodes[Tile::up][0] = city;
-					t->edgeNodes[Tile::right][0] = city;
-					t->edgeNodes[Tile::down][0] = field;
+					t->setEdgeNode(Tile::left,  0, city);
+					t->setEdgeNode(Tile::up,    0, city);
+					t->setEdgeNode(Tile::right, 0, city);
+					t->setEdgeNode(Tile::down,  0, field);
 
 					return t;
 				}
@@ -453,18 +439,14 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * field1 = newFieldNode();
 					Node * field2 = newFieldNode();
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(city);
-					t->nodes.append(road);
-					t->nodes.append(field1);
-					t->nodes.append(field2);
+					Tile * t = new Tile(s, type, e, 4, new Node*[4]{city, road, field1, field2});
 
-					t->edgeNodes[Tile::left][0] = city;
-					t->edgeNodes[Tile::up][0] = city;
-					t->edgeNodes[Tile::right][0] = city;
-					t->edgeNodes[Tile::down][0] = field1;
-					t->edgeNodes[Tile::down][1] = road;
-					t->edgeNodes[Tile::down][2] = field2;
+					t->setEdgeNode(Tile::left,  0, city);
+					t->setEdgeNode(Tile::up,    0, city);
+					t->setEdgeNode(Tile::right, 0, city);
+					t->setEdgeNode(Tile::down,  0, field1);
+					t->setEdgeNode(Tile::down,  1, road);
+					t->setEdgeNode(Tile::down,  2, field2);
 
 					return t;
 				}
@@ -475,19 +457,16 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * field1 = newFieldNode();
 					Node * field2 = newFieldNode();
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(road);
-					t->nodes.append(field1);
-					t->nodes.append(field2);
+					Tile * t = new Tile(s, type, e, 3, new Node*[3]{road, field1, field2});
 
-					t->edgeNodes[Tile::left][0] = field1;
-					t->edgeNodes[Tile::up][0] = field2;
-					t->edgeNodes[Tile::up][1] = road;
-					t->edgeNodes[Tile::up][2] = field1;
-					t->edgeNodes[Tile::right][0] = field2;
-					t->edgeNodes[Tile::down][0] = field1;
-					t->edgeNodes[Tile::down][1] = road;
-					t->edgeNodes[Tile::down][2] = field2;
+					t->setEdgeNode(Tile::left,  0, field1);
+					t->setEdgeNode(Tile::up,    0, field2);
+					t->setEdgeNode(Tile::up,    1, road);
+					t->setEdgeNode(Tile::up,    2, field1);
+					t->setEdgeNode(Tile::right, 0, field2);
+					t->setEdgeNode(Tile::down,  0, field1);
+					t->setEdgeNode(Tile::down,  1, road);
+					t->setEdgeNode(Tile::down,  2, field2);
 
 					return t;
 				}
@@ -498,19 +477,16 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * field1 = newFieldNode();
 					Node * field2 = newFieldNode();
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(road);
-					t->nodes.append(field1);
-					t->nodes.append(field2);
+					Tile * t = new Tile(s, type, e, 3, new Node*[3]{road, field1, field2});
 
-					t->edgeNodes[Tile::left][0] = field1;
-					t->edgeNodes[Tile::left][1] = road;
-					t->edgeNodes[Tile::left][2] = field2;
-					t->edgeNodes[Tile::up][0] = field1;
-					t->edgeNodes[Tile::right][0] = field1;
-					t->edgeNodes[Tile::down][0] = field2;
-					t->edgeNodes[Tile::down][1] = road;
-					t->edgeNodes[Tile::down][2] = field1;
+					t->setEdgeNode(Tile::left,  0, field1);
+					t->setEdgeNode(Tile::left,  1, road);
+					t->setEdgeNode(Tile::left,  2, field2);
+					t->setEdgeNode(Tile::up,    0, field1);
+					t->setEdgeNode(Tile::right, 0, field1);
+					t->setEdgeNode(Tile::down,  0, field2);
+					t->setEdgeNode(Tile::down,  1, road);
+					t->setEdgeNode(Tile::down,  2, field1);
 
 					return t;
 				}
@@ -524,24 +500,18 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * field2 = newFieldNode();
 					Node * field3 = newFieldNode();
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(road1);
-					t->nodes.append(road2);
-					t->nodes.append(road3);
-					t->nodes.append(field1);
-					t->nodes.append(field2);
-					t->nodes.append(field3);
+					Tile * t = new Tile(s, type, e, 6, new Node*[6]{road1, road2, road3, field1, field2, field3});
 
-					t->edgeNodes[Tile::left][0] = field1;
-					t->edgeNodes[Tile::left][1] = road1;
-					t->edgeNodes[Tile::left][2] = field3;
-					t->edgeNodes[Tile::up][0] = field1;
-					t->edgeNodes[Tile::right][0] = field2;
-					t->edgeNodes[Tile::right][1] = road2;
-					t->edgeNodes[Tile::right][2] = field1;
-					t->edgeNodes[Tile::down][0] = field3;
-					t->edgeNodes[Tile::down][1] = road3;
-					t->edgeNodes[Tile::down][2] = field2;
+					t->setEdgeNode(Tile::left,  0, field1);
+					t->setEdgeNode(Tile::left,  1, road1);
+					t->setEdgeNode(Tile::left,  2, field3);
+					t->setEdgeNode(Tile::up,    0, field1);
+					t->setEdgeNode(Tile::right, 0, field2);
+					t->setEdgeNode(Tile::right, 1, road2);
+					t->setEdgeNode(Tile::right, 2, field1);
+					t->setEdgeNode(Tile::down,  0, field3);
+					t->setEdgeNode(Tile::down,  1, road3);
+					t->setEdgeNode(Tile::down,  2, field2);
 
 					return t;
 				}
@@ -557,28 +527,20 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 					Node * field3 = newFieldNode();
 					Node * field4 = newFieldNode();
 
-					Tile * t = new Tile(s, type, e);
-					t->nodes.append(road1);
-					t->nodes.append(road2);
-					t->nodes.append(road3);
-					t->nodes.append(road4);
-					t->nodes.append(field1);
-					t->nodes.append(field2);
-					t->nodes.append(field3);
-					t->nodes.append(field4);
+					Tile * t = new Tile(s, type, e, 8, new Node*[8]{road1, road2, road3, road4, field1, field2, field3, field4});
 
-					t->edgeNodes[Tile::left][0] = field1;
-					t->edgeNodes[Tile::left][1] = road1;
-					t->edgeNodes[Tile::left][2] = field4;
-					t->edgeNodes[Tile::up][0] = field2;
-					t->edgeNodes[Tile::up][1] = road2;
-					t->edgeNodes[Tile::up][2] = field1;
-					t->edgeNodes[Tile::right][0] = field3;
-					t->edgeNodes[Tile::right][1] = road3;
-					t->edgeNodes[Tile::right][2] = field2;
-					t->edgeNodes[Tile::down][0] = field4;
-					t->edgeNodes[Tile::down][1] = road4;
-					t->edgeNodes[Tile::down][2] = field3;
+					t->setEdgeNode(Tile::left,  0, field1);
+					t->setEdgeNode(Tile::left,  1, road1);
+					t->setEdgeNode(Tile::left,  2, field4);
+					t->setEdgeNode(Tile::up,    0, field2);
+					t->setEdgeNode(Tile::up,    1, road2);
+					t->setEdgeNode(Tile::up,    2, field1);
+					t->setEdgeNode(Tile::right, 0, field3);
+					t->setEdgeNode(Tile::right, 1, road3);
+					t->setEdgeNode(Tile::right, 2, field2);
+					t->setEdgeNode(Tile::down,  0, field4);
+					t->setEdgeNode(Tile::down,  1, road4);
+					t->setEdgeNode(Tile::down,  2, field3);
 
 					return t;
 				}

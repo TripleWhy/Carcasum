@@ -28,7 +28,7 @@ void BoardUI::boardChanged(const Board * board)
 	if (size == 0)
 	{
 		TerrainType e[4];
-		Tile t(Tile::BaseGame, 0, e);
+		Tile t(Tile::BaseGame, 0, e, 0, new Node*[0]{});
 		size = TileUI(&t).sizeHint().width();
 	}
 
@@ -59,6 +59,19 @@ void BoardUI::boardChanged(const Board * board)
 		}
 	}
 
+	QList<QPoint> const & openPlaces = board->getOpenPlaces();
+	foreach (QPoint const & open, openPlaces)
+	{
+		if (open.x() < minX)
+			minX = open.x();
+		if (open.x() > maxX)
+			maxX = open.x();
+		if (open.y() < minY)
+			minY = open.y();
+		if (open.y() > maxY)
+			maxY = open.y();
+	}
+
 	bool visible = isVisible();
 	for (int y = 0; y <= (maxY - minY); ++y)
 	{
@@ -75,6 +88,19 @@ void BoardUI::boardChanged(const Board * board)
 			if (visible)
 				ui->setVisible(true);
 		}
+	}
+	foreach (QPoint const & open, openPlaces)
+	{
+		int x = open.x();
+		int y = open.y();
+		TileUI * ui = new TileUI(0, this);
+		ui->setText(QString("%1|%2").arg(x).arg(y));
+		ui->setFont(QFont("sans", 13));
+		tiles.append(ui);
+
+		ui->setGeometry((x - minX) * size, (y - minY) * size, size, size);
+		if (visible)
+			ui->setVisible(true);
 	}
 
 	resize((maxX - minX + 1) * size, (maxX - minX + 1) * size);

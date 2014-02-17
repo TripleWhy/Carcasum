@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "core/game.h"
 #include "boardui.h"
 
 #include <thread>
@@ -12,7 +11,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 	ui->setupUi(this);
 
-	Game * game = new Game();
+	game = new Game();
 	ui->scrollAreaWidgetContents->setGame(game);
 
 	Player * p1 = new RandomPlayer();
@@ -22,17 +21,30 @@ MainWindow::MainWindow(QWidget *parent) :
 	game->addPlayer(p2);
 	game->newGame(Tile::BaseGame);
 
-	new std::thread( [game]() {
-		while (!game->isFinished())
-		{
-			std::chrono::milliseconds dura( 1000 );
-			std::this_thread::sleep_for( dura );
-			game->step();
-		}
-	} );
+//	new std::thread( [game]() {
+//		while (!game->isFinished())
+//		{
+//			std::chrono::milliseconds dura( 500 );
+//			std::this_thread::sleep_for( dura );
+//			game->step();
+//		}
+//	} );
+
+	timer = new QTimer(this);
+	connect(timer, SIGNAL(timeout()), this, SLOT(timeout()));
+	timer->setInterval(0);
+	timer->setSingleShot(false);
+	timer->start();
 }
 
 MainWindow::~MainWindow()
 {
 	delete ui;
+}
+
+void MainWindow::timeout()
+{
+	game->step();
+	if (game->isFinished())
+		timer->stop();
 }

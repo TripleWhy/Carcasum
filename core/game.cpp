@@ -77,7 +77,7 @@ void Game::step()
 		tile = tiles.takeAt(r.nextInt(tiles.size()));
 		placements = board->getPossibleTilePlacements(tile);
 	}
-	qDebug() << "tile type:" << tile->tileType << "possible placements:" << placements.size();
+	qDebug() << "tile type:" << tile->tileType << char('A' + tile->tileType) << "possible placements:" << placements.size();
 
 	int playerIndex = ply % players.size();
 	Player * player = players[playerIndex];
@@ -91,7 +91,10 @@ void Game::step()
 	board->addTile(move.x, move.y, tile);
 	emit boardChanged(board);
 
-	++ply;
+	if (tiles.isEmpty())
+		ply = -1;
+	else
+		++ply;
 }
 
 void Game::cleanUp()

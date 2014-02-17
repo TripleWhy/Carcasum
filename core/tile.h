@@ -5,21 +5,38 @@
 #include <QSet>
 #include <QDebug>
 
+#define NODE_VARIANT 0
+
 enum TerrainType { None = 0, Field, City, Road, Cloister };
 
 struct Node
 {
+	friend class Tile;
+
+public:
 	TerrainType t;
 //	QSet<Node *> nodes;
+//	const int id = nextId++;
+//	static int nextId;
+//	bool deleted = false;
+private:
+	QList<Node **> pointers;
 
+public:
 	Node(TerrainType t) : t(t) {}
 	virtual ~Node() {}
 
-	// returns true if the other node was deleted and should be removed
-	virtual bool connect(Node * n)
+	virtual void connect(Node * n)
 	{
+		if (this == n)
+			return;
+
+		foreach (Node ** p, n->pointers)
+			*p = this;
+		pointers.append(n->pointers);
+
+//		n->deleted = true;
 		delete n;
-		return true;
 	}
 };
 
@@ -34,7 +51,7 @@ struct CityNode : public Node
 		  open(open)
 	{}
 
-	virtual bool connect(Node * n)
+	virtual void connect(Node * n)
 	{
 		Q_ASSERT_X(n->t == this->t, "CityNode::connect", "TerrainType does not match");
 		Q_ASSERT_X(dynamic_cast<CityNode *>(n) != 0, "CityNode::connect", "other node is no CityNode");
@@ -42,39 +59,50 @@ struct CityNode : public Node
 		CityNode * c = static_cast<CityNode *>(n);
 		score += c->score;
 		open += c->open - 2;
-		return Node::connect(n);
+		Node::connect(n);
 	}
 };
 
 class Tile
 {
+	friend class TileFactory;
+
 public:
 	enum Side { left = 0, up = 1, right = 2, down = 3 };
 	enum TileSet { BaseGame = 0 };
 	Q_DECLARE_FLAGS(TileSets, TileSet)
+#if NODE_VARIANT
+	typedef Node ** EdgeType;
+#else
+	typedef Node * EdgeType;
+#endif
 
-	TerrainType const * edges;
-	QList<Node *> nodes;
-	Node ** edgeNodes[4];
-
+	TerrainType const * edges; // array of edge types
+	int const nodeCount;       // lenght of nodes
 	Side orientation = left;
 
+private:
+	Node ** const nodes;       // array of node pointers
+	EdgeType * edgeNodes[4];   // 4 arrays of edge connectors
+
+public:
 	//Not neccessarily the best place (because this will need to be copied also):
 	TileSet const tileSet;
 	int tileType;
 
 public:
-	Tile(TileSet tileSet, int tileType, TerrainType const edges[4]);
-	Tile(const Tile & t);
+	Tile(TileSet tileSet, int tileType, TerrainType const edges[4], const int nodeCount, Node ** nodes);
+//	Tile(const Tile & t);
 	~Tile();
 	TerrainType const & getEdge(Side side) const;
 	TerrainType const & getEdge(Side side, Side orientation) const;
 	bool connect(Side s, Tile * other);
 
 private:
-	Node ** getEdgeNodes(Side side);
+	EdgeType * getEdgeNodes(Side side);
+	void setEdgeNode(Side side, int index, Node *& n);
 
-	static Node ** createEdgeList(TerrainType t);
+	static EdgeType * createEdgeList(TerrainType t);
 	static inline int edgeNodeCount(TerrainType t)
 	{
 		switch (t)

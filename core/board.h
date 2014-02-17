@@ -52,6 +52,7 @@ public:
 	int getInternalSize() const;
 
 	QList<TilePlacement> getPossibleTilePlacements(Tile const * tile) const;
+	QList<QPoint> getOpenPlaces() const;
 };
 
 #endif // BOARD_H

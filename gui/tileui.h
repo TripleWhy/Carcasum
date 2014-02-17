@@ -6,7 +6,7 @@
 #include <QLabel>
 #include <QMouseEvent>
 
-#define TILE_SIZE 100
+#define TILE_SIZE 50
 
 class TileUI : public QLabel
 {
