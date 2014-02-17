@@ -52,9 +52,9 @@ void BoardUI::boardChanged(const Board * board)
 				if (x > maxX)
 					maxX = x;
 				if (y < minY)
-					minY = x;
+					minY = y;
 				if (y > maxY)
-					maxY = x;
+					maxY = y;
 			}
 		}
 	}

@@ -17,6 +17,9 @@ TileUI::TileUI(Tile const * tile, QWidget * parent)
 		qDebug() << "type:" << tile->tileType << "orientation:" << tile->orientation;
 		img = img.transformed(QTransform().rotate(tile->orientation * 90));
 	}
+#if TILE_SIZE > 0
+	img = img.scaled(TILE_SIZE, TILE_SIZE, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+#endif
 
 	setPixmap(img);
 	setScaledContents(true);

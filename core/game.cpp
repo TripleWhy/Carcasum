@@ -69,23 +69,29 @@ void Game::step()
 		return;
 
 	Tile * tile = tiles.takeAt(r.nextInt(tiles.size()));
+//	Tile * tile = tiles.takeAt(0);
 	QList<Board::TilePlacement> && placements = board->getPossibleTilePlacements(tile);
 	while (placements.isEmpty())
 	{
+		delete tile;
 		tile = tiles.takeAt(r.nextInt(tiles.size()));
 		placements = board->getPossibleTilePlacements(tile);
 	}
-	qDebug() << "possible tile placements:" << placements.size();
+	qDebug() << "tile type:" << tile->tileType << "possible placements:" << placements.size();
 
 	int playerIndex = ply % players.size();
 	Player * player = players[playerIndex];
 	Move move = player->getMove(tile, placements, this);
+//	Move move{72, 73, Tile::left};
+	qDebug() << "player" << playerIndex << move.x << move.y << move.orientation;
 
 	tile->orientation = move.orientation;
 	//TODO meeple
 
 	board->addTile(move.x, move.y, tile);
 	emit boardChanged(board);
+
+	++ply;
 }
 
 void Game::cleanUp()
