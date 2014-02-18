@@ -50,33 +50,31 @@ void Board::setStartTile(Tile * tile)
 
 void Board::addTile(uint x, uint y, Tile * tile)
 {
-	int xo = x;// + offset;
-	int yo = y;// + offset;
+	Q_ASSERT_X(x < size && y < size, "addTile", "position out of bounds");
+	Q_ASSERT_X(board[x][y] == 0, "addTile", "position not empty");
 
-	Q_ASSERT_X(board[xo][yo] == 0, "addTile", "position not empty");
-
-	board[xo][yo] = tile;
+	board[x][y] = tile;
 	open.remove(QPoint(x, y));
 
-	if (board[xo - 1][yo] == 0)
-		open[QPoint(xo - 1,  yo)].t[Tile::right] = tile->getEdge(Tile::left);
+	if (board[x - 1][y] == 0)
+		open[QPoint(x - 1,  y)].t[Tile::right] = tile->getEdge(Tile::left);
 	else
-		board[xo - 1][yo]->connect(Tile::right, tile);
+		board[x - 1][y]->connect(Tile::right, tile);
 
-	if (board[xo + 1][yo] == 0)
-		open[QPoint(xo + 1,  yo)].t[Tile::left] = tile->getEdge(Tile::right);
+	if (board[x + 1][y] == 0)
+		open[QPoint(x + 1,  y)].t[Tile::left] = tile->getEdge(Tile::right);
 	else
-		board[xo + 1][yo]->connect(Tile::left, tile);
+		board[x + 1][y]->connect(Tile::left, tile);
 
-	if (board[xo][yo - 1] == 0)
-		open[QPoint(xo,  yo - 1)].t[Tile::down] = tile->getEdge(Tile::up);
+	if (board[x][y - 1] == 0)
+		open[QPoint(x,  y - 1)].t[Tile::down] = tile->getEdge(Tile::up);
 	else
-		board[xo][yo - 1]->connect(Tile::down, tile);
+		board[x][y - 1]->connect(Tile::down, tile);
 
-	if (board[xo][yo + 1] == 0)
-		open[QPoint(xo,  yo + 1)].t[Tile::up] = tile->getEdge(Tile::down);
+	if (board[x][y + 1] == 0)
+		open[QPoint(x,  y + 1)].t[Tile::up] = tile->getEdge(Tile::down);
 	else
-		board[xo][yo + 1]->connect(Tile::up, tile);
+		board[x][y + 1]->connect(Tile::up, tile);
 }
 
 int Board::getInternalSize() const

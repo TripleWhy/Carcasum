@@ -6,5 +6,6 @@ Move RandomPlayer::getMove(const Tile * const /*tile*/, QList<Board::TilePlaceme
 
 	qDebug() << "random" << i << "/" << placements.size();
 	Board::TilePlacement const & placement = placements.at(i);
-	return Move{placement.x, placement.y, placement.orientation};
+	//return Move{placement.x, placement.y, placement.orientation};
+	return Move(placement.x, placement.y, placement.orientation);
 }

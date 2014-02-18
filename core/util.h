@@ -2,6 +2,8 @@
 #define UTIL_H
 
 #include <QPoint>
+#include <QThread>
+#include <QCoreApplication>
 
 #include <random>
 #include <chrono>
@@ -39,7 +41,10 @@ public:
 class Util
 {
 public:
-
+	static inline bool isGUIThread()
+	{
+		return QThread::currentThread() == QCoreApplication::instance()->thread();
+	}
 };
 
 #endif // UTIL_H

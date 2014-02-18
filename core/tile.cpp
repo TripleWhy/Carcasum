@@ -176,6 +176,7 @@ Tile * TileFactory::createTile(Tile::TileSet s, int type)
 				{
 					// quick and dirty
 					Tile * t = createTile(s, type + 1);
+					t->tileType = type;
 #if NODE_VARIANT
 					static_cast<CityNode*>(*(t->edgeNodes[Tile::left][0]))->score = 2;
 #else

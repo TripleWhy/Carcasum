@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include "core/game.h"
+#include "core/player.h"
 
 #include <QMainWindow>
 
@@ -10,7 +11,7 @@ class MainWindow;
 }
 
 #include <QTimer>
-class MainWindow : public QMainWindow
+class MainWindow : public QMainWindow, public Player
 {
 	Q_OBJECT
 private:
@@ -20,6 +21,8 @@ private:
 public:
 	explicit MainWindow(QWidget *parent = 0);
 	~MainWindow();
+
+	virtual Move getMove(Tile const * const tile, QList<Board::TilePlacement> const & placements, Game const * const game);
 
 private slots:
 	void timeout();

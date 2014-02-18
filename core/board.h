@@ -55,4 +55,14 @@ public:
 	QList<QPoint> getOpenPlaces() const;
 };
 
+inline bool operator==(Board::TilePlacement const& lhs, Board::TilePlacement const& rhs)
+{
+	return (lhs.x == rhs.x) && (lhs.y == rhs.y) && (lhs.orientation == rhs.orientation);
+}
+
+inline bool operator!=(Board::TilePlacement const& lhs, Board::TilePlacement const& rhs)
+{
+	return !(lhs == rhs);
+}
+
 #endif // BOARD_H

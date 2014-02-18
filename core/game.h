@@ -13,6 +13,14 @@ struct Move
 	uint x, y;
 	Tile::Side orientation;
 	//TODO meeple move
+
+	Move() noexcept : x(-1) {}
+	Move(uint x, uint y, Tile::Side orientation) noexcept : x(x), y(y), orientation(orientation) {}
+
+	inline bool isNull()
+	{
+		return x == (uint)-1;
+	}
 };
 
 class Game : public QObject

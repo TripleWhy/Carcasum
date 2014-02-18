@@ -3,12 +3,19 @@
 BoardUI::BoardUI(QWidget *parent) :
 	QWidget(parent),
 	game(0),
-	size(0)
+	tilesize(0),
+	running(false),
+	userMoveReady(false)
 {
 }
 
 BoardUI::~BoardUI()
 {
+}
+
+QSize BoardUI::sizeHint() const
+{
+	return size;
 }
 
 void BoardUI::setGame(Game * g)
@@ -23,17 +30,52 @@ void BoardUI::setGame(Game * g)
 	connect(game, SIGNAL(boardChanged(const Board*)), this, SLOT(boardChanged(const Board*)));
 }
 
+Move BoardUI::getMove(const Tile * const tile, const QList<Board::TilePlacement> & placements, const Game * const /*game*/)
+{
+	if (running.exchange(true))
+		return Move();
+
+	foreach (TileUI * tui, openTiles) {
+		tui->setOpenTile(tile);
+	}
+
+	if (Util::isGUIThread())
+	{
+		qDebug() << "GUI thread";
+		//TODO?
+	}
+
+	Board::TilePlacement m;
+	while (true)
+	{
+		if (userMoveReady)
+		{
+			m = userMove;
+			userMoveReady = false;
+
+			if (placements.contains(m))
+				break;
+		}
+		else
+			QThread::currentThread()->yieldCurrentThread();
+	}
+
+	running = false;
+	return Move(m.x, m.y, m.orientation);
+}
+
 void BoardUI::boardChanged(const Board * board)
 {
-	if (size == 0)
+	if (tilesize == 0)
 	{
 		TerrainType e[4];
 		Tile t(Tile::BaseGame, 0, e, 0, new Node*[0]{});
-		size = TileUI(&t).sizeHint().width();
+		tilesize = TileUI(&t).sizeHint().width();
 	}
 
 	qDeleteAll(tiles);
 	tiles.clear();
+	openTiles.clear();
 
 	int arraySize = board->getInternalSize();
 	int minX = arraySize;
@@ -84,7 +126,7 @@ void BoardUI::boardChanged(const Board * board)
 			TileUI * ui = new TileUI(t, this);
 			tiles.append(ui);
 
-			ui->setGeometry(x * size, y * size, size, size);
+			ui->setGeometry(x * tilesize, y * tilesize, tilesize, tilesize);
 			if (visible)
 				ui->setVisible(true);
 		}
@@ -93,15 +135,31 @@ void BoardUI::boardChanged(const Board * board)
 	{
 		int x = open.x();
 		int y = open.y();
-		TileUI * ui = new TileUI(0, this);
+		TileUI * ui = new TileUI(x, y, this);
 		ui->setText(QString("%1|%2").arg(x).arg(y));
 		ui->setFont(QFont("sans", 13));
 		tiles.append(ui);
+		openTiles.append(ui);
 
-		ui->setGeometry((x - minX) * size, (y - minY) * size, size, size);
+		ui->setGeometry((x - minX) * tilesize, (y - minY) * tilesize, tilesize, tilesize);
 		if (visible)
 			ui->setVisible(true);
+
+		connect(ui, SIGNAL(tilePlaced()), this, SLOT(tilePlaced()));
 	}
 
-	resize((maxX - minX + 1) * size, (maxX - minX + 1) * size);
+	size.setWidth((maxX - minX + 1) * tilesize);
+	size.setHeight((maxX - minX + 1) * tilesize);
+	resize(size);
+	setMinimumSize(size);
+}
+
+void BoardUI::tilePlaced()
+{
+	if (!running || userMoveReady)
+		return;
+
+	auto snd = static_cast<TileUI*>(sender());
+	userMove = snd->getTilePlacement();
+	userMoveReady = true;
 }

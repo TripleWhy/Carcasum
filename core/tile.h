@@ -58,7 +58,10 @@ struct CityNode : public Node
 
 		CityNode * c = static_cast<CityNode *>(n);
 		score += c->score;
+		qDebug() << "   city value:" << score;
 		open += c->open - 2;
+		if (open == 0)
+			qDebug() << "   city closed, value:" << score;
 		Node::connect(n);
 	}
 };
