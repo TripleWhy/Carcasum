@@ -31,7 +31,7 @@ public:
 		if (this == n)
 			return;
 
-		foreach (Node ** p, n->pointers)
+		for (Node ** p : n->pointers)
 			*p = this;
 		pointers.append(n->pointers);
 

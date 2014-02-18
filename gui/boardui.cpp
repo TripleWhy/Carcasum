@@ -35,7 +35,7 @@ Move BoardUI::getMove(const Tile * const tile, const QList<Board::TilePlacement>
 	if (running.exchange(true))
 		return Move();
 
-	foreach (TileUI * tui, openTiles) {
+	for (TileUI * tui : openTiles) {
 		tui->setOpenTile(tile);
 	}
 
@@ -102,7 +102,7 @@ void BoardUI::boardChanged(const Board * board)
 	}
 
 	QList<QPoint> const & openPlaces = board->getOpenPlaces();
-	foreach (QPoint const & open, openPlaces)
+	for (QPoint const & open : openPlaces)
 	{
 		if (open.x() < minX)
 			minX = open.x();
@@ -131,7 +131,7 @@ void BoardUI::boardChanged(const Board * board)
 				ui->setVisible(true);
 		}
 	}
-	foreach (QPoint const & open, openPlaces)
+	for (QPoint const & open : openPlaces)
 	{
 		int x = open.x();
 		int y = open.y();
