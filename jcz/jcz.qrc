@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/jcz/tile-definitions">
+        <file alias="basic.xml">resources/tile-definitions/basic.xml</file>
+    </qresource>
+</RCC>

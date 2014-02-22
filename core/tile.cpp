@@ -4,31 +4,53 @@
 
 //int Node::nextId = 0;
 
+Tile::Tile(TileSet tileSet, int tileType)
+	: edges {None, None, None, None},
+	  tileSet(tileSet),
+	  tileType(tileType)
+{
+}
+
 Tile::Tile(TileSet tileSet, int tileType, TerrainType const edges[4], int const nodeCount, Node ** nodes)
-	: edges(edges),
+	: edges { edges[0], edges[1], edges[2], edges[3] },
 	  nodeCount(nodeCount),
 	  nodes(nodes),
 	  tileSet(tileSet),
 	  tileType(tileType)
 {
-	edgeNodes[left] = createEdgeList(edges[left]);
-	edgeNodes[up] = createEdgeList(edges[up]);
-	edgeNodes[right] = createEdgeList(edges[right]);
-	edgeNodes[down] = createEdgeList(edges[down]);
+	createEdgeList(left);
+	createEdgeList(up);
+	createEdgeList(right);
+	createEdgeList(down);
 
 	for (int i = 0; i < nodeCount; ++i)
 		nodes[i]->pointers.append(nodes + i);
 }
 
-//Tile::Tile(const Tile & t)
-//	: edges(t.edges),
-//	  tileSet(t.tileSet),
-//	  tileType(t.tileType),
-//	  nodes(new Node*[t.nodeCount]),
-//	  nodeCount(nodeCount)
-//{
-//	//TODO
-//}
+Tile::Tile(const Tile & t)
+	: Tile(t.tileSet, t.tileType, t.edges, 0, 0)
+{
+	orientation = t.orientation;
+
+	nodeCount = t.nodeCount;
+	nodes = new Node*[t.nodeCount];
+	for (int i = 0; i < nodeCount; ++i)
+	{
+		nodes[i] = t.nodes[i]->clone();
+		nodes[i]->pointers.append(nodes + i);
+	}
+	for (int i = 0; i < 4; ++i)
+	{
+		todo //TODO these are the wrong nodes!
+		int const enc = edgeNodeCount(edges[i]);
+		for (int j = 0; j < enc; ++j)
+#if NODE_VARIANT
+			setEdgeNode((Side)i, j, *t.edgeNodes[i][j]);
+#else
+			setEdgeNode((Side)i, j, t.edgeNodes[i][j]);
+#endif
+	}
+}
 
 Tile::~Tile()
 {
@@ -98,20 +120,19 @@ void Tile::setEdgeNode(Tile::Side side, int index, Node *& n)
 #endif
 }
 
-Tile::EdgeType * Tile::createEdgeList(TerrainType t)
+void Tile::createEdgeList(Side side)
 {
-	switch (t)
+	switch (edges[side])
 	{
 		case Field:
 		case City:
-			return new EdgeType[1];
+			edgeNodes[side] = new EdgeType[1];
 		case Road:
-			return new EdgeType[3];
+			edgeNodes[side] = new EdgeType[3];
 		case None:
 		case Cloister:
 			break;
 	}
-	return 0;
 }
 
 

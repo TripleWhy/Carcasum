@@ -7,6 +7,11 @@
 
 #define NODE_VARIANT 0
 
+namespace JCZUtils
+{
+class TileFactory;
+}
+
 enum TerrainType { None = 0, Field, City, Road, Cloister };
 
 struct Node
@@ -38,17 +43,22 @@ public:
 //		n->deleted = true;
 		delete n;
 	}
+
+	virtual Node * clone() const
+	{
+		return new Node(t);
+	}
 };
 
 struct CityNode : public Node
 {
-	uchar score;
 	uchar open;
+	uchar score;
 
 	CityNode(uchar open, uchar score = 1)
 		: Node(City),
-		  score(score),
-		  open(open)
+		  open(open),
+		  score(score)
 	{}
 
 	virtual void connect(Node * n)
@@ -64,11 +74,17 @@ struct CityNode : public Node
 			qDebug() << "   city closed, value:" << score;
 		Node::connect(n);
 	}
+
+	virtual Node * clone() const
+	{
+		return new CityNode(open, score);
+	}
 };
 
 class Tile
 {
 	friend class TileFactory;
+	friend class JCZUtils::TileFactory;
 
 public:
 	enum Side { left = 0, up = 1, right = 2, down = 3 };
@@ -80,32 +96,40 @@ public:
 	typedef Node * EdgeType;
 #endif
 
-	TerrainType const * edges; // array of edge types
-	int const nodeCount;       // lenght of nodes
-	Side orientation = left;
+
 
 private:
-	Node ** const nodes;       // array of node pointers
+	TerrainType edges[4]; // array of edge types
+	int nodeCount;       // lenght of nodes
+	Node ** nodes;       // array of node pointers
 	EdgeType * edgeNodes[4];   // 4 arrays of edge connectors
 
 public:
+	Side orientation = left;
+
 	//Not neccessarily the best place (because this will need to be copied also):
 	TileSet const tileSet;
+//	int const tileType; //TODO this is correct
 	int tileType;
+
+private:
+	Tile(TileSet tileSet, int tileType);
 
 public:
 	Tile(TileSet tileSet, int tileType, TerrainType const edges[4], const int nodeCount, Node ** nodes);
-//	Tile(const Tile & t);
+	Tile(const Tile & t);
+	Tile (Tile&& t) = delete;
 	~Tile();
 	TerrainType const & getEdge(Side side) const;
 	TerrainType const & getEdge(Side side, Side orientation) const;
 	bool connect(Side s, Tile * other);
+	Tile&& operator=(Tile&& t) = delete;
 
 private:
 	EdgeType * getEdgeNodes(Side side);
 	void setEdgeNode(Side side, int index, Node *& n);
+	void createEdgeList(Side side);
 
-	static EdgeType * createEdgeList(TerrainType t);
 	static inline int edgeNodeCount(TerrainType t)
 	{
 		switch (t)
