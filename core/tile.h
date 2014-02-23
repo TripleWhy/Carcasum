@@ -83,7 +83,6 @@ struct CityNode : public Node
 
 class Tile
 {
-	friend class TileFactory;
 	friend class JCZUtils::TileFactory;
 
 public:
@@ -127,7 +126,7 @@ public:
 
 private:
 	EdgeType * getEdgeNodes(Side side);
-	void setEdgeNode(Side side, int index, Node *& n);
+	void setEdgeNode(Side side, int index, Node * n);
 	void createEdgeList(Side side);
 
 	static inline int edgeNodeCount(TerrainType t)
@@ -147,15 +146,6 @@ private:
 	}
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(Tile::TileSets)
-
-class TileFactory
-{
-public:
-	static QList<Tile *> createTiles(Tile::TileSets s);
-
-//private:
-	static Tile * createTile(Tile::TileSet s, int type);
-};
 
 inline QDebug operator<< (QDebug d, const Tile::Side & s)
 {

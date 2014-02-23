@@ -69,7 +69,7 @@ void BoardUI::boardChanged(const Board * board)
 	if (tilesize == 0)
 	{
 		TerrainType e[4];
-		Tile t(Tile::BaseGame, 0, e, 0, new Node*[0]{});
+		Tile t(Tile::BaseGame, 0, e, 0, 0);
 		tilesize = TileUI(&t).sizeHint().width();
 	}
 

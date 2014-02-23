@@ -3,9 +3,23 @@
 #include <QFile>
 
 #include <QDebug>
+QList<Tile *> JCZUtils::TileFactory::createPack(Tile::TileSets tileSets)
+{
+	QList<Tile *> pack;
+	if (tileSets.testFlag(Tile::BaseGame))
+		createPack(":/jcz/tile-definitions/basic.xml", pack);
+	return pack;
+}
+
 QList<Tile *> JCZUtils::TileFactory::createPack(QString file)
 {
 	QList<Tile *> pack;
+	createPack(file, pack);
+	return pack;
+}
+
+QList<Tile *> JCZUtils::TileFactory::createPack(QString file, QList<Tile *> & pack)
+{
 
 	QFile f(file);
 	f.open(QIODevice::ReadOnly);
@@ -98,7 +112,7 @@ void JCZUtils::TileFactory::createTile(QXmlStreamReader & xml, QList<Tile *> & p
 	Tile * tile = new Tile(set, type);
 	TerrainType (&edges)[4] = tile->edges;
 	QList<Node *> nodes;
-	Node * edgeConnectors[3][4] = { {0} };
+	Node * edgeConnectors[4][3] = { {0} };
 	while (xml.readNextStartElement())
 	{
 		if (xml.name() == "cloister")
@@ -109,6 +123,7 @@ void JCZUtils::TileFactory::createTile(QXmlStreamReader & xml, QList<Tile *> & p
 		else if (xml.name() == "farm")
 		{
 			Node * field = newFieldNode();
+			xml.readNext();
 			for (QString const & str : xml.text().toString().split(' ', QString::SkipEmptyParts))
 			{
 				int side;
@@ -138,6 +153,7 @@ void JCZUtils::TileFactory::createTile(QXmlStreamReader & xml, QList<Tile *> & p
 		else if (xml.name() == "road")
 		{
 			Node * road = newRoadNode();
+			xml.readNext();
 			for (QString const & str : xml.text().toString().split(' ', QString::SkipEmptyParts))
 			{
 				int side;
@@ -171,6 +187,7 @@ void JCZUtils::TileFactory::createTile(QXmlStreamReader & xml, QList<Tile *> & p
 		else if (xml.name() == "city")
 		{
 			bool pennant = (xml.attributes().value("pennant") == "yes");
+			xml.readNext();
 			QStringList const & split = xml.text().toString().split(' ', QString::SkipEmptyParts);
 			Node * city = newCityNode(split.length(), pennant);
 			for (QString const & str : split)
@@ -212,6 +229,9 @@ void JCZUtils::TileFactory::createTile(QXmlStreamReader & xml, QList<Tile *> & p
 		{
 			qWarning() << "unsupported node type:" << xml.name();
 		}
+
+		while (xml.readNextStartElement())
+			;
 	}
 
 	for (int i = 0; i < 4; ++i)

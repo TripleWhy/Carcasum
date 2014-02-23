@@ -9,11 +9,11 @@ int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
 
-	JCZUtils::TileFactory::createPack(":/jcz/tile-definitions/basic.xml");
+//	JCZUtils::TileFactory::createPack(":/jcz/tile-definitions/basic.xml");
 
-//	MainWindow w;
-//	w.show();
+	MainWindow w;
+	w.show();
 
-//	return a.exec();
+	return a.exec();
 	return 0;
 }

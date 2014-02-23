@@ -1,4 +1,5 @@
 #include "game.h"
+#include "jcz/jczutils.h"
 
 Game::Game()
 	: ply(-1),
@@ -19,7 +20,7 @@ void Game::newGame(Tile::TileSets tileSets)
 	cleanUp();
 
 	ply = 0;
-	tiles = TileFactory::createTiles(tileSets);
+	tiles = JCZUtils::TileFactory::createPack(tileSets);
 	board = new Board(tiles.size());
 	board->setStartTile(tiles.takeFirst());
 
