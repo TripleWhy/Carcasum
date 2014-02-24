@@ -12,7 +12,7 @@ Game::~Game()
 	cleanUp();
 }
 
-void Game::newGame(Tile::TileSets tileSets)
+void Game::newGame(Tile::TileSets tileSets, JCZUtils::TileFactory * tileFactory)
 {
 	if (players.size() == 0)
 		return;
@@ -20,7 +20,7 @@ void Game::newGame(Tile::TileSets tileSets)
 	cleanUp();
 
 	ply = 0;
-	tiles = JCZUtils::TileFactory::createPack(tileSets);
+	tiles = tileFactory->createPack(tileSets);
 	board = new Board(tiles.size());
 	board->setStartTile(tiles.takeFirst());
 

@@ -3,24 +3,52 @@
 #include <QFile>
 
 #include <QDebug>
+JCZUtils::TileFactory::~TileFactory()
+{
+	for (auto it = tileTemplates.constBegin(); it != tileTemplates.constEnd(); ++it)
+		qDeleteAll(it.value());
+	tileTemplates.clear();
+}
+
 QList<Tile *> JCZUtils::TileFactory::createPack(Tile::TileSets tileSets)
 {
 	QList<Tile *> pack;
 	if (tileSets.testFlag(Tile::BaseGame))
-		createPack(":/jcz/tile-definitions/basic.xml", pack);
+		createPack(Tile::BaseGame, pack);
 	return pack;
 }
 
-QList<Tile *> JCZUtils::TileFactory::createPack(QString file)
+void JCZUtils::TileFactory::createPack(Tile::TileSet tileSet, QList<Tile *> & pack)
 {
-	QList<Tile *> pack;
-	createPack(file, pack);
-	return pack;
+	if (!tileTemplates.contains(tileSet))
+		readXMLPack(tileSet);
+	for (Tile * t : tileTemplates[tileSet])
+	{
+		TileMetaData const & data = tileMetaData[t];
+		if (data.hasPosition)
+			pack.prepend(new Tile(*t));
+		else
+			pack.append(new Tile(*t));
+
+		for (uint i = 1; i < data.count; ++i)
+			pack.append(new Tile(*t));
+	}
 }
 
-QList<Tile *> JCZUtils::TileFactory::createPack(QString file, QList<Tile *> & pack)
+void JCZUtils::TileFactory::readXMLPack(Tile::TileSet set)
 {
+	QString file;
+	switch (set)
+	{
+		case Tile::BaseGame:
+			file = ":/jcz/tile-definitions/basic.xml";
+			break;
+	}
+	readXMLPack(file, set);
+}
 
+void JCZUtils::TileFactory::readXMLPack(QString file, Tile::TileSet tileSet)
+{
 	QFile f(file);
 	f.open(QIODevice::ReadOnly);
 
@@ -30,21 +58,19 @@ QList<Tile *> JCZUtils::TileFactory::createPack(QString file, QList<Tile *> & pa
 	if (xml.name() != "pack")
 		qWarning() << "unknown element:" << xml.name();
 
-	int index = 0;
-	while (!xml.atEnd())
+	while (xml.readNextStartElement())
 	{
-		xml.readNextStartElement();
-
+		qDebug() << xml.tokenString() << xml.name();
+		Q_ASSERT(xml.tokenType() == QXmlStreamReader::StartElement);
 		if (xml.name() == "tile")
-			createTile(xml, pack, Tile::BaseGame, index++);
-		if (xml.name() != "pack")
+		{
+			for (QXmlStreamAttribute const & a : xml.attributes())
+				qDebug() << "\t" << a.name() << "=" << a.value();
+			qDebug();
+			readXMLTile(xml, tileSet);
+		}
+		else
 			qWarning() << "unknown element:" << xml.name();
-
-//		qDebug() << xml.tokenType();
-//		qDebug() << xml.tokenString();
-//		qDebug() << xml.name();
-//		qDebug() << xml.text();
-//		qDebug();
 	}
 	if (xml.hasError())
 	{
@@ -52,7 +78,6 @@ QList<Tile *> JCZUtils::TileFactory::createPack(QString file, QList<Tile *> & pa
 	}
 
 	f.close();
-	return pack;
 }
 
 inline Node * newFieldNode()
@@ -100,14 +125,17 @@ inline void convertSide(QString const & str, int & side, int & subside)
 	}
 }
 
-void JCZUtils::TileFactory::createTile(QXmlStreamReader & xml, QList<Tile *> & pack, Tile::TileSet set, int type)
+void JCZUtils::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set)
 {
+	TileMetaData data;
 	bool ok = false;
 	int count = xml.attributes().value("count").toInt(&ok);
 	if (!ok || count <= 0)
 		return;
-	QString id = xml.attributes().value("id").toString(); //TODO
-	bool starter = false;
+	data.count = count;
+
+	QString id = xml.attributes().value("id").toString();
+	int type = tileTemplates[set].size();
 
 	Tile * tile = new Tile(set, type);
 	TerrainType (&edges)[4] = tile->edges;
@@ -222,16 +250,23 @@ void JCZUtils::TileFactory::createTile(QXmlStreamReader & xml, QList<Tile *> & p
 		}
 		else if (xml.name() == "position")
 		{
-			//TODO
-			starter = true;
+			int x = xml.attributes().value("x").toInt(&ok);
+			if (ok)
+			{
+				int y = xml.attributes().value("y").toInt(&ok);
+				if (ok)
+				{
+					data.hasPosition = true;
+					data.position = QPoint(x, y);
+				}
+			}
 		}
 		else
 		{
 			qWarning() << "unsupported node type:" << xml.name();
 		}
 
-		while (xml.readNextStartElement())
-			;
+		xml.skipCurrentElement();
 	}
 
 	for (int i = 0; i < 4; ++i)
@@ -265,8 +300,18 @@ void JCZUtils::TileFactory::createTile(QXmlStreamReader & xml, QList<Tile *> & p
 	for (int i = 0; i < tile->nodeCount; ++i)
 		tile->nodes[i] = nodes.at(i);
 
-	pack.append(tile);
+	tileTemplates[set].append(tile);
+	tileMetaData[tile] = data;
+	tileIdentifiers[set].append(id);
+	qDebug() << this << tileIdentifiers[set].size();
+}
 
-	for (int i = 1; i < count; ++i)
-		pack.append(new Tile(*tile));
+QStringList JCZUtils::TileFactory::getTileIdentifiers(Tile::TileSet set) const
+{
+	return tileIdentifiers[set];
+}
+
+QString JCZUtils::TileFactory::getTileIdentifier(Tile::TileSet set, int type) const
+{
+	return tileIdentifiers[set][type];
 }

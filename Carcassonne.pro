@@ -27,15 +27,17 @@ core {
 
 	SOURCES += gui/main.cpp\
 		gui/mainwindow.cpp \
+		gui/boardui.cpp \
 		gui/tileui.cpp
 
 	HEADERS  += gui/mainwindow.h \
+		gui/boardui.h \
 		gui/tileui.h
 
 	FORMS    += gui/mainwindow.ui
 
 	classicTiles {
-		RESOURCES += gui/tilesClassic.qrc
+		RESOURCES += jcz/jczTilesClassic.qrc
 	} else {
 		RESOURCES += gui/tilesJczf.qrc
 	}
@@ -48,7 +50,6 @@ SOURCES += core/tile.cpp \
 	core/board.cpp \
 	core/util.cpp \
     player/randomplayer.cpp \
-    gui/boardui.cpp \
 	jcz/jczutils.cpp
 
 HEADERS += \
@@ -58,11 +59,10 @@ HEADERS += \
 	core/player.h \
 	core/util.h \
     player/randomplayer.h \
-    gui/boardui.h \
 	jcz/jczutils.h
 
 QMAKE_CXXFLAGS += -std=c++11
 QMAKE_CXXFLAGS_WARN_ON += -Wextra -Werror=switch -Werror=return-type -Werror=delete-non-virtual-dtor
 
 RESOURCES += \
-    jcz/jcz.qrc
+	jcz/jcz.qrc
