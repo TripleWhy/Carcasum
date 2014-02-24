@@ -1,8 +1,8 @@
 #ifndef TILE_H
 #define TILE_H
 
+#include <unordered_set>
 #include <QList>
-#include <QSet>
 #include <QDebug>
 
 #define NODE_VARIANT 0
@@ -11,6 +11,8 @@ namespace JCZUtils
 {
 class TileFactory;
 }
+class Tile;
+class Game;
 
 enum TerrainType { None = 0, Field, City, Road, Cloister };
 
@@ -20,18 +22,15 @@ struct Node
 
 public:
 	TerrainType t;
-//	QSet<Node *> nodes;
-//	const int id = nextId++;
-//	static int nextId;
-//	bool deleted = false;
+	std::unordered_set<Tile *> tiles;
 private:
 	QList<Node **> pointers;
 
 public:
-	Node(TerrainType t) : t(t) {}
+	Node(TerrainType t, Tile * parent) : t(t) { tiles.insert(parent); }
 	virtual ~Node() {}
 
-	virtual void connect(Node * n)
+	virtual void connect(Node * n, Game * /*g*/)
 	{
 		if (this == n)
 			return;
@@ -39,45 +38,52 @@ public:
 		for (Node ** p : n->pointers)
 			*p = this;
 		pointers.append(n->pointers);
+		tiles.insert(n->tiles.begin(), n->tiles.end());
 
-//		n->deleted = true;
 		delete n;
 	}
 
-	virtual Node * clone() const
+	virtual Node * clone(Tile * parent) const
 	{
-		return new Node(t);
+		return new Node(t, parent);
 	}
 };
 
 struct CityNode : public Node
 {
 	uchar open;
-	uchar score;
+	uchar bonus;
 
-	CityNode(uchar open, uchar score = 1)
-		: Node(City),
+public:
+	CityNode(Tile * parent, uchar open, uchar bonus = 0)
+		: Node(City, parent),
 		  open(open),
-		  score(score)
+		  bonus(bonus)
 	{}
 
-	virtual void connect(Node * n)
-	{
-		Q_ASSERT_X(n->t == this->t, "CityNode::connect", "TerrainType does not match");
-		Q_ASSERT_X(dynamic_cast<CityNode *>(n) != 0, "CityNode::connect", "other node is no CityNode");
+	virtual void connect(Node * n, Game * g);
 
-		CityNode * c = static_cast<CityNode *>(n);
-		score += c->score;
-		qDebug() << "   city value:" << score;
-		open += c->open - 2;
-		if (open == 0)
-			qDebug() << "   city closed, value:" << score;
-		Node::connect(n);
+	virtual Node * clone(Tile * parent) const
+	{
+		return new CityNode(parent, open, bonus);
 	}
+};
 
-	virtual Node * clone() const
+struct RoadNode : public Node
+{
+	uchar open;
+
+public:
+	RoadNode(Tile * parent, uchar open)
+		: Node(Road, parent),
+		  open(open)
+	{}
+
+	virtual void connect(Node * n, Game * g);
+
+	virtual Node * clone(Tile * parent) const
 	{
-		return new CityNode(open, score);
+		return new RoadNode(parent, open);
 	}
 };
 
@@ -121,7 +127,7 @@ public:
 	~Tile();
 	TerrainType const & getEdge(Side side) const;
 	TerrainType const & getEdge(Side side, Side orientation) const;
-	bool connect(Side s, Tile * other);
+	bool connect(Side s, Tile * other, Game * game);
 	Tile&& operator=(Tile&& t) = delete;
 
 private:

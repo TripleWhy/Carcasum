@@ -1,12 +1,12 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include "player.h"
 #include "tile.h"
 #include "board.h"
 #include "util.h"
 
 class Player;
+class Tile;
 
 struct Move
 {
@@ -49,7 +49,8 @@ public:
 	//getWinner()
 	//undo(...)
 
-	static void test();
+	void cityClosed(CityNode * n);
+	void roadClosed(RoadNode * n);
 
 private:
 	void cleanUp();

@@ -7,6 +7,8 @@
 #include <QHash>
 #include <QPoint>
 
+class Game;
+
 inline uint qHash(const QPoint &p)
 {
 	return (p.x() << (sizeof(p.x()) * 8 / 2)) | (p.y() & ((1 << (sizeof(p.x()) * 8 / 2)) - 1));
@@ -36,13 +38,14 @@ private:
 		}
 	};
 
+	Game * game;
 	Tile *** board;
 	uint const size;
 //	uint const offset;
 	QHash<QPoint, TerrainWrapper> open;
 
 public:
-	Board(uint const size);
+	Board(Game * game, uint const size);
 	~Board();
 
 	Tile * getTile(uint x, uint y);
@@ -53,6 +56,8 @@ public:
 
 	QList<TilePlacement> getPossibleTilePlacements(Tile const * tile) const;
 	QList<QPoint> getOpenPlaces() const;
+
+	QPoint positionOf(Tile * t) const;
 };
 
 inline bool operator==(Board::TilePlacement const& lhs, Board::TilePlacement const& rhs)

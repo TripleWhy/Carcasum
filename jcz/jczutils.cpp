@@ -80,24 +80,24 @@ void JCZUtils::TileFactory::readXMLPack(QString file, Tile::TileSet tileSet)
 	f.close();
 }
 
-inline Node * newFieldNode()
+inline Node * newFieldNode(Tile * tile)
 {
-	return new Node(Field);
+	return new Node(Field, tile);
 }
 
-inline Node * newCityNode(uchar open, bool pennant = false)
+inline Node * newCityNode(Tile * tile, uchar open, bool pennant = false)
 {
-	return new CityNode(open, pennant ? 1 : 0);
+	return new CityNode(tile, open, pennant ? 1 : 0);
 }
 
-inline Node * newRoadNode()
+inline Node * newRoadNode(Tile * tile, uchar open)
 {
-	return new Node(Road);
+	return new RoadNode(tile, open);
 }
 
-inline Node * newCloisterNode()
+inline Node * newCloisterNode(Tile * tile)
 {
-	return new Node(Cloister);
+	return new Node(Cloister, tile);
 }
 
 inline void convertSide(QString const & str, int & side, int & subside)
@@ -145,12 +145,12 @@ void JCZUtils::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet se
 	{
 		if (xml.name() == "cloister")
 		{
-			Node * cloister = newCloisterNode();
+			Node * cloister = newCloisterNode(tile);
 			nodes.append(cloister);
 		}
 		else if (xml.name() == "farm")
 		{
-			Node * field = newFieldNode();
+			Node * field = newFieldNode(tile);
 			xml.readNext();
 			for (QString const & str : xml.text().toString().split(' ', QString::SkipEmptyParts))
 			{
@@ -180,9 +180,10 @@ void JCZUtils::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet se
 		}
 		else if (xml.name() == "road")
 		{
-			Node * road = newRoadNode();
 			xml.readNext();
-			for (QString const & str : xml.text().toString().split(' ', QString::SkipEmptyParts))
+			QStringList const & split = xml.text().toString().split(' ', QString::SkipEmptyParts);
+			Node * road = newRoadNode(tile, split.length());
+			for (QString const & str : split)
 			{
 				int side;
 				int subside = 1;
@@ -217,7 +218,7 @@ void JCZUtils::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet se
 			bool pennant = (xml.attributes().value("pennant") == "yes");
 			xml.readNext();
 			QStringList const & split = xml.text().toString().split(' ', QString::SkipEmptyParts);
-			Node * city = newCityNode(split.length(), pennant);
+			Node * city = newCityNode(tile, split.length(), pennant);
 			for (QString const & str : split)
 			{
 				int side;

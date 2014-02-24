@@ -1,5 +1,7 @@
 #include "tile.h"
 
+#include "game.h"
+
 #include <unordered_map>
 
 #include <QDebug>
@@ -39,7 +41,7 @@ Tile::Tile(const Tile & t)
 	std::unordered_map<EdgeType, EdgeType> nodeMap;
 	for (int i = 0; i < nodeCount; ++i)
 	{
-		nodes[i] = t.nodes[i]->clone();
+		nodes[i] = t.nodes[i]->clone(this);
 		nodes[i]->pointers.append(nodes + i);
 #if NODE_VARIANT
 		nodeMap[t.nodes + i] = nodes + i;
@@ -78,7 +80,7 @@ const TerrainType & Tile::getEdge(Side side, Side orientation) const
 	return edges[(4 + side - orientation) % 4];
 }
 
-bool Tile::connect(Tile::Side side, Tile * other)
+bool Tile::connect(Tile::Side side, Tile * other, Game * game)
 {
 	Tile::Side otherSide = (Tile::Side)((side + 2) % 4);
 	TerrainType t = getEdge(side);
@@ -96,9 +98,9 @@ bool Tile::connect(Tile::Side side, Tile * other)
 		EdgeType thisNode = nodeList[nodeCount - i - 1];
 
 #if NODE_VARIANT
-		(*thisNode)->connect(*otherNode);
+		(*thisNode)->connect(*otherNode, game);
 #else
-		thisNode->connect(otherNode);
+		thisNode->connect(otherNode, game);
 #endif
 	}
 
@@ -130,4 +132,46 @@ void Tile::setEdgeNode(Tile::Side side, int index, Node * n)
 void Tile::createEdgeList(Side side)
 {
 	edgeNodes[side] = new EdgeType[edgeNodeCount(edges[side])];
+}
+
+
+void CityNode::connect(Node * n, Game * g)
+{
+	Q_ASSERT_X(n->t == this->t, "CityNode::connect", "TerrainType does not match");
+	Q_ASSERT_X(typeid(*n) == typeid(*this), "CityNode::connect", "other node is no CityNode");
+
+	open -= 2;
+	if (this != n)
+	{
+		CityNode * c = static_cast<CityNode *>(n);
+		bonus += c->bonus;
+		open += c->open;
+		Node::connect(n, g);
+	}
+	Q_ASSERT(uchar(open + 2) > open);
+
+	qDebug() << "   city open:" << open;
+	if (open == 0)
+		g->cityClosed(this);
+}
+
+#include <iostream>
+void RoadNode::connect(Node * n, Game * g)
+{
+	Q_ASSERT_X(n->t == this->t, "RoadNode::connect", "TerrainType does not match");
+	Q_ASSERT_X(typeid(*n) == typeid(*this), "RoadNode::connect", "other node is no RoadNode");
+
+	open -= 2;
+	if (this != n)
+	{
+		RoadNode * r = static_cast<RoadNode *>(n);
+		open += r->open;
+		Node::connect(n, g);
+	}
+	Q_ASSERT(uchar(open + 2) > open);
+
+	qDebug() << "   road open:" << open;
+
+	if (open == 0)
+		g->roadClosed(this);
 }

@@ -1,4 +1,6 @@
 #include "game.h"
+
+#include "player.h"
 #include "jcz/jczutils.h"
 
 Game::Game()
@@ -21,7 +23,7 @@ void Game::newGame(Tile::TileSets tileSets, JCZUtils::TileFactory * tileFactory)
 
 	ply = 0;
 	tiles = tileFactory->createPack(tileSets);
-	board = new Board(tiles.size());
+	board = new Board(this, tiles.size());
 	board->setStartTile(tiles.takeFirst());
 
 	emit boardChanged(board);
@@ -96,6 +98,20 @@ void Game::step()
 		ply = -1;
 	else
 		++ply;
+}
+
+void Game::cityClosed(CityNode * n)
+{
+	int score = n->tiles.size();
+	if (score > 2)
+		score = (score + n->bonus) * 2;
+	qDebug() << "   city closed, value:" << score;
+}
+
+void Game::roadClosed(RoadNode * n)
+{
+	int score = n->tiles.size();
+	qDebug() << "   raod closed, value:" << score;
 }
 
 void Game::cleanUp()

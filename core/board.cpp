@@ -1,7 +1,8 @@
 #include "board.h"
 
-Board::Board(const uint s)
-	: size(s * 2 - 1)//,
+Board::Board(Game * game, const uint s)
+	: game(game),
+	  size(s * 2 - 1)//,
 //	  offset(s - 1)
 {
 	board = new Tile ** [size];
@@ -59,22 +60,22 @@ void Board::addTile(uint x, uint y, Tile * tile)
 	if (board[x - 1][y] == 0)
 		open[QPoint(x - 1,  y)].t[Tile::right] = tile->getEdge(Tile::left);
 	else
-		board[x - 1][y]->connect(Tile::right, tile);
+		board[x - 1][y]->connect(Tile::right, tile, game);
 
 	if (board[x + 1][y] == 0)
 		open[QPoint(x + 1,  y)].t[Tile::left] = tile->getEdge(Tile::right);
 	else
-		board[x + 1][y]->connect(Tile::left, tile);
+		board[x + 1][y]->connect(Tile::left, tile, game);
 
 	if (board[x][y - 1] == 0)
 		open[QPoint(x,  y - 1)].t[Tile::down] = tile->getEdge(Tile::up);
 	else
-		board[x][y - 1]->connect(Tile::down, tile);
+		board[x][y - 1]->connect(Tile::down, tile, game);
 
 	if (board[x][y + 1] == 0)
 		open[QPoint(x,  y + 1)].t[Tile::up] = tile->getEdge(Tile::down);
 	else
-		board[x][y + 1]->connect(Tile::up, tile);
+		board[x][y + 1]->connect(Tile::up, tile, game);
 }
 
 int Board::getInternalSize() const
@@ -120,4 +121,13 @@ QList<Board::TilePlacement> Board::getPossibleTilePlacements(const Tile * tile) 
 QList<QPoint> Board::getOpenPlaces() const
 {
 	return open.keys();
+}
+
+QPoint Board::positionOf(Tile * t) const
+{
+	for (uint y = 0; y < size; ++y)
+		for (uint x = 0; x < size; ++x)
+			if (board[x][y] == t)
+				return QPoint(x, y);
+	return QPoint(-1, -1);
 }

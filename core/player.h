@@ -5,6 +5,8 @@
 #include "board.h"
 #include "game.h"
 
+#include <QList>
+
 class Move;
 class Game;
 class Tile;
