@@ -3,15 +3,16 @@
 
 #include "core/tile.h"
 #include "core/board.h"
+#include "jcz/jczutils.h"
 
 #include <QLabel>
 #include <QMouseEvent>
 
-#define TILE_SIZE 50
-
 class TileUI : public QLabel
 {
 Q_OBJECT
+public:
+	static int const TILE_SIZE = 50;
 
 private:
 	QPixmap baseImg;
@@ -20,10 +21,11 @@ private:
 	uint x, y;
 	const Tile * openTile = 0;
 	Tile::Side openOrientation;
+	JCZUtils::TileFactory * tileFactory;
 
 public:
-	TileUI(Tile const * tile, QWidget * parent = 0);
-	TileUI(uint x, uint y, QWidget * parent = 0);
+	TileUI(Tile const * tile, JCZUtils::TileFactory * tileFactory, QWidget * parent = 0);
+	TileUI(uint x, uint y, JCZUtils::TileFactory * tileFactory, QWidget * parent = 0);
 
 	void setOpenTile(const Tile * const tile);
 	Board::TilePlacement getTilePlacement();

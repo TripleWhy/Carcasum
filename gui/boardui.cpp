@@ -1,11 +1,11 @@
 #include "boardui.h"
 
-BoardUI::BoardUI(QWidget *parent) :
+BoardUI::BoardUI(JCZUtils::TileFactory * tileFactory, QWidget *parent) :
 	QWidget(parent),
 	game(0),
-	tilesize(0),
 	running(false),
-	userMoveReady(false)
+	userMoveReady(false),
+	tileFactory(tileFactory)
 {
 }
 
@@ -28,6 +28,11 @@ void BoardUI::setGame(Game * g)
 	game = g;
 
 	connect(game, SIGNAL(boardChanged(const Board*)), this, SLOT(boardChanged(const Board*)));
+}
+
+void BoardUI::setTileFactory(JCZUtils::TileFactory * factory)
+{
+	tileFactory = factory;
 }
 
 Move BoardUI::getMove(const Tile * const tile, const QList<Board::TilePlacement> & placements, const Game * const /*game*/)
@@ -66,16 +71,12 @@ Move BoardUI::getMove(const Tile * const tile, const QList<Board::TilePlacement>
 
 void BoardUI::boardChanged(const Board * board)
 {
-	if (tilesize == 0)
-	{
-		TerrainType e[4];
-		Tile t(Tile::BaseGame, 0, e, 0, new Node*[0]{});
-		tilesize = TileUI(&t).sizeHint().width();
-	}
-
 	qDeleteAll(tiles);
 	tiles.clear();
 	openTiles.clear();
+
+	if (tileFactory == 0)
+		return;
 
 	int arraySize = board->getInternalSize();
 	int minX = arraySize;
@@ -123,10 +124,10 @@ void BoardUI::boardChanged(const Board * board)
 			if (t == 0)
 				continue;
 
-			TileUI * ui = new TileUI(t, this);
+			TileUI * ui = new TileUI(t, tileFactory, this);
 			tiles.append(ui);
 
-			ui->setGeometry(x * tilesize, y * tilesize, tilesize, tilesize);
+			ui->setGeometry(x * TileUI::TILE_SIZE, y * TileUI::TILE_SIZE, TileUI::TILE_SIZE, TileUI::TILE_SIZE);
 			if (visible)
 				ui->setVisible(true);
 		}
@@ -135,21 +136,21 @@ void BoardUI::boardChanged(const Board * board)
 	{
 		int x = open.x();
 		int y = open.y();
-		TileUI * ui = new TileUI(x, y, this);
+		TileUI * ui = new TileUI(x, y, tileFactory, this);
 		ui->setText(QString("%1|%2").arg(x).arg(y));
 		ui->setFont(QFont("sans", 13));
 		tiles.append(ui);
 		openTiles.append(ui);
 
-		ui->setGeometry((x - minX) * tilesize, (y - minY) * tilesize, tilesize, tilesize);
+		ui->setGeometry((x - minX) * TileUI::TILE_SIZE, (y - minY) * TileUI::TILE_SIZE, TileUI::TILE_SIZE, TileUI::TILE_SIZE);
 		if (visible)
 			ui->setVisible(true);
 
 		connect(ui, SIGNAL(tilePlaced()), this, SLOT(tilePlaced()));
 	}
 
-	size.setWidth((maxX - minX + 1) * tilesize);
-	size.setHeight((maxX - minX + 1) * tilesize);
+	size.setWidth((maxX - minX + 1) * TileUI::TILE_SIZE);
+	size.setHeight((maxX - minX + 1) * TileUI::TILE_SIZE);
 	resize(size);
 	setMinimumSize(size);
 }

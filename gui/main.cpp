@@ -3,10 +3,13 @@
 
 #include "core/game.h"
 #include "gui/boardui.h"
+#include "jcz/jczutils.h"
 
 int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
+
+//	JCZUtils::TileFactory::createPack(":/jcz/tile-definitions/basic.xml");
 
 	MainWindow w;
 	w.show();

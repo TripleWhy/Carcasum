@@ -1,0 +1,28 @@
+<RCC>
+    <qresource prefix="/tile/BaseGame">
+        <file alias="C">resources/plugins/classic/tiles/BA/C.jpg</file>
+        <file alias="Cc.1">resources/plugins/classic/tiles/BA/Cc.1.jpg</file>
+        <file alias="CC.2">resources/plugins/classic/tiles/BA/CC.2.jpg</file>
+        <file alias="Cc+">resources/plugins/classic/tiles/BA/Cc+.jpg</file>
+        <file alias="Ccc">resources/plugins/classic/tiles/BA/Ccc.jpg</file>
+        <file alias="Ccc+">resources/plugins/classic/tiles/BA/Ccc+.jpg</file>
+        <file alias="Cccc+">resources/plugins/classic/tiles/BA/Cccc+.jpg</file>
+        <file alias="CccR">resources/plugins/classic/tiles/BA/CccR.jpg</file>
+        <file alias="CccR+">resources/plugins/classic/tiles/BA/CccR+.jpg</file>
+        <file alias="CcRr">resources/plugins/classic/tiles/BA/CcRr.jpg</file>
+        <file alias="CcRr+">resources/plugins/classic/tiles/BA/CcRr+.jpg</file>
+        <file alias="CFc.1">resources/plugins/classic/tiles/BA/CFc.1.jpg</file>
+        <file alias="CFC.2">resources/plugins/classic/tiles/BA/CFC.2.jpg</file>
+        <file alias="CFc+">resources/plugins/classic/tiles/BA/CFc+.jpg</file>
+        <file alias="CRr">resources/plugins/classic/tiles/BA/CRr.jpg</file>
+        <file alias="CRRR">resources/plugins/classic/tiles/BA/CRRR.jpg</file>
+        <file alias="L">resources/plugins/classic/tiles/BA/L.jpg</file>
+        <file alias="LR">resources/plugins/classic/tiles/BA/LR.jpg</file>
+        <file alias="RCr">resources/plugins/classic/tiles/BA/RCr.jpg</file>
+        <file alias="RFr">resources/plugins/classic/tiles/BA/RFr.jpg</file>
+        <file alias="Rr">resources/plugins/classic/tiles/BA/Rr.jpg</file>
+        <file alias="RrC">resources/plugins/classic/tiles/BA/RrC.jpg</file>
+        <file alias="RRR">resources/plugins/classic/tiles/BA/RRR.jpg</file>
+        <file alias="RRRR">resources/plugins/classic/tiles/BA/RRRR.jpg</file>
+    </qresource>
+</RCC>

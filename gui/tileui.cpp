@@ -2,9 +2,11 @@
 
 #include <QGraphicsOpacityEffect>
 
-TileUI::TileUI(Tile const * tile, QWidget * parent)
-	: QLabel(parent)
+TileUI::TileUI(Tile const * tile, JCZUtils::TileFactory * tileFactory, QWidget * parent)
+	: QLabel(parent),
+	  tileFactory(tileFactory)
 {
+	Q_ASSERT(tileFactory != 0);
 	if (tile == 0)
 	{
 		setStyleSheet("QLabel { background: #50FFFFFF; }");
@@ -21,8 +23,8 @@ TileUI::TileUI(Tile const * tile, QWidget * parent)
 	setScaledContents(true);
 }
 
-TileUI::TileUI(uint x, uint y, QWidget * parent)
-	: TileUI(0, parent)
+TileUI::TileUI(uint x, uint y, JCZUtils::TileFactory * tileFactory, QWidget * parent)
+	: TileUI(0, tileFactory, parent)
 {
 	this->x = x;
 	this->y = y;
@@ -94,13 +96,12 @@ void TileUI::loadImage(Tile::TileSet tileSet, int tileType)
 			prefix = "BaseGame";
 			break;
 	}
-	baseImg.load(QString(":/tile/%1/%2").arg(prefix).arg(char('A' + tileType)));
+	baseImg.load(QString(":/tile/%1/%2").arg(prefix).arg(tileFactory->getTileIdentifier(tileSet, tileType)));
+	Q_ASSERT(!baseImg.isNull());
 }
 
 void TileUI::setRotatedImage(Tile::Side orientation)
 {
 	img = baseImg.transformed(QTransform().rotate(orientation * 90));
-#if TILE_SIZE > 0
 	img = img.scaled(TILE_SIZE, TILE_SIZE, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-#endif
 }

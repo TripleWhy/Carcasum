@@ -3,6 +3,7 @@
 
 #include "core/game.h"
 #include "tileui.h"
+#include "jcz/jczutils.h"
 
 #include <QWidget>
 #include <QGridLayout>
@@ -15,9 +16,9 @@ Q_OBJECT
 
 private:
 	Game * game;
-	int tilesize;
 	QList<TileUI *> tiles;
 	QList<TileUI *> openTiles;
+	JCZUtils::TileFactory * tileFactory;
 
 	QSize size;
 
@@ -28,12 +29,13 @@ private:
 	Board::TilePlacement userMove;
 
 public:
-	explicit BoardUI(QWidget *parent = 0);
+	explicit BoardUI(JCZUtils::TileFactory * tileFactory = 0, QWidget *parent = 0);
 	~BoardUI();
 
 	virtual QSize sizeHint() const;
 
 	void setGame(Game * g);
+	void setTileFactory(JCZUtils::TileFactory * factory);
 	virtual Move getMove(Tile const * const tile, QList<Board::TilePlacement> const & placements, Game const * const game);
 
 private slots:
