@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "boardui.h"
 #include "jcz/jczutils.h"
 
 #include <thread>
@@ -11,11 +10,15 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
-	JCZUtils::TileFactory * tileFactory = new JCZUtils::TileFactory();
 
+	JCZUtils::TileFactory * tileFactory = new JCZUtils::TileFactory();
+	boardUi = new BoardGraphicsScene(tileFactory, ui->boardView);
 	game = new Game();
-	ui->boardUi->setGame(game);
-	ui->boardUi->setTileFactory(tileFactory);
+
+	boardUi->setGame(game);
+	ui->boardView->setScene(boardUi);
+
+	connect(boardUi, SIGNAL(sceneRectChanged(QRectF)), this, SLOT(recenter(QRectF)));
 
 	Player * p1 = new RandomPlayer();
 	Player * p2 = new RandomPlayer();
@@ -48,7 +51,7 @@ MainWindow::~MainWindow()
 
 Move MainWindow::getMove(const Tile * const tile, const QList<Board::TilePlacement> & placements, const Game * const game)
 {
-	return ui->boardUi->getMove(tile, placements, game);
+	return boardUi->getMove(tile, placements, game);
 }
 
 void MainWindow::timeout()
@@ -56,4 +59,9 @@ void MainWindow::timeout()
 	game->step();
 	if (game->isFinished())
 		timer->stop();
+}
+
+void MainWindow::recenter(QRectF rect)
+{
+	ui->boardView->centerOn(rect.center());
 }

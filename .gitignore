@@ -19,6 +19,7 @@ qrc_*.cpp
 Makefile
 *-build-*
 
+Thumbs.db
 gui/img/classic/*
 jcz/resources/plugins/classic/tiles/*/*.jpg
 jcz/resources/plugins/rgg_siege/tiles/*/*.jpg

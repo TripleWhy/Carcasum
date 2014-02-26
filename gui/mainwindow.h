@@ -3,6 +3,7 @@
 
 #include "core/game.h"
 #include "core/player.h"
+#include "boardgraphicsscene.h"
 
 #include <QMainWindow>
 
@@ -17,6 +18,7 @@ class MainWindow : public QMainWindow, public Player
 private:
 	Game * game;
 	QTimer * timer;
+	BoardGraphicsScene * boardUi;
 
 public:
 	explicit MainWindow(QWidget *parent = 0);
@@ -26,6 +28,7 @@ public:
 
 private slots:
 	void timeout();
+	void recenter(QRectF rect);
 
 private:
 	Ui::MainWindow *ui;

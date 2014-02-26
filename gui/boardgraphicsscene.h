@@ -1,26 +1,27 @@
-#ifndef BOARDUI_H
-#define BOARDUI_H
+#ifndef BOARDGRAPHICSSCENE_H
+#define BOARDGRAPHICSSCENE_H
 
 #include "core/game.h"
-#include "tileui.h"
 #include "jcz/jczutils.h"
+#include "tileimagefactory.h"
 
 #include <QWidget>
-#include <QGridLayout>
+#include <QGraphicsScene>
 
 #include <atomic>
 
-class BoardUI : public QWidget
+class BoardGraphicsScene : public QGraphicsScene
 {
 Q_OBJECT
+public:
+	static int const TILE_SIZE = 300;
 
 private:
 	Game * game;
-	QList<TileUI *> tiles;
-	QList<TileUI *> openTiles;
+	QList<QGraphicsPixmapItem *> tiles;
+//	QList<TileUI *> openTiles;
 	JCZUtils::TileFactory * tileFactory;
-
-	QSize size;
+	TileImageFactory imgFactory;
 
 	std::atomic<bool> running;
 //	std::atomic<Move> userMove; // Does not compile and I have no idea why
@@ -29,10 +30,8 @@ private:
 	Board::TilePlacement userMove;
 
 public:
-	explicit BoardUI(JCZUtils::TileFactory * tileFactory = 0, QWidget *parent = 0);
-	~BoardUI();
-
-	virtual QSize sizeHint() const;
+	explicit BoardGraphicsScene(JCZUtils::TileFactory * tileFactory = 0, QObject * parent = 0);
+	~BoardGraphicsScene();
 
 	void setGame(Game * g);
 	void setTileFactory(JCZUtils::TileFactory * factory);
@@ -43,4 +42,4 @@ private slots:
 	void tilePlaced();
 };
 
-#endif // BOARDUI_H
+#endif // BOARDGRAPHICSSCENE_H

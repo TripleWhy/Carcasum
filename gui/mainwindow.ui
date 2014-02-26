@@ -16,21 +16,7 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QScrollArea" name="scrollArea">
-      <property name="widgetResizable">
-       <bool>true</bool>
-      </property>
-      <widget class="BoardUI" name="boardUi">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>380</width>
-         <height>222</height>
-        </rect>
-       </property>
-      </widget>
-     </widget>
+     <widget class="BoardGraphicsView" name="boardView"/>
     </item>
    </layout>
   </widget>
@@ -40,7 +26,7 @@
      <x>0</x>
      <y>0</y>
      <width>400</width>
-     <height>19</height>
+     <height>15</height>
     </rect>
    </property>
   </widget>
@@ -57,10 +43,9 @@
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
-   <class>BoardUI</class>
-   <extends>QWidget</extends>
-   <header>gui/boardui.h</header>
-   <container>1</container>
+   <class>BoardGraphicsView</class>
+   <extends>QGraphicsView</extends>
+   <header>gui/boardgraphicsview.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

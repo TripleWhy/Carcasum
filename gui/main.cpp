@@ -2,7 +2,7 @@
 #include <QApplication>
 
 #include "core/game.h"
-#include "gui/boardui.h"
+#include "gui/boardgraphicsscene.h"
 #include "jcz/jczutils.h"
 
 int main(int argc, char *argv[])

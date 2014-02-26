@@ -27,12 +27,14 @@ core {
 
 	SOURCES += gui/main.cpp\
 		gui/mainwindow.cpp \
-		gui/boardui.cpp \
-		gui/tileui.cpp
+		gui/tileimagefactory.cpp \
+		gui/boardgraphicsview.cpp \
+		gui/boardgraphicsscene.cpp
 
 	HEADERS  += gui/mainwindow.h \
-		gui/boardui.h \
-		gui/tileui.h
+		gui/tileimagefactory.h \
+		gui/boardgraphicsview.h \
+		gui/boardgraphicsscene.h
 
 	FORMS    += gui/mainwindow.ui
 
