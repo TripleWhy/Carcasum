@@ -7,7 +7,7 @@
 
 #define NODE_VARIANT 0
 
-namespace JCZUtils
+namespace jcz
 {
 class TileFactory;
 }
@@ -89,7 +89,7 @@ public:
 
 class Tile
 {
-	friend class JCZUtils::TileFactory;
+	friend class jcz::TileFactory;
 
 public:
 	enum Side { left = 0, up = 1, right = 2, down = 3 };

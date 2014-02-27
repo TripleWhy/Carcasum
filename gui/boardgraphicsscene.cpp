@@ -3,7 +3,7 @@
 #include <QGraphicsPixmapItem>
 #include <QGraphicsSceneMouseEvent>
 
-BoardGraphicsScene::BoardGraphicsScene(JCZUtils::TileFactory * tileFactory, QObject * parent)
+BoardGraphicsScene::BoardGraphicsScene(jcz::TileFactory * tileFactory, QObject * parent)
 	: QGraphicsScene(parent),
 	  game(0),
 	  tileFactory(tileFactory),
@@ -37,7 +37,7 @@ void BoardGraphicsScene::setGame(Game * g)
 	connect(game, SIGNAL(boardChanged(const Board*)), this, SLOT(boardChanged(const Board*)));
 }
 
-void BoardGraphicsScene::setTileFactory(JCZUtils::TileFactory * factory)
+void BoardGraphicsScene::setTileFactory(jcz::TileFactory * factory)
 {
 	tileFactory = factory;
 }

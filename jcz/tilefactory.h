@@ -1,5 +1,5 @@
-#ifndef JCZUTILS_H
-#define JCZUTILS_H
+#ifndef TILEFACTORY_H
+#define TILEFACTORY_H
 
 #include "core/tile.h"
 
@@ -9,7 +9,7 @@
 
 class Tile;
 
-namespace JCZUtils
+namespace jcz
 {
 
 class TileFactory
@@ -42,4 +42,4 @@ public:
 
 }
 
-#endif // JCZUTILS_H
+#endif // TILEFACTORY_H

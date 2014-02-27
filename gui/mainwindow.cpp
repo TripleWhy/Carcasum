@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "jcz/jczutils.h"
+#include "jcz/tilefactory.h"
 
 #include <thread>
 #include <chrono>
@@ -11,7 +11,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 	ui->setupUi(this);
 
-	JCZUtils::TileFactory * tileFactory = new JCZUtils::TileFactory();
+	jcz::TileFactory * tileFactory = new jcz::TileFactory();
 	boardUi = new BoardGraphicsScene(tileFactory, ui->boardView);
 	game = new Game();
 

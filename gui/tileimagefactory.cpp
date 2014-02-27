@@ -1,7 +1,7 @@
 #include "tileimagefactory.h"
 #include "boardgraphicsscene.h"
 
-TileImageFactory::TileImageFactory(JCZUtils::TileFactory * tileFactory)
+TileImageFactory::TileImageFactory(jcz::TileFactory * tileFactory)
 	: tileFactory(tileFactory)
 {
 }

@@ -2,7 +2,7 @@
 #define BOARDGRAPHICSSCENE_H
 
 #include "core/game.h"
-#include "jcz/jczutils.h"
+#include "jcz/tilefactory.h"
 #include "tileimagefactory.h"
 
 #include <QWidget>
@@ -24,7 +24,7 @@ private:
 	QList<QGraphicsItem *> tiles;
 	QSet<QGraphicsRectItem *> openTiles;
 	QGraphicsPixmapItem * placementTile;
-	JCZUtils::TileFactory * tileFactory;
+	jcz::TileFactory * tileFactory;
 	TileImageFactory imgFactory;
 
 	std::atomic<bool> running;
@@ -35,11 +35,11 @@ private:
 	QList<Board::TilePlacement> const * possiblePlacements;
 
 public:
-	explicit BoardGraphicsScene(JCZUtils::TileFactory * tileFactory = 0, QObject * parent = 0);
+	explicit BoardGraphicsScene(jcz::TileFactory * tileFactory = 0, QObject * parent = 0);
 	~BoardGraphicsScene();
 
 	void setGame(Game * g);
-	void setTileFactory(JCZUtils::TileFactory * factory);
+	void setTileFactory(jcz::TileFactory * factory);
 	virtual Move getMove(Tile const * const tile, QList<Board::TilePlacement> const & placements, Game const * const game);
 
 protected:

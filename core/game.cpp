@@ -1,7 +1,7 @@
 #include "game.h"
 
 #include "player.h"
-#include "jcz/jczutils.h"
+#include "jcz/tilefactory.h"
 
 Game::Game()
 	: ply(-1),
@@ -14,7 +14,7 @@ Game::~Game()
 	cleanUp();
 }
 
-void Game::newGame(Tile::TileSets tileSets, JCZUtils::TileFactory * tileFactory)
+void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)
 {
 	if (players.size() == 0)
 		return;

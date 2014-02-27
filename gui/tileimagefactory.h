@@ -2,7 +2,7 @@
 #define TILEIMAGEFACTORY_H
 
 #include "core/tile.h"
-#include "jcz/jczutils.h"
+#include "jcz/tilefactory.h"
 
 #include <QHash>
 #include <QPixmap>
@@ -10,11 +10,11 @@
 class TileImageFactory
 {
 private:
-	JCZUtils::TileFactory * tileFactory;
+	jcz::TileFactory * tileFactory;
 	QHash<Tile::TileSet, QList<QPixmap>> images;
 
 public:
-	TileImageFactory(JCZUtils::TileFactory * tileFactory);
+	TileImageFactory(jcz::TileFactory * tileFactory);
 	~TileImageFactory();
 	const QPixmap getImage(const Tile * tile);
 	const QPixmap getImage(Tile::TileSet tileSet, int tileType);

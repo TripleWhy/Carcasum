@@ -38,7 +38,7 @@ public:
 	Game();
 	~Game();
 
-	void newGame(Tile::TileSets tileSets, JCZUtils::TileFactory * tileFactory);
+	void newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory);
 	void addPlayer(Player * player);
 	void setPlayer(int index, Player * player);
 	void setPlayers(QList<Player *> players);

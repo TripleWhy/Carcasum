@@ -1,16 +1,16 @@
-#include "jczutils.h"
+#include "tilefactory.h"
 
 #include <QFile>
 
 //#include <QDebug>
-JCZUtils::TileFactory::~TileFactory()
+jcz::TileFactory::~TileFactory()
 {
 	for (auto it = tileTemplates.constBegin(); it != tileTemplates.constEnd(); ++it)
 		qDeleteAll(it.value());
 	tileTemplates.clear();
 }
 
-QList<Tile *> JCZUtils::TileFactory::createPack(Tile::TileSets tileSets)
+QList<Tile *> jcz::TileFactory::createPack(Tile::TileSets tileSets)
 {
 	QList<Tile *> pack;
 	if (tileSets.testFlag(Tile::BaseGame))
@@ -18,7 +18,7 @@ QList<Tile *> JCZUtils::TileFactory::createPack(Tile::TileSets tileSets)
 	return pack;
 }
 
-void JCZUtils::TileFactory::createPack(Tile::TileSet tileSet, QList<Tile *> & pack)
+void jcz::TileFactory::createPack(Tile::TileSet tileSet, QList<Tile *> & pack)
 {
 	if (!tileTemplates.contains(tileSet))
 		readXMLPack(tileSet);
@@ -35,7 +35,7 @@ void JCZUtils::TileFactory::createPack(Tile::TileSet tileSet, QList<Tile *> & pa
 	}
 }
 
-void JCZUtils::TileFactory::readXMLPack(Tile::TileSet set)
+void jcz::TileFactory::readXMLPack(Tile::TileSet set)
 {
 	QString file;
 	switch (set)
@@ -47,7 +47,7 @@ void JCZUtils::TileFactory::readXMLPack(Tile::TileSet set)
 	readXMLPack(file, set);
 }
 
-void JCZUtils::TileFactory::readXMLPack(QString file, Tile::TileSet tileSet)
+void jcz::TileFactory::readXMLPack(QString file, Tile::TileSet tileSet)
 {
 	QFile f(file);
 	f.open(QIODevice::ReadOnly);
@@ -125,7 +125,7 @@ inline void convertSide(QString const & str, int & side, int & subside)
 	}
 }
 
-void JCZUtils::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set)
+void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set)
 {
 	TileMetaData data;
 	bool ok = false;
@@ -307,12 +307,12 @@ void JCZUtils::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet se
 //	qDebug() << this << tileIdentifiers[set].size();
 }
 
-QStringList JCZUtils::TileFactory::getTileIdentifiers(Tile::TileSet set) const
+QStringList jcz::TileFactory::getTileIdentifiers(Tile::TileSet set) const
 {
 	return tileIdentifiers[set];
 }
 
-QString JCZUtils::TileFactory::getTileIdentifier(Tile::TileSet set, int type) const
+QString jcz::TileFactory::getTileIdentifier(Tile::TileSet set, int type) const
 {
 	return tileIdentifiers[set][type];
 }
