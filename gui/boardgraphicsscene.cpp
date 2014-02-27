@@ -1,6 +1,7 @@
 #include "boardgraphicsscene.h"
 
 #include <QGraphicsPixmapItem>
+#include <QGraphicsSceneMouseEvent>
 
 BoardGraphicsScene::BoardGraphicsScene(JCZUtils::TileFactory * tileFactory, QObject * parent)
 	: QGraphicsScene(parent),
@@ -10,10 +11,18 @@ BoardGraphicsScene::BoardGraphicsScene(JCZUtils::TileFactory * tileFactory, QObj
 	  running(false),
 	  userMoveReady(false)
 {
+	setBackgroundBrush(QBrush(QPixmap(":/jcz/sysimages/panel_bg.png")));
+
+	placementTile = new QGraphicsPixmapItem();
+	placementTile->setTransformationMode(Qt::SmoothTransformation);
+	placementTile->setShapeMode(QGraphicsPixmapItem::BoundingRectShape);
+	placementTile->setOffset(-TILE_SIZE / 2.0, -TILE_SIZE / 2.0);
+	placementTile->setOpacity(0.7);
 }
 
 BoardGraphicsScene::~BoardGraphicsScene()
 {
+	delete placementTile;
 }
 
 void BoardGraphicsScene::setGame(Game * g)
@@ -38,9 +47,32 @@ Move BoardGraphicsScene::getMove(const Tile * const tile, const QList<Board::Til
 	if (running.exchange(true))
 		return Move();
 
-//	for (TileUI * tui : openTiles) {
-//		tui->setOpenTile(tile);
-//	}
+	possiblePlacements = &placements;
+	placementTile->setPixmap(imgFactory.getImage(tile));
+	addItem(placementTile);
+	for(auto it = openTiles.begin(); it != openTiles.end(); )
+	{
+		QGraphicsRectItem * rect = *it;
+		uint const x = rect->data(0).toUInt();
+		uint const y = rect->data(1).toUInt();
+		rect->setBrush(Qt::black);
+
+		bool possible = false;
+		for (Board::TilePlacement const & p : placements)
+		{
+			if (p.x == x && p.y == y)
+			{
+				rect->setBrush(Qt::green);
+				possible = true;
+				break;
+			}
+		}
+		if (possible)
+			++it;
+		else
+			it = openTiles.erase(it);
+	}
+	placementTile->setVisible(true);
 
 	if (Util::isGUIThread())
 	{
@@ -64,26 +96,130 @@ Move BoardGraphicsScene::getMove(const Tile * const tile, const QList<Board::Til
 	}
 
 	running = false;
+	removeItem(placementTile);
 	return Move(m.x, m.y, m.orientation);
+}
+
+void BoardGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent * mouseEvent)
+{
+	int x, y;
+	indexAt(mouseEvent->scenePos(), x, y);
+	QGraphicsRectItem * item = 0;
+	for (QGraphicsRectItem * i : openTiles)
+	{
+		if (i->data(0).toInt() == x && i->data(1).toInt() == y)
+		{
+			item = i;
+			break;
+		}
+	}
+
+	if (mouseEvent->buttons() == Qt::LeftButton)
+	{
+		if (item == 0)
+			return;
+
+		userMove.x = x;
+		userMove.y = y;
+		userMove.orientation = (Tile::Side)int(placementTile->rotation() / 90);
+		userMoveReady = true;
+	}
+	else if (mouseEvent->buttons() == Qt::RightButton)
+	{
+		int orientation = int(placementTile->rotation() / 90);
+		if (item != 0)
+		{
+			QList<Board::TilePlacement> const & placements = *possiblePlacements;
+#if defined(QT_NO_DEBUG) && !defined(QT_FORCE_ASSERTS)
+			for (int i = 0; i < 4; ++i)
+			{
+#else
+			for (int i = 0; i < 5; ++i)
+			{
+				Q_ASSERT(i < 4);
+#endif
+				orientation = (orientation + 1) % 4;
+				for (Board::TilePlacement const & p : placements)
+					if (p.x == x && p.y == y && p.orientation == orientation)
+						goto hell;
+			}
+			hell:;
+		}
+		else
+		{
+			orientation = (orientation + 1) % 4;
+		}
+		placementTile->setRotation(orientation * 90);
+	}
+}
+
+void BoardGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent)
+{
+	if (running)
+	{
+		int x, y;
+		indexAt(mouseEvent->scenePos(), x, y);
+		QGraphicsRectItem * item = 0;
+		for (QGraphicsRectItem * i : openTiles)
+		{
+			if (i->data(0).toInt() == x && i->data(1).toInt() == y)
+			{
+				item = i;
+				break;
+			}
+		}
+
+		if (item == 0)
+		{
+			placementTile->setPos(mouseEvent->scenePos());
+		}
+		else
+		{
+			placementTile->setPos(item->pos());
+			int orientation = int(placementTile->rotation() / 90);
+			QList<Board::TilePlacement> const & placements = *possiblePlacements;
+#if defined(QT_NO_DEBUG) && !defined(QT_FORCE_ASSERTS)
+			for (int i = 0; i < 4; ++i)
+			{
+#else
+			for (int i = 0; i < 5; ++i)
+			{
+				Q_ASSERT(i < 4);
+#endif
+				for (Board::TilePlacement const & p : placements)
+					if (p.x == x && p.y == y && p.orientation == orientation)
+						goto hell;
+				orientation = (orientation + 1) % 4;
+			}
+			hell:
+			placementTile->setRotation(orientation * 90);
+		}
+	}
+}
+
+void BoardGraphicsScene::indexAt(QPointF scenePos, int & x, int & y)
+{
+	x = (scenePos.x() + TILE_SIZE / 2) / TILE_SIZE;
+	y = (scenePos.y() + TILE_SIZE / 2) / TILE_SIZE;
 }
 
 void BoardGraphicsScene::boardChanged(const Board * board)
 {
 	qDeleteAll(tiles);
 	tiles.clear();
-//	openTiles.clear();
+	openTiles.clear();
 
 	if (tileFactory == 0)
 		return;
 
-	int arraySize = board->getInternalSize();
+	uint arraySize = board->getInternalSize();
 	setSceneRect(-TILE_SIZE / 2.0, -TILE_SIZE / 2.0, arraySize * TILE_SIZE, arraySize * TILE_SIZE);
 
 	QList<QPoint> const & openPlaces = board->getOpenPlaces();
 
-	for (int y = 0; y < arraySize; ++y)
+	for (uint y = 0; y < arraySize; ++y)
 	{
-		for (int x = 0; x < arraySize; ++x)
+		for (uint x = 0; x < arraySize; ++x)
 		{
 			Tile const * t = board->getTile(x, y);
 			if (t == 0)
@@ -101,30 +237,27 @@ void BoardGraphicsScene::boardChanged(const Board * board)
 			tiles.append(item);
 		}
 	}
-//	for (QPoint const & open : openPlaces)
-//	{
-//		int x = open.x();
-//		int y = open.y();
-//		TileUI * ui = new TileUI(x, y, tileFactory, this);
-//		ui->setText(QString("%1|%2").arg(x).arg(y));
-//		ui->setFont(QFont("sans", 13));
-//		tiles.append(ui);
-//		openTiles.append(ui);
+	for (QPoint const & open : openPlaces)
+	{
+		uint x = open.x();
+		uint y = open.y();
 
-//		ui->setGeometry((x - minX) * TileUI::TILE_SIZE, (y - minY) * TileUI::TILE_SIZE, TileUI::TILE_SIZE, TileUI::TILE_SIZE);
-//		if (visible)
-//			ui->setVisible(true);
+		QGraphicsRectItem * rect = new QGraphicsRectItem(-TILE_SIZE / 2.0, -TILE_SIZE / 2.0, TILE_SIZE, TILE_SIZE);
+		rect->setPos(x * TILE_SIZE, y * TILE_SIZE);
+		rect->setOpacity(0.2);
+		rect->setBrush(Qt::gray);
+		rect->setData(0, x);
+		rect->setData(1, y);
 
-//		connect(ui, SIGNAL(tilePlaced()), this, SLOT(tilePlaced()));
-//	}
-}
+#if DRAW_TILE_POSITION_TEXT
+		QGraphicsTextItem * text = new QGraphicsTextItem(QString("%1|%2").arg(x).arg(y), rect);
+		text->setFont(QFont("sans", 90));
+		text->setDefaultTextColor(Qt::red);
+		text->setPos(-TILE_SIZE / 2.0, -90 / 2.0);
+#endif
 
-void BoardGraphicsScene::tilePlaced()
-{
-	if (!running || userMoveReady)
-		return;
-
-//	auto snd = static_cast<TileUI*>(sender());
-//	userMove = snd->getTilePlacement();
-//	userMoveReady = true;
+		addItem(rect);
+		tiles.append(rect);
+		openTiles.insert(rect);
+	}
 }

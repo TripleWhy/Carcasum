@@ -78,7 +78,7 @@ void Board::addTile(uint x, uint y, Tile * tile)
 		board[x][y + 1]->connect(Tile::up, tile, game);
 }
 
-int Board::getInternalSize() const
+uint Board::getInternalSize() const
 {
 	return size;
 }

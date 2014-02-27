@@ -7,8 +7,11 @@
 
 #include <QWidget>
 #include <QGraphicsScene>
+#include <QSet>
 
 #include <atomic>
+
+#define DRAW_TILE_POSITION_TEXT 1
 
 class BoardGraphicsScene : public QGraphicsScene
 {
@@ -18,8 +21,9 @@ public:
 
 private:
 	Game * game;
-	QList<QGraphicsPixmapItem *> tiles;
-//	QList<TileUI *> openTiles;
+	QList<QGraphicsItem *> tiles;
+	QSet<QGraphicsRectItem *> openTiles;
+	QGraphicsPixmapItem * placementTile;
 	JCZUtils::TileFactory * tileFactory;
 	TileImageFactory imgFactory;
 
@@ -28,6 +32,7 @@ private:
 	// workaround:
 	std::atomic<bool> userMoveReady;
 	Board::TilePlacement userMove;
+	QList<Board::TilePlacement> const * possiblePlacements;
 
 public:
 	explicit BoardGraphicsScene(JCZUtils::TileFactory * tileFactory = 0, QObject * parent = 0);
@@ -37,9 +42,15 @@ public:
 	void setTileFactory(JCZUtils::TileFactory * factory);
 	virtual Move getMove(Tile const * const tile, QList<Board::TilePlacement> const & placements, Game const * const game);
 
+protected:
+	virtual void mousePressEvent (QGraphicsSceneMouseEvent * mouseEvent);
+	virtual void mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent);
+
+private:
+	static void indexAt(QPointF scenePos, int & x, int & y);
+
 private slots:
 	void boardChanged(Board const * board);
-	void tilePlaced();
 };
 
 #endif // BOARDGRAPHICSSCENE_H

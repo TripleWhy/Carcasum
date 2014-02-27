@@ -2,4 +2,7 @@
     <qresource prefix="/jcz/tile-definitions">
         <file alias="basic.xml">resources/tile-definitions/basic.xml</file>
     </qresource>
+    <qresource prefix="/jcz/sysimages">
+        <file alias="panel_bg.png">resources/sysimages/panel_bg.png</file>
+    </qresource>
 </RCC>

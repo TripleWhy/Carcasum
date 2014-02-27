@@ -23,9 +23,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	Player * p1 = new RandomPlayer();
 	Player * p2 = new RandomPlayer();
 
-	game->addPlayer(p1);
-	game->addPlayer(p2);
-//	game->addPlayer(this);
+//	game->addPlayer(p1);
+//	game->addPlayer(p2);
+	game->addPlayer(this);
 	game->newGame(Tile::BaseGame, tileFactory);
 
 	new std::thread( [this]() {

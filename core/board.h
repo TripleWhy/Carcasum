@@ -52,7 +52,7 @@ public:
 	const Tile * getTile(uint x, uint y) const;
 	void setStartTile(Tile  * tile);
 	void addTile(uint x, uint y, Tile * tile);
-	int getInternalSize() const;
+	uint getInternalSize() const;
 
 	QList<TilePlacement> getPossibleTilePlacements(Tile const * tile) const;
 	QList<QPoint> getOpenPlaces() const;

@@ -2,7 +2,7 @@
 
 #include <QFile>
 
-#include <QDebug>
+//#include <QDebug>
 JCZUtils::TileFactory::~TileFactory()
 {
 	for (auto it = tileTemplates.constBegin(); it != tileTemplates.constEnd(); ++it)
@@ -60,13 +60,13 @@ void JCZUtils::TileFactory::readXMLPack(QString file, Tile::TileSet tileSet)
 
 	while (xml.readNextStartElement())
 	{
-		qDebug() << xml.tokenString() << xml.name();
+//		qDebug() << xml.tokenString() << xml.name();
 		Q_ASSERT(xml.tokenType() == QXmlStreamReader::StartElement);
 		if (xml.name() == "tile")
 		{
-			for (QXmlStreamAttribute const & a : xml.attributes())
-				qDebug() << "\t" << a.name() << "=" << a.value();
-			qDebug();
+//			for (QXmlStreamAttribute const & a : xml.attributes())
+//				qDebug() << "\t" << a.name() << "=" << a.value();
+//			qDebug();
 			readXMLTile(xml, tileSet);
 		}
 		else
@@ -304,7 +304,7 @@ void JCZUtils::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet se
 	tileTemplates[set].append(tile);
 	tileMetaData[tile] = data;
 	tileIdentifiers[set].append(id);
-	qDebug() << this << tileIdentifiers[set].size();
+//	qDebug() << this << tileIdentifiers[set].size();
 }
 
 QStringList JCZUtils::TileFactory::getTileIdentifiers(Tile::TileSet set) const
