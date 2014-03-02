@@ -70,7 +70,10 @@ void jcz::TileFactory::readXMLPack(QString file, Tile::TileSet tileSet)
 			readXMLTile(xml, tileSet);
 		}
 		else
+		{
 			qWarning() << "unknown element:" << xml.name();
+			xml.skipCurrentElement();
+		}
 	}
 	if (xml.hasError())
 	{

@@ -52,7 +52,10 @@ SOURCES += core/tile.cpp \
 	core/board.cpp \
 	core/util.cpp \
     player/randomplayer.cpp \
-    jcz/tilefactory.cpp
+    jcz/xmlparser.cpp \
+    jcz/tilefactory.cpp \
+    jcz/location.cpp \
+    jcz/expansion.cpp
 
 HEADERS += \
 	core/tile.h \
@@ -61,7 +64,10 @@ HEADERS += \
 	core/player.h \
 	core/util.h \
     player/randomplayer.h \
-    jcz/tilefactory.h
+    jcz/tilefactory.h \
+    jcz/xmlparser.h \
+    jcz/location.h \
+    jcz/expansion.h
 
 QMAKE_CXXFLAGS += -std=c++11
 QMAKE_CXXFLAGS_WARN_ON += -Wextra -Werror=switch -Werror=return-type -Werror=delete-non-virtual-dtor
