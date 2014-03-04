@@ -226,7 +226,7 @@ void jcz::XmlParser::readPoint(QXmlStreamReader & xml, QList<XMLTile> & tiles)
 			locations.append(location);
 			if (allRotations)
 				for (uchar i = 1; i < 4; ++i)
-					locations.append(location.rotateCW(i));
+					locations.append(location.rotateCCW(i));
 		}
 
 		bool allTiles = true;
@@ -256,11 +256,11 @@ void jcz::XmlParser::readPoint(QXmlStreamReader & xml, QList<XMLTile> & tiles)
 			t.translate(500, 500);
 			t.rotate(-i * 90);
 			if (transform > 0)
-				t.rotate(transform);
+				t.rotate(-transform); // Untested, since it does not apply to the base game.
 
 			signed char r = l.getRotationOf(baseLocation);
 			if (r > 0)
-				t.rotate(-r * 90);
+				t.rotate(r * 90);
 
 			t.translate(-500, -500);
 			QPoint rotatedPoint = t.map(point);
