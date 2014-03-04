@@ -17,7 +17,7 @@ core {
 	TEMPLATE = app
 
 } else {
-	QT       += gui
+	QT       += gui svg
 
 	greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -44,6 +44,9 @@ core {
 		RESOURCES += gui/tilesJczf.qrc
 	}
 
+	RESOURCES += \
+		jcz/jcz.qrc \
+		gui/graphics.qrc
 
 }
 
@@ -72,5 +75,3 @@ HEADERS += \
 QMAKE_CXXFLAGS += -std=c++11
 QMAKE_CXXFLAGS_WARN_ON += -Wextra -Werror=switch -Werror=return-type -Werror=delete-non-virtual-dtor
 
-RESOURCES += \
-	jcz/jcz.qrc

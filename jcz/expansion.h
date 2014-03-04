@@ -2,6 +2,7 @@
 #define EXPANSION_H
 
 #include <QString>
+#include "core/tile.h"
 
 namespace jcz
 {
@@ -63,17 +64,38 @@ private:
 	quint64 values;
 
 private:
-	Expansions(quint64 v) : values(v) {}
 public:
-	Expansions(Expansion e) : values(e) {}
-
 	static QString getCode(Expansion expansion);
 	static QString getName(Expansion expansion);
+	static Expansion fromTileSet(Tile::TileSet set);
+
+	Q_DECL_CONSTEXPR inline Expansions() : values(0) {}
+	Q_DECL_CONSTEXPR inline Expansions(Expansion f) : values(quint64(f)) {}
+	Q_DECL_CONSTEXPR inline Expansions(quint64 f) : values(f) {}
+
+	inline Expansions &operator&=(quint64 mask) { values &= mask; return *this; }
+	inline Expansions &operator&=(uint mask) { values &= mask; return *this; }
+	inline Expansions &operator&=(Expansion mask) { values &= quint64(mask); return *this; }
+	inline Expansions &operator|=(Expansions f) { values |= f.values; return *this; }
+	inline Expansions &operator|=(Expansion f) { values |= quint64(f); return *this; }
+	inline Expansions &operator^=(Expansions f) { values ^= f.values; return *this; }
+	inline Expansions &operator^=(Expansion f) { values ^= quint64(f); return *this; }
+
+	Q_DECL_CONSTEXPR  inline operator quint64() const { return values; }
+
+	Q_DECL_CONSTEXPR inline Expansions operator|(Expansions f) const { return Expansions(quint64(values | f.values)); }
+	Q_DECL_CONSTEXPR inline Expansions operator|(Expansion f) const { return Expansions(quint64(values | quint64(f))); }
+	Q_DECL_CONSTEXPR inline Expansions operator^(Expansions f) const { return Expansions(quint64(values ^ f.values)); }
+	Q_DECL_CONSTEXPR inline Expansions operator^(Expansion f) const { return Expansions(quint64(values ^ quint64(f))); }
+	Q_DECL_CONSTEXPR inline Expansions operator&(quint64 mask) const { return Expansions(quint64(values & mask)); }
+	Q_DECL_CONSTEXPR inline Expansions operator&(uint mask) const { return Expansions(quint64(values & mask)); }
+	Q_DECL_CONSTEXPR inline Expansions operator&(Expansion f) const { return Expansions(quint64(values & quint64(f))); }
+	Q_DECL_CONSTEXPR inline Expansions operator~() const { return Expansions(quint64(~values)); }
+
+	Q_DECL_CONSTEXPR inline bool operator!() const { return !values; }
+
+	Q_DECL_CONSTEXPR inline bool testFlag(Expansion f) const { return (values & quint64(f)) == quint64(f) && (quint64(f) != 0 || values == quint64(f) ); }
 };
-inline Expansions operator|(Expansions e1, Expansions e2)
-{
-	return Expansions(e1.values | e2.values);
-}
 
 }
 

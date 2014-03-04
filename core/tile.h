@@ -104,18 +104,17 @@ public:
 
 
 private:
-	TerrainType edges[4]; // array of edge types
-	int nodeCount;       // lenght of nodes
-	Node ** nodes;       // array of node pointers
-	EdgeType * edgeNodes[4];   // 4 arrays of edge connectors
+	TerrainType edges[4];    // array of edge types
+	int nodeCount;           // lenght of nodes
+	Node ** nodes;           // array of node pointers
+	EdgeType * edgeNodes[4]; // 4 arrays of edge connectors
 
 public:
 	Side orientation = left;
 
 	//Not neccessarily the best place (because this will need to be copied also):
 	TileSet const tileSet;
-//	int const tileType; //TODO this is correct
-	int tileType;
+	int const tileType;
 
 private:
 	Tile(TileSet tileSet, int tileType);
@@ -150,6 +149,11 @@ private:
 		}
 		return 0;
 	}
+
+public:
+	inline int getNodeCount() const { return nodeCount; }
+	inline Node const * const * getCNodes() const { return nodes; }
+	inline Node * const * getNodes() { return nodes; }
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(Tile::TileSets)
 

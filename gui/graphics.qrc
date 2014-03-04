@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/img/meeple">
+        <file alias="laying-outline">img/meeple-laying-outline.svg</file>
+        <file alias="standing-outline">img/meeple-standing-outline.svg</file>
+        <file alias="laying-fill">img/meeple-laying-fill.svg</file>
+        <file alias="standing-fill">img/meeple-standing-fill.svg</file>
+    </qresource>
+</RCC>

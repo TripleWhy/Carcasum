@@ -7,15 +7,17 @@
 
 class Player;
 class Tile;
+class Node;
 
-struct Move
+#define NODE_ARRAY_LENGTH 16
+
+struct TileMove
 {
 	uint x, y;
 	Tile::Side orientation;
-	//TODO meeple move
 
-	Move() noexcept : x(-1) {}
-	Move(uint x, uint y, Tile::Side orientation) noexcept : x(x), y(y), orientation(orientation) {}
+	TileMove() noexcept : x(-1) {}
+	TileMove(uint x, uint y, Tile::Side orientation) noexcept : x(x), y(y), orientation(orientation) {}
 
 	inline bool isNull()
 	{
@@ -23,12 +25,15 @@ struct Move
 	}
 };
 
+typedef Node const * MeepleMove;
+
 class Game : public QObject
 {
 Q_OBJECT
 
 private:
 	int ply;
+	int currentPlayer;
 	QList<Player *> players;
 	Board * board;
 	QList<Tile *> tiles;

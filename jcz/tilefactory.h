@@ -30,6 +30,7 @@ public:
 	~TileFactory();
 	QList<Tile *> createPack(Tile::TileSets tileSets);
 	void createPack(Tile::TileSet tileSet, QList<Tile *> & pack);
+
 private:
 	void readXMLPack(Tile::TileSet set);
 	void readXMLPack(QString file, Tile::TileSet tileSet);

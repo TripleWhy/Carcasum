@@ -49,9 +49,14 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
-Move MainWindow::getMove(const Tile * const tile, const QList<Board::TilePlacement> & placements, const Game * const game)
+TileMove MainWindow::getTileMove(const Tile * const tile, const QList<Board::TilePlacement> & placements, const Game * const game)
 {
 	return boardUi->getMove(tile, placements, game);
+}
+
+MeepleMove MainWindow::getMeepleMove(const Tile * const tile, const QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> & possible, const Game * const game)
+{
+	return boardUi->getMeepleMove(tile, possible, game);
 }
 
 void MainWindow::timeout()

@@ -1,6 +1,8 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include "tile.h"
+
 #include <QPoint>
 #include <QThread>
 #include <QCoreApplication>
@@ -41,9 +43,15 @@ public:
 class Util
 {
 public:
-	static inline bool isGUIThread()
+	inline static bool isGUIThread()
 	{
 		return QThread::currentThread() == QCoreApplication::instance()->thread();
+	}
+
+	inline static bool isNodeFree(Node const * n)
+	{
+		//TODO
+		return true;
 	}
 };
 

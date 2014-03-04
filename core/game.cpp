@@ -3,6 +3,8 @@
 #include "player.h"
 #include "jcz/tilefactory.h"
 
+#include <QVarLengthArray>
+
 Game::Game()
 	: ply(-1),
 	  board(0)
@@ -82,18 +84,29 @@ void Game::step()
 	}
 	qDebug() << "tile type:" << tile->tileType << char('A' + tile->tileType) << "possible placements:" << placements.size();
 
-	int playerIndex = ply % players.size();
+	int playerIndex = currentPlayer = (currentPlayer + 1) % players.size();
 	Player * player = players[playerIndex];
-	Move move = player->getMove(tile, placements, this);
+
+	TileMove move = player->getTileMove(tile, placements, this);
 //	Move move{72, 73, Tile::left};
 	qDebug() << "player" << playerIndex << move.x << move.y << move.orientation;
-
 	tile->orientation = move.orientation;
-	//TODO meeple
-
 	board->addTile(move.x, move.y, tile);
-	emit boardChanged(board);
 
+	QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> possibleMeeples(1);
+	possibleMeeples[0] = 0;
+	for (auto n = tile->getCNodes(), end = n + tile->getNodeCount(); n < end; ++n)
+		if (Util::isNodeFree(*n))
+			possibleMeeples.append(*n);
+	Q_ASSERT_X(possibleMeeples.size() <= NODE_ARRAY_LENGTH, "Game::step()", "possibleMeeples initial size too low");
+
+	if (possibleMeeples.size() > 1)
+	{
+		MeepleMove meepleMove = player->getMeepleMove(tile, possibleMeeples, this);
+		// TODO place meeple
+	}
+
+	emit boardChanged(board);
 	if (tiles.isEmpty())
 		ply = -1;
 	else

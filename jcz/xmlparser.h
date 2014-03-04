@@ -28,14 +28,18 @@ public:
 		int index = 0;
 		int count = 0;
 		QString id;
-		QHash<Location, XMLFeature> features;
+		QList<XMLFeature> features;
+		QHash<Location, uint> locations; // index in features
 	};
 
 public:
 	static QList<XMLTile> readTileDefinitions(Expansion expansion);
+private:
 	static void readTile(QXmlStreamReader & xml, XMLTile & tile);
 
+public:
 	static void readPoints(const QString & file, QList<XMLTile> & tiles);
+private:
 	static void readPoint(QXmlStreamReader & xml, QList<XMLTile> & tiles);
 };
 

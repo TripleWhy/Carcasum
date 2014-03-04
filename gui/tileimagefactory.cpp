@@ -25,6 +25,55 @@ const QPixmap TileImageFactory::getImage(Tile::TileSet tileSet, int tileType)
 	return imgList[tileType];
 }
 
+QString TileImageFactory::getMeepleFillSvg(const Node * node) const
+{
+	switch (node->t)
+	{
+		case Field:
+			return ":/img/meeple/laying-fill";
+		default:
+			return ":/img/meeple/standing-fill";
+	}
+}
+
+QString TileImageFactory::getMeepleOutlineSvg(const Node * node) const
+{
+	switch (node->t)
+	{
+		case Field:
+			return ":/img/meeple/laying-outline";
+		default:
+			return ":/img/meeple/standing-outline";
+	}
+}
+
+QMap<const Node *, QPoint> TileImageFactory::getPoints(Tile const * tile)
+{
+	jcz::Expansion expansion = jcz::Expansions::fromTileSet(tile->tileSet);
+	if (!xmlTiles.contains(expansion))
+	{
+		auto && tiles = jcz::XmlParser::readTileDefinitions(expansion);
+		jcz::XmlParser::readPoints(":/jcz/defaults/points.xml", tiles);
+		jcz::XmlParser::readPoints(":/jcz/resources/plugins/classic/tiles/points.xml", tiles);
+		xmlTiles.insert(expansion, tiles);
+	}
+
+	// :-/  All this relies on the fact that both TileFactory and XMLParser read the same file in the same order.
+
+	jcz::XmlParser::XMLTile const & xTile = xmlTiles.value(expansion).at(tile->tileType);
+
+	QMap<Node const *, QPoint> points;
+	for (int i = 0; i < tile->getNodeCount(); ++i)
+	{
+		QPoint point = xTile.features[i].point;
+		point *= (BoardGraphicsScene::TILE_SIZE / 1000.0);
+		points.insert(tile->getCNodes()[i], point);
+	}
+
+	return points;
+}
+
+
 QPixmap TileImageFactory::loadImage(Tile::TileSet tileSet, int tileType)
 {
 	QString prefix;

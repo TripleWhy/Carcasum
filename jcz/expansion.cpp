@@ -155,3 +155,13 @@ QString jcz::Expansions::getName(jcz::Expansion expansion)
 	}
 	return QString();
 }
+
+jcz::Expansion jcz::Expansions::fromTileSet(Tile::TileSet set)
+{
+	switch (set)
+	{
+		case Tile::BaseGame:
+			return BASIC;
+	}
+	return BASIC;
+}

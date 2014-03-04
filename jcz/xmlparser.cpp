@@ -66,7 +66,7 @@ jcz::Location initFromDirList(QStringList const & sides)
 
 void jcz::XmlParser::readTile(QXmlStreamReader & xml, XMLTile & tile)
 {
-	qDebug() << xml.tokenString() << xml.name();
+//	qDebug() << xml.tokenString() << xml.name();
 	bool ok = false;
 	int count = xml.attributes().value("count").toInt(&ok);
 	if (!ok || count <= 0)
@@ -76,7 +76,7 @@ void jcz::XmlParser::readTile(QXmlStreamReader & xml, XMLTile & tile)
 
 	while (xml.readNextStartElement())
 	{
-		qDebug() << xml.tokenString() << xml.name();
+//		qDebug() << xml.tokenString() << xml.name();
 
 		QString name = xml.name().toString();
 		if (name == "wagon-move")
@@ -89,7 +89,8 @@ void jcz::XmlParser::readTile(QXmlStreamReader & xml, XMLTile & tile)
 		}
 		else
 		{
-			XMLFeature feature;
+			tile.features.append(XMLFeature());
+			XMLFeature & feature = tile.features.last();
 			feature.name = name;
 
 			for (QXmlStreamAttribute const & a : xml.attributes())
@@ -102,20 +103,20 @@ void jcz::XmlParser::readTile(QXmlStreamReader & xml, XMLTile & tile)
 			else
 			{
 				xml.readNext();
-				qDebug() << xml.tokenString() << xml.name() << xml.text();
+//				qDebug() << xml.tokenString() << xml.name() << xml.text();
 
 				QStringList const & split = xml.text().toString().split(' ', QString::SkipEmptyParts);
 				feature.location = initFromDirList(split);
 			}
 
-			Q_ASSERT(!tile.features.contains(feature.location));
-			tile.features.insert(feature.location, feature);
+			Q_ASSERT(!tile.locations.contains(feature.location));
+			tile.locations.insert(feature.location, tile.features.length() - 1);
 		}
 
 		xml.skipCurrentElement();
-		qDebug();
+//		qDebug();
 	}
-	qDebug();
+//	qDebug();
 }
 
 void jcz::XmlParser::readPoints(QString const & file, QList<XMLTile> & tiles)
@@ -164,25 +165,49 @@ void jcz::XmlParser::readPoint(QXmlStreamReader & xml, QList<XMLTile> & tiles)
 		return;
 	}
 
-	qDebug() << featureName << cx << cy << xml.attributes().value("baseLocation");
+//	qDebug() << featureName << cx << cy << xml.attributes().value("baseLocation");
 
 	while (xml.readNextStartElement())
 	{
+		int transform = -1;
 		if (xml.name() != "apply")
 		{
-			//TODO rotate(..., 500, 500)
-			qWarning() << "bad point apply definition";
-//			Q_ASSERT(false);
-//			return;
-
-			xml.skipCurrentElement();
-			continue;
+			if (xml.name() == "g")
+			{
+				auto const & value = xml.attributes().value("svg:transform");
+				if (value == "rotate(90 500 500)") // Well, this is actually hardcoded this way in jcz
+					transform = 90;
+				else if (value == "rotate(180 500 500)")
+					transform = 180;
+				else if (value == "rotate(270 500 500)")
+					transform = 270;
+			}
+			if (transform < 0)
+			{
+				qWarning() << "bad point apply definition 1";
+				Q_ASSERT(false);
+//				return;
+				xml.skipCurrentElement();
+				continue;
+			}
+			else
+			{
+				xml.readNextStartElement();
+				if (xml.name() != "apply")
+				{
+					qWarning() << "bad point apply definition 2";
+					Q_ASSERT(false);
+	//				return;
+					xml.skipCurrentElement();
+					continue;
+				}
+			}
 		}
 
 		bool allRotations = (xml.attributes().value("allRotations") == "1");
 
 		xml.readNext();
-		qDebug() << "apply" << xml.text();
+//		qDebug() << "apply" << xml.text();
 
 		QStringList const & split = xml.text().toString().split(' ', QString::SkipEmptyParts);
 		if (split.length() != 2)
@@ -230,6 +255,8 @@ void jcz::XmlParser::readPoint(QXmlStreamReader & xml, QList<XMLTile> & tiles)
 			QTransform t;
 			t.translate(500, 500);
 			t.rotate(-i * 90);
+			if (transform > 0)
+				t.rotate(transform);
 
 			signed char r = l.getRotationOf(baseLocation);
 			if (r > 0)
@@ -248,17 +275,21 @@ void jcz::XmlParser::readPoint(QXmlStreamReader & xml, QList<XMLTile> & tiles)
 						continue;
 				}
 
-				if (!tile.features.contains(l))
+				if (!tile.locations.contains(l))
 					continue;
-				XMLFeature & feature = tile.features[l];
+				XMLFeature & feature = tile.features[tile.locations[l]];
 				if (feature.name != featureName)
 					continue;
 
 				feature.point = rotatedPoint;
+				if (transform > 0)
+					qDebug() << tile.id << feature.name << feature.point;
 			}
 		}
 
 		xml.skipCurrentElement();
+		if (transform > 0)
+			xml.skipCurrentElement();
 	}
-	qDebug();
+//	qDebug();
 }
