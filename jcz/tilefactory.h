@@ -28,13 +28,13 @@ private:
 
 public:
 	~TileFactory();
-	QList<Tile *> createPack(Tile::TileSets tileSets);
-	void createPack(Tile::TileSet tileSet, QList<Tile *> & pack);
+	QList<Tile *> createPack(Tile::TileSets tileSets, const Game * g);
+	void createPack(Tile::TileSet tileSet, QList<Tile *> & pack, const Game * g);
 
 private:
-	void readXMLPack(Tile::TileSet set);
-	void readXMLPack(QString file, Tile::TileSet tileSet);
-	void readXMLTile(QXmlStreamReader & xml, Tile::TileSet set);
+	void readXMLPack(Tile::TileSet set, const Game * g);
+	void readXMLPack(QString file, Tile::TileSet tileSet, const Game * g);
+	void readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, const Game * g);
 
 public:
 	QStringList getTileIdentifiers(Tile::TileSet set) const;

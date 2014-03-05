@@ -10,32 +10,32 @@ jcz::TileFactory::~TileFactory()
 	tileTemplates.clear();
 }
 
-QList<Tile *> jcz::TileFactory::createPack(Tile::TileSets tileSets)
+QList<Tile *> jcz::TileFactory::createPack(Tile::TileSets tileSets, Game const * g)
 {
 	QList<Tile *> pack;
 	if (tileSets.testFlag(Tile::BaseGame))
-		createPack(Tile::BaseGame, pack);
+		createPack(Tile::BaseGame, pack, g);
 	return pack;
 }
 
-void jcz::TileFactory::createPack(Tile::TileSet tileSet, QList<Tile *> & pack)
+void jcz::TileFactory::createPack(Tile::TileSet tileSet, QList<Tile *> & pack, Game const * g)
 {
 	if (!tileTemplates.contains(tileSet))
-		readXMLPack(tileSet);
+		readXMLPack(tileSet, g);
 	for (Tile * t : tileTemplates[tileSet])
 	{
 		TileMetaData const & data = tileMetaData[t];
 		if (data.hasPosition)
-			pack.prepend(new Tile(*t));
+			pack.prepend(t->clone(g));
 		else
-			pack.append(new Tile(*t));
+			pack.append(t->clone(g));
 
 		for (uint i = 1; i < data.count; ++i)
-			pack.append(new Tile(*t));
+			pack.append(t->clone(g));
 	}
 }
 
-void jcz::TileFactory::readXMLPack(Tile::TileSet set)
+void jcz::TileFactory::readXMLPack(Tile::TileSet set, Game const * g)
 {
 	QString file;
 	switch (set)
@@ -44,10 +44,10 @@ void jcz::TileFactory::readXMLPack(Tile::TileSet set)
 			file = ":/jcz/tile-definitions/basic.xml";
 			break;
 	}
-	readXMLPack(file, set);
+	readXMLPack(file, set, g);
 }
 
-void jcz::TileFactory::readXMLPack(QString file, Tile::TileSet tileSet)
+void jcz::TileFactory::readXMLPack(QString file, Tile::TileSet tileSet, Game const * g)
 {
 	QFile f(file);
 	f.open(QIODevice::ReadOnly);
@@ -67,7 +67,7 @@ void jcz::TileFactory::readXMLPack(QString file, Tile::TileSet tileSet)
 //			for (QXmlStreamAttribute const & a : xml.attributes())
 //				qDebug() << "\t" << a.name() << "=" << a.value();
 //			qDebug();
-			readXMLTile(xml, tileSet);
+			readXMLTile(xml, tileSet, g);
 		}
 		else
 		{
@@ -83,24 +83,24 @@ void jcz::TileFactory::readXMLPack(QString file, Tile::TileSet tileSet)
 	f.close();
 }
 
-inline Node * newFieldNode(Tile * tile)
+inline Node * newFieldNode(Tile * tile, Game const * g)
 {
-	return new Node(Field, tile);
+	return new Node(Field, tile, g);
 }
 
-inline Node * newCityNode(Tile * tile, uchar open, bool pennant = false)
+inline Node * newCityNode(Tile * tile, Game const * g, uchar open, bool pennant = false)
 {
-	return new CityNode(tile, open, pennant ? 1 : 0);
+	return new CityNode(tile, g, open, pennant ? 1 : 0);
 }
 
-inline Node * newRoadNode(Tile * tile, uchar open)
+inline Node * newRoadNode(Tile * tile, Game const * g, uchar open)
 {
-	return new RoadNode(tile, open);
+	return new RoadNode(tile, g, open);
 }
 
-inline Node * newCloisterNode(Tile * tile)
+inline Node * newCloisterNode(Tile * tile, Game const * g)
 {
-	return new Node(Cloister, tile);
+	return new Node(Cloister, tile, g);
 }
 
 inline void convertSide(QString const & str, int & side, int & subside)
@@ -128,7 +128,7 @@ inline void convertSide(QString const & str, int & side, int & subside)
 	}
 }
 
-void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set)
+void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Game const * g)
 {
 	TileMetaData data;
 	bool ok = false;
@@ -148,12 +148,12 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set)
 	{
 		if (xml.name() == "cloister")
 		{
-			Node * cloister = newCloisterNode(tile);
+			Node * cloister = newCloisterNode(tile, g);
 			nodes.append(cloister);
 		}
 		else if (xml.name() == "farm")
 		{
-			Node * field = newFieldNode(tile);
+			Node * field = newFieldNode(tile, g);
 			xml.readNext();
 			for (QString const & str : xml.text().toString().split(' ', QString::SkipEmptyParts))
 			{
@@ -185,7 +185,7 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set)
 		{
 			xml.readNext();
 			QStringList const & split = xml.text().toString().split(' ', QString::SkipEmptyParts);
-			Node * road = newRoadNode(tile, split.length());
+			Node * road = newRoadNode(tile, g, split.length());
 			for (QString const & str : split)
 			{
 				int side;
@@ -221,7 +221,7 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set)
 			bool pennant = (xml.attributes().value("pennant") == "yes");
 			xml.readNext();
 			QStringList const & split = xml.text().toString().split(' ', QString::SkipEmptyParts);
-			Node * city = newCityNode(tile, split.length(), pennant);
+			Node * city = newCityNode(tile, g, split.length(), pennant);
 			for (QString const & str : split)
 			{
 				int side;

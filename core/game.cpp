@@ -6,8 +6,6 @@
 #include <QVarLengthArray>
 
 Game::Game()
-	: ply(-1),
-	  board(0)
 {
 }
 
@@ -24,11 +22,14 @@ void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)
 	cleanUp();
 
 	ply = 0;
-	tiles = tileFactory->createPack(tileSets);
+	tiles = tileFactory->createPack(tileSets, this);
 	board = new Board(this, tiles.size());
 	board->setStartTile(tiles.takeFirst());
 
-	emit boardChanged(board);
+	for (Player * p : allPlayers)
+		p->newGame(this);
+
+//	emit boardChanged(board);
 }
 
 void Game::addPlayer(Player * player)
@@ -36,25 +37,41 @@ void Game::addPlayer(Player * player)
 	if (!isFinished())
 		return;
 	players.append(player);
+	addWatchingPlayer(player);
 }
 
-void Game::setPlayer(int index, Player * player)
+void Game::addWatchingPlayer(Player * player)
 {
-	players[index] = player;
-	//TODO player->setGameState oder so
+	if (std::find(allPlayers.begin(), allPlayers.end(), player) == allPlayers.end()) // player not already in vector
+		allPlayers.push_back(player);
 }
 
-void Game::setPlayers(QList<Player *> players)
+//void Game::setPlayer(int index, Player * player)
+//{
+//	players[index] = player;
+//}
+
+void Game::setPlayers(QList<Player *> newPlayers)
 {
 	if (!isFinished())
 		return;
-	this->players = players;
+	clearPlayers();
+	players = newPlayers;
+	for (Player * p : newPlayers)
+		addWatchingPlayer(p);
 }
 
 void Game::clearPlayers()
 {
 	if (!isFinished())
 		return;
+	for (auto it = allPlayers.begin(); it < allPlayers.end(); )
+	{
+		if (players.contains(*it))
+			it = allPlayers.erase(it);
+		else
+			++it;
+	}
 	players.clear();
 }
 
@@ -73,16 +90,18 @@ void Game::step()
 	if (isFinished())
 		return;
 
+	qDebug() << "ply" << ply;
+
 	Tile * tile = tiles.takeAt(r.nextInt(tiles.size()));
-//	Tile * tile = tiles.takeAt(0);
-	QList<Board::TilePlacement> && placements = board->getPossibleTilePlacements(tile);
+//	Tile * tile = tiles.takeAt(tiles.size() - 6);
+	QList<TileMove> && placements = board->getPossibleTilePlacements(tile);
 	while (placements.isEmpty())
 	{
 		delete tile;
 		tile = tiles.takeAt(r.nextInt(tiles.size()));
 		placements = board->getPossibleTilePlacements(tile);
 	}
-	qDebug() << "tile type:" << tile->tileType << char('A' + tile->tileType) << "possible placements:" << placements.size();
+	qDebug() << "tile type:" << tile->tileType << "possible placements:" << placements.size();
 
 	int playerIndex = currentPlayer = (currentPlayer + 1) % players.size();
 	Player * player = players[playerIndex];
@@ -100,15 +119,29 @@ void Game::step()
 			possibleMeeples.append(*n);
 	Q_ASSERT_X(possibleMeeples.size() <= NODE_ARRAY_LENGTH, "Game::step()", "possibleMeeples initial size too low");
 
+	MeepleMove meepleMove = 0;
 	if (possibleMeeples.size() > 1)
 	{
-		MeepleMove meepleMove = player->getMeepleMove(tile, possibleMeeples, this);
-		// TODO place meeple
+		meepleMove = player->getMeepleMove(tile, possibleMeeples, this);
+		if (meepleMove != 0)
+		{
+			Node * n = const_cast<Node *>(meepleMove);
+			n->addMeeple(playerIndex);
+			qDebug() << "player" << playerIndex << "placed meeple on" << n->t;
+			tile->printSides(n);
+		}
+		else
+			qDebug() << "player" << playerIndex << "placed no meeple";
 	}
 
-	emit boardChanged(board);
+	for (Player * p : allPlayers)
+		p->playerMoved(tile, move, meepleMove, this);
+
 	if (tiles.isEmpty())
+	{
 		ply = -1;
+		currentPlayer = -1;
+	}
 	else
 		++ply;
 }

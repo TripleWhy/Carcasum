@@ -27,6 +27,12 @@ BoardGraphicsScene::BoardGraphicsScene(jcz::TileFactory * tileFactory, QObject *
 
 	openLayer->setOpacity(0.2);
 	placementLayer->setOpacity(0.7);
+	
+#if DRAW_TILE_POSITION_TEXT
+	textOverlayLayer = new QGraphicsItemGroup();
+	addItem(textOverlayLayer);
+	textOverlayLayer->setOpacity(0.5);
+#endif
 
 	placementTile = new QGraphicsPixmapItem();
 	placementTile->setTransformationMode(Qt::SmoothTransformation);
@@ -39,16 +45,9 @@ BoardGraphicsScene::~BoardGraphicsScene()
 	delete placementTile;
 }
 
-void BoardGraphicsScene::setGame(Game * g)
+void BoardGraphicsScene::setGame(Game const *const g)
 {
-	if (game != 0)
-	{
-		disconnect(game, SIGNAL(boardChanged(const Board*)), this, SLOT(boardChanged(const Board*)));
-	}
-
 	game = g;
-
-	connect(game, SIGNAL(boardChanged(const Board*)), this, SLOT(boardChanged(const Board*)));
 }
 
 void BoardGraphicsScene::setTileFactory(jcz::TileFactory * factory)
@@ -56,7 +55,7 @@ void BoardGraphicsScene::setTileFactory(jcz::TileFactory * factory)
 	tileFactory = factory;
 }
 
-TileMove BoardGraphicsScene::getMove(const Tile * const tile, const QList<Board::TilePlacement> & placements, const Game * const /*game*/)
+TileMove BoardGraphicsScene::getTileMove(Tile const * const tile, QList<TileMove> const & placements, Game const * const game)
 {
 	if (running.exchange(1))
 		return TileMove();
@@ -72,7 +71,7 @@ TileMove BoardGraphicsScene::getMove(const Tile * const tile, const QList<Board:
 		rect->setBrush(Qt::black);
 
 		bool possible = false;
-		for (Board::TilePlacement const & p : placements)
+		for (TileMove const & p : placements)
 		{
 			if (p.x == x && p.y == y)
 			{
@@ -93,7 +92,7 @@ TileMove BoardGraphicsScene::getMove(const Tile * const tile, const QList<Board:
 		//TODO?
 	}
 
-	Board::TilePlacement m;
+	TileMove m;
 	while (true)
 	{
 		if (userMoveReady)
@@ -112,12 +111,12 @@ TileMove BoardGraphicsScene::getMove(const Tile * const tile, const QList<Board:
 	return TileMove(m.x, m.y, m.orientation);
 }
 
-MeepleMove BoardGraphicsScene::getMeepleMove(const Tile * const tile, const QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> & possible, const Game * const game)
+MeepleMove BoardGraphicsScene::getMeepleMove(Tile const * const tile, QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> const & possible, Game const * const game)
 {
 	if (running.exchange(2)) // Not exactly correct anymore
 		return 0;
 
-	Board::TilePlacement tileMove = userMove;
+	TileMove tileMove = userMove;
 	placementTile->setPos(tileMove.x * TILE_SIZE, tileMove.y * TILE_SIZE);
 
 	QMap<const Node *, QPoint> pointMap = imgFactory.getPoints(tile);
@@ -126,49 +125,14 @@ MeepleMove BoardGraphicsScene::getMeepleMove(const Tile * const tile, const QVar
 	{
 		if (p == 0)
 			continue;
+
 		Q_ASSERT(pointMap.contains(p));
 		QPoint point = pointMap[p];
-
-		QTransform t;
-		t.translate(TILE_SIZE / 2.0, TILE_SIZE / 2.0);
-		t.rotate(tile->orientation * 90);
-		t.translate(-TILE_SIZE / 2.0, -TILE_SIZE / 2.0);
-		point = t.map(point);
-
-		point.rx() += tileMove.x * TILE_SIZE - TILE_SIZE / 2;
-		point.ry() += tileMove.y * TILE_SIZE - TILE_SIZE / 2;
-
-		QGraphicsItemGroup * svg = new QGraphicsItemGroup();
+		QGraphicsItemGroup * svg = createMeeple(p, point, tileMove, Qt::red);
 		svg->setData(0, qVariantFromValue((void *)p));
-		points.insert(point, svg);
-
-		QGraphicsSvgItem * fill = new QGraphicsSvgItem(imgFactory.getMeepleFillSvg(p), svg);
-		QGraphicsSvgItem * outline = new QGraphicsSvgItem(imgFactory.getMeepleOutlineSvg(p), svg);
-		auto color = new QGraphicsColorizeEffect(fill);
-		color->setColor(Qt::red);
-		fill->setGraphicsEffect(color);
-		svg->addToGroup(fill);
-		svg->addToGroup(outline);
-//		meepleOutlines.append(svg);
 		svg->setOpacity(0.7);
-
-
-		auto size = svg->boundingRect().size();
-		qreal max = qMax(size.width(), size.height());
-		qreal scale = MEEPLE_SIZE / max;
-		svg->setScale( scale );
-		size *= scale;
-
-		QPointF pos(point.x() - size.width()  / 2,
-					point.y() - size.height() / 2);
-		svg->setPos(pos);
-
-		qDebug() << tile->orientation << p->t << point << pos << size;
-
 		meeplePlacementLayer->addToGroup(svg);
-
-		addRect(point.x(), point.y(), 5, 5, QPen(), Qt::red);
-
+		points.insert(point, svg);
 	}
 	possibleMeeplePlaces = points;
 
@@ -187,6 +151,121 @@ MeepleMove BoardGraphicsScene::getMeepleMove(const Tile * const tile, const QVar
 
 	running = 0;
 	return m;
+}
+
+void BoardGraphicsScene::newGame(const Game * const game)
+{
+	setGame(game);
+	displayNewGame();
+}
+
+void BoardGraphicsScene::displayNewGame()
+{
+	if (!Util::isGUIThread())
+	{
+		QMetaObject::invokeMethod(this, "displayNewGame", Qt::QueuedConnection);
+		return;
+	}
+	qDeleteAll(tileLayer->childItems());
+	qDeleteAll(openLayer->childItems());
+	qDeleteAll(meepleLayer->childItems());
+	qDeleteAll(meeplePlacementLayer->childItems());
+#if DRAW_TILE_POSITION_TEXT
+	qDeleteAll(textOverlayLayer->childItems());
+#endif
+
+	openTiles.clear();
+	removeItem(placementTile);
+
+	const Board * board = game->getBoard();
+	uint arraySize = board->getInternalSize();
+	setSceneRect(-TILE_SIZE / 2.0, -TILE_SIZE / 2.0, arraySize * TILE_SIZE, arraySize * TILE_SIZE);
+
+	for (uint y = 0; y < arraySize; ++y)
+	{
+		for (uint x = 0; x < arraySize; ++x)
+		{
+			Tile const * t = board->getTile(x, y);
+			
+#if DRAW_TILE_POSITION_TEXT
+			QGraphicsTextItem * text = new QGraphicsTextItem(QString("%1|%2").arg(x).arg(y));
+			text->setFont(QFont("sans", 50));
+			text->setDefaultTextColor(Qt::red);
+//			text->setPos(-TILE_SIZE / 2.0, -90 / 2.0);
+			text->setPos(x * TILE_SIZE -TILE_SIZE / 2.0, y * TILE_SIZE -TILE_SIZE / 2.0);
+			textOverlayLayer->addToGroup(text);
+#endif
+			
+			if (t == 0)
+				continue;
+
+			QPixmap const & img = imgFactory.getImage(t);
+			QGraphicsPixmapItem * item = new QGraphicsPixmapItem(img);
+			item->setTransformationMode(Qt::SmoothTransformation);
+			item->setShapeMode(QGraphicsPixmapItem::BoundingRectShape);
+			item->setOffset(-TILE_SIZE / 2.0, -TILE_SIZE / 2.0);
+			item->setPos(x * TILE_SIZE, y * TILE_SIZE);
+			item->setRotation(t->orientation * 90);
+
+			tileLayer->addToGroup(item);
+		}
+	}
+
+	placeOpen();
+}
+
+void BoardGraphicsScene::playerMoved(Tile const * const tile, const TileMove & tileMove, const MeepleMove & meepleMove, const Game * const /*game*/)
+{
+	Q_ASSERT(tileFactory != 0);
+
+	QPoint const & meeplePoint = imgFactory.getPoints(tile)[meepleMove];
+	DPMData * callData = new DPMData { 0, tile->tileSet, tile->tileType, tileMove, meepleMove, meeplePoint };
+	displayPlayerMoved(callData);
+}
+
+void BoardGraphicsScene::displayPlayerMoved(void * data)
+{
+	DPMData * d = static_cast<DPMData *>(data);
+	// Execute update in GUI thread only.
+	if (!Util::isGUIThread())
+	{
+		++d->callDepth;
+		Q_ASSERT(d->callDepth < 2);
+		if (d->callDepth < 2)
+		{
+			QMetaObject::invokeMethod(this, "displayPlayerMoved", Qt::QueuedConnection,
+			                          Q_ARG(void *, data));
+		}
+		else
+		{
+			delete d;
+		}
+		return;
+	}
+	qDeleteAll(openLayer->childItems());
+	openTiles.clear();
+	removeItem(placementTile);
+	qDeleteAll(meeplePlacementLayer->childItems());
+
+	QPixmap const & img = imgFactory.getImage(d->tileSet, d->tileType);
+	QGraphicsPixmapItem * item = new QGraphicsPixmapItem(img);
+	item->setTransformationMode(Qt::SmoothTransformation);
+	item->setShapeMode(QGraphicsPixmapItem::BoundingRectShape);
+	item->setOffset(-TILE_SIZE / 2.0, -TILE_SIZE / 2.0);
+	item->setPos(d->tileMove.x * TILE_SIZE, d->tileMove.y * TILE_SIZE);
+	item->setRotation(d->tileMove.orientation * 90);
+	tileLayer->addToGroup(item);
+
+	if (d->meepleMove != 0)
+	{
+		auto meeple = createMeeple(d->meepleMove, d->meeplePoint, d->tileMove, Qt::red);
+		meepleLayer->addToGroup(meeple);
+//		meeple->ensureVisible();
+	}
+
+	placeOpen();
+	
+	delete d;
 }
 
 void BoardGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent * mouseEvent)
@@ -221,7 +300,7 @@ void BoardGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent * mouseEvent)
 			int orientation = int(placementTile->rotation() / 90);
 			if (item != 0)
 			{
-				QList<Board::TilePlacement> const & placements = *possiblePlacements;
+				QList<TileMove> const & placements = *possiblePlacements;
 #if defined(QT_NO_DEBUG) && !defined(QT_FORCE_ASSERTS)
 				for (int i = 0; i < 4; ++i)
 				{
@@ -231,7 +310,7 @@ void BoardGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent * mouseEvent)
 					Q_ASSERT(i < 4);
 #endif
 					orientation = (orientation + 1) % 4;
-					for (Board::TilePlacement const & p : placements)
+					for (TileMove const & p : placements)
 						if (p.x == x && p.y == y && p.orientation == orientation)
 							goto hell;
 				}
@@ -246,18 +325,30 @@ void BoardGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent * mouseEvent)
 	}
 	else if (r == 2)
 	{
-		QGraphicsItemGroup * m = meepleAt(mouseEvent->scenePos());
-		if (m == 0)
-			return;
-		userMeepleMove = (MeepleMove)m->data(0).value<void *>();
-		userMoveReady = true;
+		if (mouseEvent->buttons() == Qt::LeftButton)
+		{
+			QGraphicsItemGroup * m = meepleAt(mouseEvent->scenePos());
+			if (m == 0)
+				return;
+			userMeepleMove = (MeepleMove)m->data(0).value<void *>();
+			userMoveReady = true;
+		}
+		else if (mouseEvent->buttons() == Qt::RightButton)
+		{
+			userMeepleMove = 0;
+			userMoveReady = true;
+		}
 	}
 }
 
 void BoardGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent)
 {
 	int r = running;
-	if (r == 1)
+	if (r == 0)
+	{
+		placementTile->setPos(mouseEvent->scenePos());
+	}
+	else if (r == 1)
 	{
 		int x, y;
 		indexAt(mouseEvent->scenePos(), x, y);
@@ -279,16 +370,16 @@ void BoardGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent)
 		{
 			placementTile->setPos(item->pos());
 			int orientation = int(placementTile->rotation() / 90);
-			QList<Board::TilePlacement> const & placements = *possiblePlacements;
-#if defined(QT_NO_DEBUG) && !defined(QT_FORCE_ASSERTS)
+			QList<TileMove> const & placements = *possiblePlacements;
+//#if defined(QT_NO_DEBUG) && !defined(QT_FORCE_ASSERTS)
 			for (int i = 0; i < 4; ++i)
 			{
-#else
-			for (int i = 0; i < 5; ++i)
-			{
-				Q_ASSERT(i < 4);
-#endif
-				for (Board::TilePlacement const & p : placements)
+//#else
+//			for (int i = 0; i < 5; ++i)
+//			{
+//				Q_ASSERT(i < 4);
+//#endif
+				for (TileMove const & p : placements)
 					if (p.x == x && p.y == y && p.orientation == orientation)
 						goto hell;
 				orientation = (orientation + 1) % 4;
@@ -339,40 +430,44 @@ QGraphicsItemGroup * BoardGraphicsScene::meepleAt(const QPointF & scenePos)
 		return 0;
 }
 
-void BoardGraphicsScene::boardChanged(const Board * board)
+QGraphicsItemGroup *BoardGraphicsScene::createMeeple(MeepleMove const & p, QPoint & point, TileMove const & tileMove, QColor const & color)
 {
-	qDeleteAll(openLayer->childItems());
-	openTiles.clear();
-	placementLayer->removeFromGroup(placementTile);
-	qDeleteAll(meeplePlacementLayer->childItems());
+	QTransform t;
+	t.translate(TILE_SIZE / 2.0, TILE_SIZE / 2.0);
+	t.rotate(tileMove.orientation * 90);
+	t.translate(-TILE_SIZE / 2.0, -TILE_SIZE / 2.0);
+	point = t.map(point);
 
-	if (tileFactory == 0)
-		return;
+	point.rx() += tileMove.x * TILE_SIZE - TILE_SIZE / 2;
+	point.ry() += tileMove.y * TILE_SIZE - TILE_SIZE / 2;
 
-	uint arraySize = board->getInternalSize();
-	setSceneRect(-TILE_SIZE / 2.0, -TILE_SIZE / 2.0, arraySize * TILE_SIZE, arraySize * TILE_SIZE);
+	QGraphicsItemGroup * svg = new QGraphicsItemGroup();
 
+	QGraphicsSvgItem * fill = new QGraphicsSvgItem(imgFactory.getMeepleFillSvg(p), svg);
+	QGraphicsSvgItem * outline = new QGraphicsSvgItem(imgFactory.getMeepleOutlineSvg(p), svg);
+	auto colorEffect = new QGraphicsColorizeEffect(fill);
+	colorEffect->setColor(color);
+	fill->setGraphicsEffect(colorEffect);
+	svg->addToGroup(fill);
+	svg->addToGroup(outline);
+
+	auto size = svg->boundingRect().size();
+	qreal max = qMax(size.width(), size.height());
+	qreal scale = MEEPLE_SIZE / max;
+	svg->setScale( scale );
+	size *= scale;
+
+	QPointF pos(point.x() - size.width()  / 2,
+				point.y() - size.height() / 2);
+	svg->setPos(pos);
+
+	return svg;
+}
+
+void BoardGraphicsScene::placeOpen()
+{
+	const Board * board = game->getBoard();
 	QList<QPoint> const & openPlaces = board->getOpenPlaces();
-
-	for (uint y = 0; y < arraySize; ++y)
-	{
-		for (uint x = 0; x < arraySize; ++x)
-		{
-			Tile const * t = board->getTile(x, y);
-			if (t == 0)
-				continue;
-
-			QPixmap const & img = imgFactory.getImage(t);
-			QGraphicsPixmapItem * item = new QGraphicsPixmapItem(img);
-			item->setTransformationMode(Qt::SmoothTransformation);
-			item->setShapeMode(QGraphicsPixmapItem::BoundingRectShape);
-			item->setOffset(-TILE_SIZE / 2.0, -TILE_SIZE / 2.0);
-			item->setPos(x * TILE_SIZE, y * TILE_SIZE);
-			item->setRotation(t->orientation * 90);
-
-			tileLayer->addToGroup(item);
-		}
-	}
 	for (QPoint const & open : openPlaces)
 	{
 		uint x = open.x();
@@ -383,13 +478,6 @@ void BoardGraphicsScene::boardChanged(const Board * board)
 		rect->setBrush(Qt::gray);
 		rect->setData(0, x);
 		rect->setData(1, y);
-
-#if DRAW_TILE_POSITION_TEXT
-		QGraphicsTextItem * text = new QGraphicsTextItem(QString("%1|%2").arg(x).arg(y), rect);
-		text->setFont(QFont("sans", 90));
-		text->setDefaultTextColor(Qt::red);
-		text->setPos(-TILE_SIZE / 2.0, -90 / 2.0);
-#endif
 
 		openLayer->addToGroup(rect);
 		openTiles.append(rect);

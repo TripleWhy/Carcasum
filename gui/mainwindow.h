@@ -12,7 +12,7 @@ class MainWindow;
 }
 
 #include <QTimer>
-class MainWindow : public QMainWindow, public Player
+class MainWindow : public QMainWindow
 {
 	Q_OBJECT
 private:
@@ -23,9 +23,6 @@ private:
 public:
 	explicit MainWindow(QWidget *parent = 0);
 	~MainWindow();
-
-	virtual TileMove getTileMove(Tile const * const tile, QList<Board::TilePlacement> const & placements, Game const * const game);
-	virtual MeepleMove getMeepleMove(Tile const * const tile, QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> const & possible, Game const * const game);
 
 private slots:
 	void timeout();

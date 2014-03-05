@@ -8,6 +8,7 @@
 #include <QCoreApplication>
 
 #include <random>
+#include <thread>
 #include <chrono>
 
 class Random
@@ -50,8 +51,14 @@ public:
 
 	inline static bool isNodeFree(Node const * n)
 	{
-		//TODO
-		return true;
+//		return true;
+		return !n->isOccupied();
+	}
+	
+	inline static void sleep(int millis)
+	{
+		std::chrono::milliseconds dura( millis );
+		std::this_thread::sleep_for( dura );
 	}
 };
 

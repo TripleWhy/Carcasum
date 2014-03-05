@@ -10,7 +10,9 @@ private:
 	Random r;
 
 public:
-	virtual TileMove getTileMove(const Tile * const tile, QList<Board::TilePlacement> const & placements, const Game * const game);
+	virtual void newGame(Game const * const game) {}
+	virtual void playerMoved(Tile const * const tile, TileMove const & tileMove, MeepleMove const & meepleMove, Game const * const game) {}
+	virtual TileMove getTileMove(const Tile * const tile, QList<TileMove> const & placements, const Game * const game);
 	virtual MeepleMove getMeepleMove(Tile const * const tile, QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> const & possible, Game const * const game);
 };
 

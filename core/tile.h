@@ -25,27 +25,20 @@ public:
 	std::unordered_set<Tile *> tiles;
 private:
 	QList<Node **> pointers;
+	uchar * const meeples; // Number of meeples on this node per player.
+	bool occupied = false;
 
 public:
-	Node(TerrainType t, Tile * parent) : t(t) { tiles.insert(parent); }
-	virtual ~Node() {}
+	Node(TerrainType t, Tile * parent, Game const * g);
+	virtual ~Node();
 
-	virtual void connect(Node * n, Game * /*g*/)
+	inline void addMeeple(int player) { ++meeples[player]; occupied = true; }
+	inline bool isOccupied() const { return occupied; }
+
+	virtual void connect(Node * n, Game * /*g*/);
+	virtual Node * clone(Tile * parent, Game const * g) const
 	{
-		if (this == n)
-			return;
-
-		for (Node ** p : n->pointers)
-			*p = this;
-		pointers.append(n->pointers);
-		tiles.insert(n->tiles.begin(), n->tiles.end());
-
-		delete n;
-	}
-
-	virtual Node * clone(Tile * parent) const
-	{
-		return new Node(t, parent);
+		return new Node(t, parent, g);
 	}
 };
 
@@ -55,17 +48,17 @@ struct CityNode : public Node
 	uchar bonus;
 
 public:
-	CityNode(Tile * parent, uchar open, uchar bonus = 0)
-		: Node(City, parent),
+	CityNode(Tile * parent, Game const * g, uchar open, uchar bonus = 0)
+		: Node(City, parent, g),
 		  open(open),
 		  bonus(bonus)
 	{}
 
 	virtual void connect(Node * n, Game * g);
 
-	virtual Node * clone(Tile * parent) const
+	virtual Node * clone(Tile * parent, Game const * g) const
 	{
-		return new CityNode(parent, open, bonus);
+		return new CityNode(parent, g, open, bonus);
 	}
 };
 
@@ -74,16 +67,16 @@ struct RoadNode : public Node
 	uchar open;
 
 public:
-	RoadNode(Tile * parent, uchar open)
-		: Node(Road, parent),
+	RoadNode(Tile * parent, Game const * g, uchar open)
+		: Node(Road, parent, g),
 		  open(open)
 	{}
 
 	virtual void connect(Node * n, Game * g);
 
-	virtual Node * clone(Tile * parent) const
+	virtual Node * clone(Tile * parent, Game const * g) const
 	{
-		return new RoadNode(parent, open);
+		return new RoadNode(parent, g, open);
 	}
 };
 
@@ -121,13 +114,15 @@ private:
 
 public:
 	Tile(TileSet tileSet, int tileType, TerrainType const edges[4], const int nodeCount, Node ** nodes);
-	Tile(const Tile & t);
-	Tile (Tile&& t) = delete;
+	Tile(const Tile & t) = delete; // I don't want implicit copies. Use clone() instead.
+	Tile (Tile&& t) = delete; // I don't actually want this to happen.
 	~Tile();
 	TerrainType const & getEdge(Side side) const;
 	TerrainType const & getEdge(Side side, Side orientation) const;
 	bool connect(Side s, Tile * other, Game * game);
+	Tile * clone(Game const * g);
 	Tile&& operator=(Tile&& t) = delete;
+	Tile& operator= (Tile const& t) = delete;
 
 private:
 	EdgeType * getEdgeNodes(Side side);
@@ -154,6 +149,8 @@ public:
 	inline int getNodeCount() const { return nodeCount; }
 	inline Node const * const * getCNodes() const { return nodes; }
 	inline Node * const * getNodes() { return nodes; }
+
+	void printSides(Node * n);
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(Tile::TileSets)
 

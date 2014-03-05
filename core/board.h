@@ -8,6 +8,7 @@
 #include <QPoint>
 
 class Game;
+struct TileMove;
 
 inline uint qHash(const QPoint &p)
 {
@@ -16,14 +17,6 @@ inline uint qHash(const QPoint &p)
 
 class Board
 {
-public:
-	struct TilePlacement
-	{
-		uint x;
-		uint y;
-		Tile::Side orientation;
-	};
-
 private:
 	struct TerrainWrapper
 	{
@@ -54,20 +47,10 @@ public:
 	void addTile(uint x, uint y, Tile * tile);
 	uint getInternalSize() const;
 
-	QList<TilePlacement> getPossibleTilePlacements(Tile const * tile) const;
+	QList<TileMove> getPossibleTilePlacements(Tile const * tile) const;
 	QList<QPoint> getOpenPlaces() const;
 
 	QPoint positionOf(Tile * t) const;
 };
-
-inline bool operator==(Board::TilePlacement const& lhs, Board::TilePlacement const& rhs)
-{
-	return (lhs.x == rhs.x) && (lhs.y == rhs.y) && (lhs.orientation == rhs.orientation);
-}
-
-inline bool operator!=(Board::TilePlacement const& lhs, Board::TilePlacement const& rhs)
-{
-	return !(lhs == rhs);
-}
 
 #endif // BOARD_H

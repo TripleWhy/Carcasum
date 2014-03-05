@@ -29,13 +29,14 @@ typedef Node const * MeepleMove;
 
 class Game : public QObject
 {
-Q_OBJECT
+//Q_OBJECT
 
 private:
-	int ply;
-	int currentPlayer;
+	int ply = -1;
+	int currentPlayer = -1;
 	QList<Player *> players;
-	Board * board;
+	std::vector<Player *> allPlayers;
+	Board * board = 0;
 	QList<Tile *> tiles;
 	Random r;
 
@@ -45,7 +46,8 @@ public:
 
 	void newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory);
 	void addPlayer(Player * player);
-	void setPlayer(int index, Player * player);
+	void addWatchingPlayer(Player * player);
+//	void setPlayer(int index, Player * player);
 	void setPlayers(QList<Player *> players);
 	void clearPlayers();
 	Board const * getBoard() const;
@@ -57,12 +59,24 @@ public:
 	void cityClosed(CityNode * n);
 	void roadClosed(RoadNode * n);
 
+	inline int getPlayerCount() const { return players.size(); }
+
 private:
 	void cleanUp();
 
-signals:
-	void boardChanged(Board const * board);
+//signals:
+//	void boardChanged(Board const * board);
 };
+
+inline bool operator==(TileMove const& lhs, TileMove const& rhs)
+{
+	return (lhs.x == rhs.x) && (lhs.y == rhs.y) && (lhs.orientation == rhs.orientation);
+}
+
+inline bool operator!=(TileMove const& lhs, TileMove const& rhs)
+{
+	return !(lhs == rhs);
+}
 
 
 #endif // GAME_H

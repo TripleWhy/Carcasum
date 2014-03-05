@@ -1,4 +1,5 @@
 #include "board.h"
+#include "game.h"
 
 Board::Board(Game * game, const uint s)
 	: game(game),
@@ -83,9 +84,9 @@ uint Board::getInternalSize() const
 	return size;
 }
 
-QList<Board::TilePlacement> Board::getPossibleTilePlacements(const Tile * tile) const
+QList<TileMove> Board::getPossibleTilePlacements(const Tile * tile) const
 {
-	QList<TilePlacement> possible;
+	QList<TileMove> possible;
 	TerrainType edges[4];
 	quint32 rotations[4] = {0, 0, 0, 0};
 	for (int orientation = 0; orientation < 4; ++orientation)
@@ -109,7 +110,7 @@ QList<Board::TilePlacement> Board::getPossibleTilePlacements(const Tile * tile) 
 				if (openTypes[i] != None && openTypes[i] != edges[i])
 					goto hell;
 			}
-			possible.append(TilePlacement{uint(it.key().x()), uint(it.key().y()), (Tile::Side)orientation});
+			possible.append(TileMove{uint(it.key().x()), uint(it.key().y()), (Tile::Side)orientation});
 			hell:;
 		}
 		hell2:;
