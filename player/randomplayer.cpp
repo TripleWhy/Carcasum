@@ -1,6 +1,6 @@
 #include "randomplayer.h"
 
-TileMove RandomPlayer::getTileMove(const Tile * const /*tile*/, QList<TileMove> const & placements, const Game * const /*game*/)
+TileMove RandomPlayer::getTileMove(int /*player*/, const Tile * const /*tile*/, QList<TileMove> const & placements, const Game * const /*game*/)
 {
 	int i = r.nextInt(placements.size());
 
@@ -10,7 +10,7 @@ TileMove RandomPlayer::getTileMove(const Tile * const /*tile*/, QList<TileMove> 
 	return TileMove(placement.x, placement.y, placement.orientation);
 }
 
-MeepleMove RandomPlayer::getMeepleMove(const Tile * const /*tile*/, const QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> & possible, const Game * const /*game*/)
+MeepleMove RandomPlayer::getMeepleMove(int /*player*/, const Tile * const /*tile*/, const QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> & possible, const Game * const /*game*/)
 {
 	int i = r.nextInt(possible.size());
 

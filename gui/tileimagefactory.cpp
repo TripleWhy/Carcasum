@@ -47,6 +47,28 @@ QString TileImageFactory::getMeepleOutlineSvg(const Node * node) const
 	}
 }
 
+QColor TileImageFactory::getPlayerColor(int player) const
+{
+	//TODO make dynamic
+	switch (player)
+	{
+		case 0:
+			return Qt::red;
+		case 1:
+			return Qt::blue;
+		case 2:
+			return Qt::yellow;
+		case 3:
+			return Qt::darkGreen;
+		case 4:
+			return Qt::black;
+		case 5:
+			return Qt::gray;
+		default:
+			return Qt::magenta;
+	}
+}
+
 QMap<const Node *, QPoint> TileImageFactory::getPoints(Tile const * tile)
 {
 	jcz::Expansion expansion = jcz::Expansions::fromTileSet(tile->tileSet);

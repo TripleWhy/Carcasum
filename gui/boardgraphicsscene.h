@@ -12,6 +12,7 @@
 #include <QGraphicsSvgItem>
 
 #include <atomic>
+#include <mutex>
 
 #define DRAW_TILE_POSITION_TEXT 1
 
@@ -40,15 +41,13 @@ private:
 	jcz::TileFactory * tileFactory;
 	TileImageFactory imgFactory;
 	QHash<QPoint, QGraphicsItemGroup *> possibleMeeplePlaces;
+	QList<TileMove> possiblePlacements;
 
-	std::atomic<int> running;
-//	std::atomic<Move> userMove; // Does not compile and I have no idea why
-	// workaround:
-	std::atomic<bool> userMoveReady;
+	std::mutex lock;
+	int running;
+	bool userMoveReady;
 	TileMove userMove;
 	MeepleMove userMeepleMove;
-	QList<TileMove> const * possiblePlacements;
-//	QMap<const Node *, QPoint> possibleMeeples;
 
 public:
 	explicit BoardGraphicsScene(jcz::TileFactory * tileFactory = 0, QObject * parent = 0);
@@ -56,34 +55,49 @@ public:
 
 	void setGame(const Game * const g);
 	void setTileFactory(jcz::TileFactory * factory);
-	virtual TileMove getTileMove(Tile const * const tile, QList<TileMove> const & placements, Game const * const game);
-	virtual MeepleMove getMeepleMove(Tile const * const tile, QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> const & possible, Game const * const game);
-	virtual void newGame(Game const * const game);
-	virtual void playerMoved(const Tile * const tile, TileMove const & tileMove, MeepleMove const & meepleMove, Game const * const game);
+	virtual TileMove getTileMove(int player, Tile const * const tile, QList<TileMove> const & placements, Game const * const game);
+	virtual MeepleMove getMeepleMove(int player, Tile const * const tile, QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> const & possible, Game const * const game);
+	virtual void newGame(int player, Game const * const game);
+	virtual void playerMoved(int player, const Tile * const tile, TileMove const & tileMove, MeepleMove const & meepleMove, Game const * const game);
 
 protected:
 	virtual void mousePressEvent (QGraphicsSceneMouseEvent * mouseEvent);
 	virtual void mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent);
 
 private:
-	static void indexAt(QPointF const & scenePos, int & x, int & y);
+	static void indexAt(QPointF const & scenePos, uint & x, uint & y);
 	QGraphicsItemGroup * meepleAt(QPointF const & scenePos);
 	QGraphicsItemGroup * createMeeple(const MeepleMove & p, QPoint & point, const TileMove & tileMove, QColor const & color);
 	void placeOpen();
 
+private slots:
+	void displayNewGame(int callDepth = 0);
+	void displayPlayerMoved(void * data, int callDepth = 0);
+	void displayGetTileMove(void * data, int callDepth = 0);
+	void displayGetMeepleMove(void * data, int callDepth = 0);
 private:
 	struct DPMData
 	{
-		int callDepth;
+		int player;
 		Tile::TileSet tileSet;
 		int tileType;
 		TileMove tileMove;
 		MeepleMove meepleMove;
 		QPoint meeplePoint;
 	};
-private slots:
-	void displayNewGame();
-	void displayPlayerMoved(void * data);
+	struct DGTMData
+	{
+		Tile::TileSet tileSet;
+		int tileType;
+		QList<TileMove> placements;
+	};
+	struct DGMMData
+	{
+		int player;
+		Tile const * const tile;
+		QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> possible;
+		TileMove tileMove;
+	};
 };
 
 #endif // BOARDGRAPHICSSCENE_H

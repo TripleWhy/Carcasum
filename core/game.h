@@ -25,7 +25,7 @@ struct TileMove
 	}
 };
 
-typedef Node const * MeepleMove;
+typedef Node const * MeepleMove; // TODO This will need to change. If I want to replay a game on a different object, pointers won't work.
 
 class Game : public QObject
 {

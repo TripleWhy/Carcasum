@@ -26,8 +26,8 @@ void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)
 	board = new Board(this, tiles.size());
 	board->setStartTile(tiles.takeFirst());
 
-	for (Player * p : allPlayers)
-		p->newGame(this);
+	for (uint i = 0; i < allPlayers.size(); ++i)
+		allPlayers[i]->newGame(i, this);
 
 //	emit boardChanged(board);
 }
@@ -103,10 +103,10 @@ void Game::step()
 	}
 	qDebug() << "tile type:" << tile->tileType << "possible placements:" << placements.size();
 
-	int playerIndex = currentPlayer = (currentPlayer + 1) % players.size();
+	int const playerIndex = currentPlayer = (currentPlayer + 1) % players.size();
 	Player * player = players[playerIndex];
 
-	TileMove move = player->getTileMove(tile, placements, this);
+	TileMove move = player->getTileMove(playerIndex, tile, placements, this);
 //	Move move{72, 73, Tile::left};
 	qDebug() << "player" << playerIndex << move.x << move.y << move.orientation;
 	tile->orientation = move.orientation;
@@ -122,7 +122,7 @@ void Game::step()
 	MeepleMove meepleMove = 0;
 	if (possibleMeeples.size() > 1)
 	{
-		meepleMove = player->getMeepleMove(tile, possibleMeeples, this);
+		meepleMove = player->getMeepleMove(playerIndex, tile, possibleMeeples, this);
 		if (meepleMove != 0)
 		{
 			Node * n = const_cast<Node *>(meepleMove);
@@ -135,7 +135,7 @@ void Game::step()
 	}
 
 	for (Player * p : allPlayers)
-		p->playerMoved(tile, move, meepleMove, this);
+		p->playerMoved(playerIndex, tile, move, meepleMove, this);
 
 	if (tiles.isEmpty())
 	{

@@ -19,20 +19,23 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(boardUi, SIGNAL(sceneRectChanged(QRectF)), this, SLOT(recenter(QRectF)));
 
 	Player * p1 = new RandomPlayer();
-	Player * p2 = new RandomPlayer();
 
 	game->addWatchingPlayer(boardUi);
 	
 	game->addPlayer(p1);
-	game->addPlayer(p2);
+	game->addPlayer(p1);
+	game->addPlayer(p1);
+	game->addPlayer(p1);
+	game->addPlayer(p1);
+//	game->addPlayer(p1);
 	game->addPlayer(boardUi);
 	game->newGame(Tile::BaseGame, tileFactory);
 
 	new std::thread( [this]() {
 		while (!game->isFinished())
 		{
-			game->step();
 			Util::sleep(500);
+			game->step();
 		}
 	} );
 

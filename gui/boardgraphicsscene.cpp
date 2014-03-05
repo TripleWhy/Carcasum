@@ -31,7 +31,7 @@ BoardGraphicsScene::BoardGraphicsScene(jcz::TileFactory * tileFactory, QObject *
 #if DRAW_TILE_POSITION_TEXT
 	textOverlayLayer = new QGraphicsItemGroup();
 	addItem(textOverlayLayer);
-	textOverlayLayer->setOpacity(0.5);
+	textOverlayLayer->setOpacity(0.2);
 #endif
 
 	placementTile = new QGraphicsPixmapItem();
@@ -55,13 +55,68 @@ void BoardGraphicsScene::setTileFactory(jcz::TileFactory * factory)
 	tileFactory = factory;
 }
 
-TileMove BoardGraphicsScene::getTileMove(Tile const * const tile, QList<TileMove> const & placements, Game const * const game)
+TileMove BoardGraphicsScene::getTileMove(int /*player*/, Tile const * const tile, QList<TileMove> const & placements, Game const * const game)
 {
-	if (running.exchange(1))
+	std::unique_lock<std::mutex> lck(lock);
+	if (running != 0)
 		return TileMove();
+	running = 1;
+	lck.unlock();
+	
+	auto data = new DGTMData { tile->tileSet, tile->tileType, placements };
+	displayGetTileMove(data);
 
-	possiblePlacements = &placements;
-	placementTile->setPixmap(imgFactory.getImage(tile));
+	TileMove m;
+	while (true)
+	{
+		lck.lock();
+		if (userMoveReady)
+		{
+			m = userMove;
+			userMoveReady = false;
+
+			if (placements.contains(m))
+				break;
+		}
+		else
+		{
+			lck.unlock();
+			if (Util::isGUIThread())
+			{
+				qDebug() << "GUI thread";
+				QCoreApplication::processEvents();
+			}
+			QThread::currentThread()->yieldCurrentThread();
+		}
+	}
+
+	running = 0;
+	lck.unlock();
+	return TileMove(m.x, m.y, m.orientation);
+}
+
+void BoardGraphicsScene::displayGetTileMove(void * data, int callDepth)
+{
+	DGTMData * d = static_cast<DGTMData *>(data);
+	
+	if (!Util::isGUIThread())
+	{
+		Q_ASSERT(callDepth < 1);
+		if (callDepth < 2)
+		{
+			QMetaObject::invokeMethod(this, "displayGetTileMove", Qt::QueuedConnection,
+			                          Q_ARG(void *, data),
+			                          Q_ARG(int, callDepth+1));
+		}
+		else
+		{
+			delete d;
+		}
+		return;
+	}
+	
+	possiblePlacements = d->placements;
+	placementTile->setPixmap(imgFactory.getImage(d->tileSet, d->tileType));
 	placementLayer->addToGroup(placementTile);
 	for(auto it = openTiles.begin(); it != openTiles.end(); )
 	{
@@ -69,9 +124,9 @@ TileMove BoardGraphicsScene::getTileMove(Tile const * const tile, QList<TileMove
 		uint const x = rect->data(0).toUInt();
 		uint const y = rect->data(1).toUInt();
 		rect->setBrush(Qt::black);
-
+		
 		bool possible = false;
-		for (TileMove const & p : placements)
+		for (TileMove const & p : d->placements)
 		{
 			if (p.x == x && p.y == y)
 			{
@@ -85,60 +140,27 @@ TileMove BoardGraphicsScene::getTileMove(Tile const * const tile, QList<TileMove
 		else
 			it = openTiles.erase(it);
 	}
-
-	if (Util::isGUIThread())
-	{
-		qDebug() << "GUI thread";
-		//TODO?
-	}
-
-	TileMove m;
-	while (true)
-	{
-		if (userMoveReady)
-		{
-			m = userMove;
-			userMoveReady = false;
-
-			if (placements.contains(m))
-				break;
-		}
-		else
-			QThread::currentThread()->yieldCurrentThread();
-	}
-
-	running = 0;
-	return TileMove(m.x, m.y, m.orientation);
+	
+	delete d;
 }
 
-MeepleMove BoardGraphicsScene::getMeepleMove(Tile const * const tile, QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> const & possible, Game const * const game)
+MeepleMove BoardGraphicsScene::getMeepleMove(int player, Tile const * const tile, QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> const & possible, Game const * const game)
 {
-	if (running.exchange(2)) // Not exactly correct anymore
+	std::unique_lock<std::mutex> lck(lock);
+	if (running != 0)
 		return 0;
+	running = 2;
 
 	TileMove tileMove = userMove;
-	placementTile->setPos(tileMove.x * TILE_SIZE, tileMove.y * TILE_SIZE);
-
-	QMap<const Node *, QPoint> pointMap = imgFactory.getPoints(tile);
-	QHash<QPoint, QGraphicsItemGroup *> points;
-	for (MeepleMove const & p : possible)
-	{
-		if (p == 0)
-			continue;
-
-		Q_ASSERT(pointMap.contains(p));
-		QPoint point = pointMap[p];
-		QGraphicsItemGroup * svg = createMeeple(p, point, tileMove, Qt::red);
-		svg->setData(0, qVariantFromValue((void *)p));
-		svg->setOpacity(0.7);
-		meeplePlacementLayer->addToGroup(svg);
-		points.insert(point, svg);
-	}
-	possibleMeeplePlaces = points;
+	lck.unlock();
+	
+	DGMMData * data = new DGMMData { player, tile, possible, tileMove };
+	displayGetMeepleMove(data);
 
 	MeepleMove m = 0;
 	while (true)
 	{
+		lck.lock();
 		if (userMoveReady)
 		{
 			m = userMeepleMove;
@@ -146,24 +168,74 @@ MeepleMove BoardGraphicsScene::getMeepleMove(Tile const * const tile, QVarLength
 			break;
 		}
 		else
+		{
+			lck.unlock();
 			QThread::currentThread()->yieldCurrentThread();
+		}
 	}
 
 	running = 0;
+	lck.unlock();
 	return m;
 }
 
-void BoardGraphicsScene::newGame(const Game * const game)
+void BoardGraphicsScene::displayGetMeepleMove(void * data, int callDepth)
+{
+	DGMMData * d = static_cast<DGMMData *>(data);
+	if (!Util::isGUIThread())
+	{
+		Q_ASSERT(callDepth < 1);
+		if (callDepth < 2)
+		{
+			QMetaObject::invokeMethod(this, "displayGetMeepleMove", Qt::QueuedConnection,
+			                          Q_ARG(void *, data),
+			                          Q_ARG(int, callDepth+1));
+		}
+		else
+		{
+			delete d;
+		}
+		return;
+	}
+	
+	placementTile->setPos(d->tileMove.x * TILE_SIZE, d->tileMove.y * TILE_SIZE);
+
+	QMap<const Node *, QPoint> pointMap = imgFactory.getPoints(d->tile);
+	QHash<QPoint, QGraphicsItemGroup *> points;
+	for (MeepleMove const & p : d->possible)
+	{
+		if (p == 0)
+			continue;
+
+		Q_ASSERT(pointMap.contains(p));
+		QPoint point = pointMap[p];
+		QGraphicsItemGroup * svg = createMeeple(p, point, d->tileMove, imgFactory.getPlayerColor(d->player));
+		svg->setData(0, qVariantFromValue((void *)p));
+		svg->setOpacity(0.7);
+		meeplePlacementLayer->addToGroup(svg);
+		points.insert(point, svg);
+	}
+	possibleMeeplePlaces = points;
+	
+	delete d;
+}
+
+void BoardGraphicsScene::newGame(int /*player*/, const Game * const game)
 {
 	setGame(game);
 	displayNewGame();
 }
 
-void BoardGraphicsScene::displayNewGame()
+void BoardGraphicsScene::displayNewGame(int callDepth)
 {
 	if (!Util::isGUIThread())
 	{
-		QMetaObject::invokeMethod(this, "displayNewGame", Qt::QueuedConnection);
+		Q_ASSERT(callDepth < 1);
+		if (callDepth < 2)
+		{
+			QMetaObject::invokeMethod(this, "displayNewGame", Qt::QueuedConnection,
+			                          Q_ARG(int, callDepth+1));
+		}
 		return;
 	}
 	qDeleteAll(tileLayer->childItems());
@@ -214,27 +286,27 @@ void BoardGraphicsScene::displayNewGame()
 	placeOpen();
 }
 
-void BoardGraphicsScene::playerMoved(Tile const * const tile, const TileMove & tileMove, const MeepleMove & meepleMove, const Game * const /*game*/)
+void BoardGraphicsScene::playerMoved(int player, Tile const * const tile, const TileMove & tileMove, const MeepleMove & meepleMove, const Game * const /*game*/)
 {
 	Q_ASSERT(tileFactory != 0);
 
 	QPoint const & meeplePoint = imgFactory.getPoints(tile)[meepleMove];
-	DPMData * callData = new DPMData { 0, tile->tileSet, tile->tileType, tileMove, meepleMove, meeplePoint };
+	DPMData * callData = new DPMData { player, tile->tileSet, tile->tileType, tileMove, meepleMove, meeplePoint };
 	displayPlayerMoved(callData);
 }
 
-void BoardGraphicsScene::displayPlayerMoved(void * data)
+void BoardGraphicsScene::displayPlayerMoved(void * data, int callDepth)
 {
 	DPMData * d = static_cast<DPMData *>(data);
 	// Execute update in GUI thread only.
 	if (!Util::isGUIThread())
 	{
-		++d->callDepth;
-		Q_ASSERT(d->callDepth < 2);
-		if (d->callDepth < 2)
+		Q_ASSERT(callDepth < 1);
+		if (callDepth < 2)
 		{
 			QMetaObject::invokeMethod(this, "displayPlayerMoved", Qt::QueuedConnection,
-			                          Q_ARG(void *, data));
+			                          Q_ARG(void *, data),
+			                          Q_ARG(int, callDepth+1));
 		}
 		else
 		{
@@ -258,7 +330,7 @@ void BoardGraphicsScene::displayPlayerMoved(void * data)
 
 	if (d->meepleMove != 0)
 	{
-		auto meeple = createMeeple(d->meepleMove, d->meeplePoint, d->tileMove, Qt::red);
+		auto meeple = createMeeple(d->meepleMove, d->meeplePoint, d->tileMove, imgFactory.getPlayerColor(d->player));
 		meepleLayer->addToGroup(meeple);
 //		meeple->ensureVisible();
 	}
@@ -270,10 +342,11 @@ void BoardGraphicsScene::displayPlayerMoved(void * data)
 
 void BoardGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent * mouseEvent)
 {
+	std::lock_guard<std::mutex> guard(lock);
 	int r = running;
 	if (r == 1)
 	{
-		int x, y;
+		uint x, y;
 		indexAt(mouseEvent->scenePos(), x, y);
 		QGraphicsRectItem * item = 0;
 		for (QGraphicsRectItem * i : openTiles)
@@ -300,7 +373,7 @@ void BoardGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent * mouseEvent)
 			int orientation = int(placementTile->rotation() / 90);
 			if (item != 0)
 			{
-				QList<TileMove> const & placements = *possiblePlacements;
+				QList<TileMove> const & placements = possiblePlacements;
 #if defined(QT_NO_DEBUG) && !defined(QT_FORCE_ASSERTS)
 				for (int i = 0; i < 4; ++i)
 				{
@@ -343,6 +416,7 @@ void BoardGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent * mouseEvent)
 
 void BoardGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent)
 {
+	std::lock_guard<std::mutex> guard(lock);
 	int r = running;
 	if (r == 0)
 	{
@@ -350,12 +424,12 @@ void BoardGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent)
 	}
 	else if (r == 1)
 	{
-		int x, y;
+		uint x, y;
 		indexAt(mouseEvent->scenePos(), x, y);
 		QGraphicsRectItem * item = 0;
 		for (QGraphicsRectItem * i : openTiles)
 		{
-			if (i->data(0).toInt() == x && i->data(1).toInt() == y)
+			if (i->data(0).toUInt() == x && i->data(1).toUInt() == y)
 			{
 				item = i;
 				break;
@@ -370,7 +444,7 @@ void BoardGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent)
 		{
 			placementTile->setPos(item->pos());
 			int orientation = int(placementTile->rotation() / 90);
-			QList<TileMove> const & placements = *possiblePlacements;
+			QList<TileMove> const & placements = possiblePlacements;
 //#if defined(QT_NO_DEBUG) && !defined(QT_FORCE_ASSERTS)
 			for (int i = 0; i < 4; ++i)
 			{
@@ -401,7 +475,7 @@ void BoardGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent)
 	}
 }
 
-void BoardGraphicsScene::indexAt(const QPointF & scenePos, int & x, int & y)
+void BoardGraphicsScene::indexAt(const QPointF & scenePos, uint & x, uint & y)
 {
 	x = (scenePos.x() + TILE_SIZE / 2) / TILE_SIZE;
 	y = (scenePos.y() + TILE_SIZE / 2) / TILE_SIZE;
