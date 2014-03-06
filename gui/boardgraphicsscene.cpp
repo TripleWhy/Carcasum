@@ -316,7 +316,8 @@ void BoardGraphicsScene::displayPlayerMoved(void * data, int callDepth)
 	}
 	qDeleteAll(openLayer->childItems());
 	openTiles.clear();
-	removeItem(placementTile);
+	if (items().contains(placementTile))
+		removeItem(placementTile);
 	qDeleteAll(meeplePlacementLayer->childItems());
 
 	QPixmap const & img = imgFactory.getImage(d->tileSet, d->tileType);

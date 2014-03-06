@@ -33,7 +33,12 @@ void Node::connect(Node * n, Game * g)
 		 ++tm, ++nm)
 	{
 		*tm += *nm;
+		if (*tm > maxMeples)
+			maxMeples = *tm;
 	}
+	
+	if (isOccupied())
+		checkClose(g);
 
 	delete n;
 }
@@ -52,8 +57,10 @@ void CityNode::connect(Node * n, Game * g)
 		Node::connect(n, g);
 	}
 	Q_ASSERT(uchar(open + 2) > open);
+}
 
-	qDebug() << "   city open:" << open;
+void CityNode::checkClose(Game * g)
+{
 	if (open == 0)
 		g->cityClosed(this);
 }
@@ -71,9 +78,10 @@ void RoadNode::connect(Node * n, Game * g)
 		Node::connect(n, g);
 	}
 	Q_ASSERT(uchar(open + 2) > open);
+}
 
-	qDebug() << "   road open:" << open;
-
+void RoadNode::checkClose(Game * g)
+{
 	if (open == 0)
 		g->roadClosed(this);
 }
@@ -147,7 +155,7 @@ bool Tile::connect(Tile::Side side, Tile * other, Game * game)
 	return true;
 }
 
-Tile * Tile::clone(const Game * g)
+Tile * Tile::clone(const Game * g)	//TODO? This process only works on unconnected tiles.
 {
 	Tile * copy = new Tile(tileSet, tileType, edges, 0, 0);
 	copy->orientation = orientation;

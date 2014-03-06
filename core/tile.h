@@ -19,6 +19,7 @@ enum TerrainType { None = 0, Field, City, Road, Cloister };
 struct Node
 {
 	friend class Tile;
+	friend class Game;
 
 public:
 	TerrainType t;
@@ -26,20 +27,25 @@ public:
 private:
 	QList<Node **> pointers;
 	uchar * const meeples; // Number of meeples on this node per player.
-	bool occupied = false;
+	uchar maxMeples = 0;
 
 public:
 	Node(TerrainType t, Tile * parent, Game const * g);
 	virtual ~Node();
 
-	inline void addMeeple(int player) { ++meeples[player]; occupied = true; }
-	inline bool isOccupied() const { return occupied; }
+	inline void addMeeple(int player, Game * g) { if (++meeples[player] > maxMeples) maxMeples = meeples[player]; checkClose(g); }
+	inline bool isOccupied() const { return maxMeples; }
+	inline uchar getMaxMeeples() const { return maxMeples; }
+	inline uchar const * getMeeples() const { return meeples; }
 
 	virtual void connect(Node * n, Game * /*g*/);
+	virtual void checkClose(Game * /*g*/) {}
 	virtual Node * clone(Tile * parent, Game const * g) const
 	{
 		return new Node(t, parent, g);
 	}
+protected:
+	inline void addPointer(Node ** p) { pointers.push_back(p); }
 };
 
 struct CityNode : public Node
@@ -55,6 +61,7 @@ public:
 	{}
 
 	virtual void connect(Node * n, Game * g);
+	virtual void checkClose(Game * g);
 
 	virtual Node * clone(Tile * parent, Game const * g) const
 	{
@@ -73,6 +80,7 @@ public:
 	{}
 
 	virtual void connect(Node * n, Game * g);
+	virtual void checkClose(Game * g);
 
 	virtual Node * clone(Tile * parent, Game const * g) const
 	{

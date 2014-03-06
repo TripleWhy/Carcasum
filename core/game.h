@@ -39,6 +39,10 @@ private:
 	Board * board = 0;
 	QList<Tile *> tiles;
 	Random r;
+	int * playerMeeples = 0;
+	int * returnMeeples = 0;
+	int * playerScores = 0;
+	int playerCount = 0;
 
 public:
 	Game();
@@ -58,8 +62,9 @@ public:
 
 	void cityClosed(CityNode * n);
 	void roadClosed(RoadNode * n);
+	void scoreNode(Node * n, const int score);
 
-	inline int getPlayerCount() const { return players.size(); }
+	inline int getPlayerCount() const { return playerCount; }
 
 private:
 	void cleanUp();

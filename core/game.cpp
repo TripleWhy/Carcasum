@@ -16,11 +16,18 @@ Game::~Game()
 
 void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)
 {
-	if (players.size() == 0)
+	int const playerCount = getPlayerCount();
+	if (playerCount == 0)
 		return;
 
 	cleanUp();
 
+	playerScores = new int[playerCount]();
+	returnMeeples = new int[playerCount]();
+	playerMeeples = new int[playerCount];
+	for (int i = 0; i < playerCount; ++i)
+		playerMeeples[i] = 7;
+	
 	ply = 0;
 	tiles = tileFactory->createPack(tileSets, this);
 	board = new Board(this, tiles.size());
@@ -28,8 +35,6 @@ void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)
 
 	for (uint i = 0; i < allPlayers.size(); ++i)
 		allPlayers[i]->newGame(i, this);
-
-//	emit boardChanged(board);
 }
 
 void Game::addPlayer(Player * player)
@@ -38,6 +43,7 @@ void Game::addPlayer(Player * player)
 		return;
 	players.append(player);
 	addWatchingPlayer(player);
+	playerCount = players.size();
 }
 
 void Game::addWatchingPlayer(Player * player)
@@ -59,6 +65,7 @@ void Game::setPlayers(QList<Player *> newPlayers)
 	players = newPlayers;
 	for (Player * p : newPlayers)
 		addWatchingPlayer(p);
+	playerCount = players.size();
 }
 
 void Game::clearPlayers()
@@ -73,6 +80,7 @@ void Game::clearPlayers()
 			++it;
 	}
 	players.clear();
+	playerCount = 0;
 }
 
 Board const * Game::getBoard() const
@@ -103,7 +111,7 @@ void Game::step()
 	}
 	qDebug() << "tile type:" << tile->tileType << "possible placements:" << placements.size();
 
-	int const playerIndex = currentPlayer = (currentPlayer + 1) % players.size();
+	int const playerIndex = currentPlayer = (currentPlayer + 1) % getPlayerCount();
 	Player * player = players[playerIndex];
 
 	TileMove move = player->getTileMove(playerIndex, tile, placements, this);
@@ -112,26 +120,36 @@ void Game::step()
 	tile->orientation = move.orientation;
 	board->addTile(move.x, move.y, tile);
 
-	QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> possibleMeeples(1);
-	possibleMeeples[0] = 0;
-	for (auto n = tile->getCNodes(), end = n + tile->getNodeCount(); n < end; ++n)
-		if (Util::isNodeFree(*n))
-			possibleMeeples.append(*n);
-	Q_ASSERT_X(possibleMeeples.size() <= NODE_ARRAY_LENGTH, "Game::step()", "possibleMeeples initial size too low");
-
 	MeepleMove meepleMove = 0;
-	if (possibleMeeples.size() > 1)
+	if (playerMeeples[playerIndex] > 0)
 	{
-		meepleMove = player->getMeepleMove(playerIndex, tile, possibleMeeples, this);
-		if (meepleMove != 0)
+		QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> possibleMeeples(1);
+		possibleMeeples[0] = 0;
+		for (auto n = tile->getCNodes(), end = n + tile->getNodeCount(); n < end; ++n)
+			if (Util::isNodeFree(*n))
+				possibleMeeples.append(*n);
+		Q_ASSERT_X(possibleMeeples.size() <= NODE_ARRAY_LENGTH, "Game::step()", "possibleMeeples initial size too low");
+	
+		if (possibleMeeples.size() > 1)
 		{
-			Node * n = const_cast<Node *>(meepleMove);
-			n->addMeeple(playerIndex);
-			qDebug() << "player" << playerIndex << "placed meeple on" << n->t;
-			tile->printSides(n);
+			meepleMove = player->getMeepleMove(playerIndex, tile, possibleMeeples, this);
+			if (meepleMove != 0)
+			{
+				Node * n = const_cast<Node *>(meepleMove);
+				n->addMeeple(playerIndex, this);
+				--playerMeeples[playerIndex];
+				
+				qDebug() << "player" << playerIndex << "placed meeple on" << n->t;
+				tile->printSides(n);
+			}
+			else
+				qDebug() << "player" << playerIndex << "placed no meeple";
 		}
-		else
-			qDebug() << "player" << playerIndex << "placed no meeple";
+	}
+	for (int * r = returnMeeples, * end = r + getPlayerCount(), * m = playerMeeples; r < end; ++r, ++m)
+	{
+		*m += *r;
+		*r = 0;
 	}
 
 	for (Player * p : allPlayers)
@@ -152,12 +170,32 @@ void Game::cityClosed(CityNode * n)
 	if (score > 2)
 		score = (score + n->bonus) * 2;
 	qDebug() << "   city closed, value:" << score;
+	
+	scoreNode(n, score);
 }
 
 void Game::roadClosed(RoadNode * n)
 {
 	int score = n->tiles.size();
 	qDebug() << "   raod closed, value:" << score;
+	
+	scoreNode(n, score);
+}
+
+void Game::scoreNode(Node * n, int const score)
+{
+	uchar meepleCount = n->getMaxMeeples();
+	for (uchar * m = n->meeples, * end = m + getPlayerCount(), player = 0; m < end; ++m, ++player)
+	{
+		if (*m == meepleCount)
+			playerScores[player] += score;
+		returnMeeples[player] += *m;
+		*m = 0;
+	}
+	
+	qDebug() << "Player scores:";
+	for (int i = 0; i < getPlayerCount(); ++i)
+		qDebug() << "  Player" << i << ":" << playerScores[i];
 }
 
 void Game::cleanUp()
@@ -165,4 +203,7 @@ void Game::cleanUp()
 	delete board;
 	qDeleteAll(tiles);
 	tiles.clear();
+	delete[] playerScores;
+	delete[] playerMeeples;
+	delete[] returnMeeples;
 }
