@@ -1,5 +1,5 @@
 #include "game.h"
-
+#include "board.h"
 #include "player.h"
 #include "jcz/tilefactory.h"
 
@@ -102,7 +102,7 @@ void Game::step()
 
 	Tile * tile = tiles.takeAt(r.nextInt(tiles.size()));
 //	Tile * tile = tiles.takeAt(tiles.size() - 6);
-	QList<TileMove> && placements = board->getPossibleTilePlacements(tile);
+	TileMovesType && placements = board->getPossibleTilePlacements(tile);
 	while (placements.isEmpty())
 	{
 		delete tile;
@@ -114,28 +114,31 @@ void Game::step()
 	int const playerIndex = currentPlayer = (currentPlayer + 1) % getPlayerCount();
 	Player * player = players[playerIndex];
 
-	TileMove move = player->getTileMove(playerIndex, tile, placements, this);
-//	Move move{72, 73, Tile::left};
-	qDebug() << "player" << playerIndex << move.x << move.y << move.orientation;
-	tile->orientation = move.orientation;
-	board->addTile(move.x, move.y, tile);
+	Move move;
+	TileMove & tileMove = move.tileMove;
+	tileMove = player->getTileMove(playerIndex, tile, placements, this);
+	qDebug() << "player" << playerIndex << tileMove.x << tileMove.y << tileMove.orientation;
+	tile->orientation = tileMove.orientation;
+	board->addTile(tileMove.x, tileMove.y, tile);
 
-	MeepleMove meepleMove = 0;
+	MeepleMove & meepleMove = move.meepleMove;
 	if (playerMeeples[playerIndex] > 0)
 	{
-		QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> possibleMeeples(1);
-		possibleMeeples[0] = 0;
-		for (auto n = tile->getCNodes(), end = n + tile->getNodeCount(); n < end; ++n)
-			if (Util::isNodeFree(*n))
-				possibleMeeples.append(*n);
+		MeepleMovesType possibleMeeples(1);
+//		possibleMeeples[0] = MeepleMove();	// Not neccessary for non-primitive types
+		
+		auto nodes = tile->getNodes();
+		for (uchar i = 0, end = tile->getNodeCount(); i < end; ++i)
+			if (Util::isNodeFree(nodes[i]))
+				possibleMeeples.append(MeepleMove(i));
 		Q_ASSERT_X(possibleMeeples.size() <= NODE_ARRAY_LENGTH, "Game::step()", "possibleMeeples initial size too low");
 	
 		if (possibleMeeples.size() > 1)
 		{
 			meepleMove = player->getMeepleMove(playerIndex, tile, possibleMeeples, this);
-			if (meepleMove != 0)
+			if (!meepleMove.isNull())
 			{
-				Node * n = const_cast<Node *>(meepleMove);
+				Node * n = nodes[meepleMove.nodeIndex];
 				n->addMeeple(playerIndex, this);
 				--playerMeeples[playerIndex];
 				
@@ -153,7 +156,7 @@ void Game::step()
 	}
 
 	for (Player * p : allPlayers)
-		p->playerMoved(playerIndex, tile, move, meepleMove, this);
+		p->playerMoved(playerIndex, tile, move, this);
 
 	if (tiles.isEmpty())
 	{

@@ -6,14 +6,17 @@
 
 class RandomPlayer : public Player
 {
+public:
+	static RandomPlayer instance;
+	
 private:
 	Random r;
 
 public:
-	virtual void newGame(int /*player*/, Game const * const /*game*/) {}
-	virtual void playerMoved(int /*player*/, Tile const * const /*tile*/, TileMove const & /*tileMove*/, MeepleMove const & /*meepleMove*/, Game const * const /*game*/) {}
-	virtual TileMove getTileMove(int player, const Tile * const tile, QList<TileMove> const & placements, const Game * const game);
-	virtual MeepleMove getMeepleMove(int player, Tile const * const tile, QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> const & possible, Game const * const game);
+	inline virtual void newGame(int /*player*/, Game const * const /*game*/) {}
+	inline virtual void playerMoved(int /*player*/, Tile const * const /*tile*/, Move const & /*move*/, Game const * const /*game*/) {}
+	inline virtual TileMove getTileMove(int /*player*/, const Tile * const /*tile*/, TileMovesType const & placements, const Game * const /*game*/) { return placements[r.nextInt(placements.size())]; }
+	inline virtual MeepleMove getMeepleMove(int /*player*/, Tile const * const /*tile*/, MeepleMovesType const & possible, Game const * const /*game*/) { return possible[r.nextInt(possible.size())]; }
 };
 
 #endif // RANDOMPLAYER_H

@@ -3,6 +3,7 @@
 
 #include "tile.h"
 #include "util.h"
+#include "player.h"
 
 #include <QHash>
 #include <QPoint>
@@ -50,7 +51,7 @@ public:
 	void addTile(uint x, uint y, Tile * tile);
 	uint getInternalSize() const;
 
-	QList<TileMove> getPossibleTilePlacements(Tile const * tile) const;
+	TileMovesType getPossibleTilePlacements(Tile const * tile) const;
 	QList<QPoint> getOpenPlaces() const;
 
 	QPoint positionOf(Tile * t) const;

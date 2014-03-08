@@ -2,12 +2,12 @@
 #define GAME_H
 
 #include "tile.h"
-#include "board.h"
 #include "util.h"
 
 class Player;
 class Tile;
 class Node;
+class Board;
 
 #define NODE_ARRAY_LENGTH 16
 
@@ -25,11 +25,22 @@ struct TileMove
 	}
 };
 
-typedef Node const * MeepleMove; // TODO This will need to change. If I want to replay a game on a different object, pointers won't work.
-
-class Game : public QObject
+struct MeepleMove
 {
-//Q_OBJECT
+	uchar nodeIndex;
+	
+	MeepleMove(uchar index = -1) : nodeIndex(index) {}
+	inline bool isNull() const { return nodeIndex == (uchar)-1; }
+};
+
+struct Move
+{
+	TileMove tileMove;
+	MeepleMove meepleMove;
+};
+
+class Game
+{
 
 private:
 	int ply = -1;
@@ -69,9 +80,6 @@ public:
 
 private:
 	void cleanUp();
-
-//signals:
-//	void boardChanged(Board const * board);
 };
 
 inline bool operator==(TileMove const& lhs, TileMove const& rhs)

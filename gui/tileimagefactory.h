@@ -25,7 +25,7 @@ public:
 	QString getMeepleOutlineSvg(Node const * node) const;
 	QColor getPlayerColor(int player) const;
 
-	QMap<const Node *, QPoint> getPoints(Tile const * tile);
+	QMap<uchar, QPoint> getPoints(Tile const * tile);
 
 private:
 	QPixmap loadImage(Tile::TileSet tileSet, int tileType);

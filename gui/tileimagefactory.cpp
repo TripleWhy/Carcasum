@@ -69,7 +69,7 @@ QColor TileImageFactory::getPlayerColor(int player) const
 	}
 }
 
-QMap<const Node *, QPoint> TileImageFactory::getPoints(Tile const * tile)
+QMap<uchar, QPoint> TileImageFactory::getPoints(Tile const * tile)
 {
 	jcz::Expansion expansion = jcz::Expansions::fromTileSet(tile->tileSet);
 	if (!xmlTiles.contains(expansion))
@@ -84,12 +84,12 @@ QMap<const Node *, QPoint> TileImageFactory::getPoints(Tile const * tile)
 
 	jcz::XmlParser::XMLTile const & xTile = xmlTiles.value(expansion).at(tile->tileType);
 
-	QMap<Node const *, QPoint> points;
-	for (int i = 0; i < tile->getNodeCount(); ++i)
+	QMap<uchar, QPoint> points;
+	for (uchar i = 0; i < tile->getNodeCount(); ++i)
 	{
 		QPoint point = xTile.features[i].point;
 		point *= (BoardGraphicsScene::TILE_SIZE / 1000.0);
-		points.insert(tile->getCNodes()[i], point);
+		points.insert(i, point);
 	}
 
 	return points;

@@ -125,14 +125,14 @@ void CloisterNode::checkClose(Game *g)
 
 
 
-Tile::Tile(TileSet tileSet, int tileType)
+Tile::Tile(TileSet tileSet, uchar tileType)
 	: edges {None, None, None, None},
 	  tileSet(tileSet),
 	  tileType(tileType)
 {
 }
 
-Tile::Tile(TileSet tileSet, int tileType, TerrainType const edges[4], int const nodeCount, Node ** nodes)
+Tile::Tile(TileSet tileSet, uchar tileType, TerrainType const edges[4], const uchar nodeCount, Node ** nodes)
 	: edges { edges[0], edges[1], edges[2], edges[3] },
 	  nodeCount(nodeCount),
 	  nodes(nodes),
@@ -272,7 +272,7 @@ Tile::EdgeType * Tile::getEdgeNodes(Tile::Side side)
 	return edgeNodes[(4 + side - orientation) % 4];
 }
 
-void Tile::setEdgeNode(Tile::Side side, int index, Node * n)
+void Tile::setEdgeNode(Tile::Side side, uchar index, Node * n)
 {
 #if NODE_VARIANT
 	for (int i = 0; i < nodeCount; ++i)

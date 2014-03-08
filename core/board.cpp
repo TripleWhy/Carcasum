@@ -93,9 +93,9 @@ uint Board::getInternalSize() const
 	return size;
 }
 
-QList<TileMove> Board::getPossibleTilePlacements(const Tile * tile) const
+TileMovesType Board::getPossibleTilePlacements(const Tile * tile) const
 {
-	QList<TileMove> possible;
+	TileMovesType possible;
 	TerrainType edges[4];
 	quint32 rotations[4] = {0, 0, 0, 0};
 	for (int orientation = 0; orientation < 4; ++orientation)

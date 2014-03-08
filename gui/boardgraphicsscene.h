@@ -41,7 +41,7 @@ private:
 	jcz::TileFactory * tileFactory;
 	TileImageFactory imgFactory;
 	QHash<QPoint, QGraphicsItemGroup *> possibleMeeplePlaces;
-	QList<TileMove> possiblePlacements;
+	TileMovesType possiblePlacements;
 
 	std::mutex lock;
 	int running;
@@ -55,10 +55,10 @@ public:
 
 	void setGame(const Game * const g);
 	void setTileFactory(jcz::TileFactory * factory);
-	virtual TileMove getTileMove(int player, Tile const * const tile, QList<TileMove> const & placements, Game const * const game);
-	virtual MeepleMove getMeepleMove(int player, Tile const * const tile, QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> const & possible, Game const * const game);
+	virtual TileMove getTileMove(int player, Tile const * const tile, TileMovesType const & placements, Game const * const game);
+	virtual MeepleMove getMeepleMove(int player, Tile const * const tile, MeepleMovesType const & possible, Game const * const game);
 	virtual void newGame(int player, Game const * const game);
-	virtual void playerMoved(int player, const Tile * const tile, TileMove const & tileMove, MeepleMove const & meepleMove, Game const * const game);
+	virtual void playerMoved(int player, const Tile * const tile, Move const & move, Game const * const game);
 
 protected:
 	virtual void mousePressEvent (QGraphicsSceneMouseEvent * mouseEvent);
@@ -67,7 +67,7 @@ protected:
 private:
 	static void indexAt(QPointF const & scenePos, uint & x, uint & y);
 	QGraphicsItemGroup * meepleAt(QPointF const & scenePos);
-	QGraphicsItemGroup * createMeeple(const MeepleMove & p, QPoint & point, const TileMove & tileMove, QColor const & color);
+	QGraphicsItemGroup * createMeeple(Node const * n, QPoint & point, const TileMove & tileMove, QColor const & color);
 	void placeOpen();
 
 private slots:
@@ -79,23 +79,20 @@ private:
 	struct DPMData
 	{
 		int player;
-		Tile::TileSet tileSet;
-		int tileType;
-		TileMove tileMove;
-		MeepleMove meepleMove;
-		QPoint meeplePoint;
+		Tile const * const tile;
+		Move move;
 	};
 	struct DGTMData
 	{
 		Tile::TileSet tileSet;
 		int tileType;
-		QList<TileMove> placements;
+		TileMovesType placements;
 	};
 	struct DGMMData
 	{
 		int player;
 		Tile const * const tile;
-		QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> possible;
+		MeepleMovesType possible;
 		TileMove tileMove;
 	};
 };

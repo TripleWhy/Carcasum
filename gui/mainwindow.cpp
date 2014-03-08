@@ -18,7 +18,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	connect(boardUi, SIGNAL(sceneRectChanged(QRectF)), this, SLOT(recenter(QRectF)));
 
-	Player * p1 = new RandomPlayer();
+	Player * p1 = &RandomPlayer::instance;
 
 	game->addWatchingPlayer(boardUi);
 	

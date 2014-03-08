@@ -148,7 +148,7 @@ public:
 
 private:
 	TerrainType edges[4];    // array of edge types
-	int nodeCount;           // lenght of nodes
+	uchar nodeCount;         // lenght of nodes
 	Node ** nodes;           // array of node pointers
 	EdgeType * edgeNodes[4]; // 4 arrays of edge connectors
 	CloisterNode * cloister = 0;
@@ -158,13 +158,13 @@ public:
 
 	//Not neccessarily the best place (because this will need to be copied also):
 	TileSet const tileSet;
-	int const tileType;
+	uchar const tileType;
 
 private:
-	Tile(TileSet tileSet, int tileType);
+	Tile(TileSet tileSet, uchar tileType);
 
 public:
-	Tile(TileSet tileSet, int tileType, TerrainType const edges[4], const int nodeCount, Node ** nodes);
+	Tile(TileSet tileSet, uchar tileType, TerrainType const edges[4], const uchar nodeCount, Node ** nodes);
 	Tile(const Tile & t) = delete; // I don't want implicit copies. Use clone() instead.
 	Tile (Tile&& t) = delete; // I don't actually want this to happen.
 	~Tile();
@@ -178,7 +178,7 @@ public:
 
 private:
 	EdgeType * getEdgeNodes(Side side);
-	void setEdgeNode(Side side, int index, Node * n);
+	void setEdgeNode(Side side, uchar index, Node * n);
 	void createEdgeList(Side side);
 
 	static inline int edgeNodeCount(TerrainType t)
@@ -198,7 +198,7 @@ private:
 	}
 
 public:
-	inline int getNodeCount() const { return nodeCount; }
+	inline uchar getNodeCount() const { return nodeCount; }
 	inline Node const * const * getCNodes() const { return nodes; }
 	inline Node * const * getNodes() { return nodes; }
 
