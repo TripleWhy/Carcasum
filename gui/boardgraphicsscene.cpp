@@ -55,7 +55,7 @@ void BoardGraphicsScene::setTileFactory(jcz::TileFactory * factory)
 	tileFactory = factory;
 }
 
-TileMove BoardGraphicsScene::getTileMove(int /*player*/, Tile const * const tile, QList<TileMove> const & placements, Game const * const game)
+TileMove BoardGraphicsScene::getTileMove(int /*player*/, Tile const * const tile, QList<TileMove> const & placements, Game const * const /*game*/)
 {
 	std::unique_lock<std::mutex> lck(lock);
 	if (running != 0)
@@ -83,10 +83,11 @@ TileMove BoardGraphicsScene::getTileMove(int /*player*/, Tile const * const tile
 			lck.unlock();
 			if (Util::isGUIThread())
 			{
-				qDebug() << "GUI thread";
 				QCoreApplication::processEvents();
+				Util::sleep(10);
 			}
-			QThread::currentThread()->yieldCurrentThread();
+			else
+				Util::sleep(200);
 		}
 	}
 
@@ -144,7 +145,7 @@ void BoardGraphicsScene::displayGetTileMove(void * data, int callDepth)
 	delete d;
 }
 
-MeepleMove BoardGraphicsScene::getMeepleMove(int player, Tile const * const tile, QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> const & possible, Game const * const game)
+MeepleMove BoardGraphicsScene::getMeepleMove(int player, Tile const * const tile, QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> const & possible, Game const * const /*game*/)
 {
 	std::unique_lock<std::mutex> lck(lock);
 	if (running != 0)
@@ -170,7 +171,13 @@ MeepleMove BoardGraphicsScene::getMeepleMove(int player, Tile const * const tile
 		else
 		{
 			lck.unlock();
-			QThread::currentThread()->yieldCurrentThread();
+			if (Util::isGUIThread())
+			{
+				QCoreApplication::processEvents();
+				Util::sleep(20);
+			}
+			else
+				Util::sleep(200);
 		}
 	}
 
@@ -352,7 +359,7 @@ void BoardGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent * mouseEvent)
 		QGraphicsRectItem * item = 0;
 		for (QGraphicsRectItem * i : openTiles)
 		{
-			if (i->data(0).toInt() == x && i->data(1).toInt() == y)
+			if (i->data(0).toUInt() == x && i->data(1).toUInt() == y)
 			{
 				item = i;
 				break;

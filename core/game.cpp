@@ -157,6 +157,8 @@ void Game::step()
 
 	if (tiles.isEmpty())
 	{
+		board->scoreEndGame();
+		
 		ply = -1;
 		currentPlayer = -1;
 	}
@@ -166,7 +168,7 @@ void Game::step()
 
 void Game::cityClosed(CityNode * n)
 {
-	int score = n->tiles.size();
+	int score = n->getScore();
 	if (score > 2)
 		score = (score + n->bonus) * 2;
 	qDebug() << "   city closed, value:" << score;
@@ -176,10 +178,20 @@ void Game::cityClosed(CityNode * n)
 
 void Game::roadClosed(RoadNode * n)
 {
-	int score = n->tiles.size();
+	int score = n->getScore();
 	qDebug() << "   raod closed, value:" << score;
 	
 	scoreNode(n, score);
+}
+
+void Game::cloisterClosed(CloisterNode * n)
+{
+	static int const score = 9; //n->getScore()
+	qDebug() << "   cloister closed, value:" << score;
+	
+	scoreNode(n, score);
+	
+	board->cloisterClosed(n);
 }
 
 void Game::scoreNode(Node * n, int const score)

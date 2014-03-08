@@ -77,6 +77,15 @@ void Board::addTile(uint x, uint y, Tile * tile)
 		open[QPoint(x,  y + 1)].t[Tile::up] = tile->getEdge(Tile::down);
 	else
 		board[x][y + 1]->connect(Tile::up, tile, game);
+	
+	if (board[x - 1][y - 1])
+		board[x - 1][y - 1]->connectDiagonal(tile, game);
+	if (board[x + 1][y - 1])
+		board[x + 1][y - 1]->connectDiagonal(tile, game);
+	if (board[x - 1][y + 1])
+		board[x - 1][y + 1]->connectDiagonal(tile, game);
+	if (board[x + 1][y + 1])
+		board[x + 1][y + 1]->connectDiagonal(tile, game);
 }
 
 uint Board::getInternalSize() const
@@ -131,4 +140,28 @@ QPoint Board::positionOf(Tile * t) const
 			if (board[x][y] == t)
 				return QPoint(x, y);
 	return QPoint(-1, -1);
+}
+
+void Board::scoreEndGame()
+{
+	std::unordered_set<Node *> scored;
+	for (uint y = 0; y < size; ++y)
+	{
+		for (uint x = 0; x < size; ++x)
+		{
+			if (board[x][y])
+			{
+				for (Node * const * n = board[x][y]->getNodes(), * const * end = n + board[x][y]->getNodeCount(); n < end; ++n)
+				{
+					if ((*n)->isOccupied() && scored.find(*n) == scored.end())
+					{
+						scored.insert(*n);
+						int const score = (*n)->getScore();
+						if (score != 0)
+							game->scoreNode(*n, score);
+					}
+				}
+			}
+		}
+	}
 }

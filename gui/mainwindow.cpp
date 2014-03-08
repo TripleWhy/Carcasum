@@ -41,7 +41,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 //	timer = new QTimer(this);
 //	connect(timer, SIGNAL(timeout()), this, SLOT(timeout()));
-//	timer->setInterval(0);
+//	timer->setInterval(500);
 //	timer->setSingleShot(false);
 //	timer->start();
 }

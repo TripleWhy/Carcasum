@@ -83,9 +83,9 @@ void jcz::TileFactory::readXMLPack(QString file, Tile::TileSet tileSet, Game con
 	f.close();
 }
 
-inline Node * newFieldNode(Tile * tile, Game const * g)
+inline FieldNode * newFieldNode(Tile * tile, Game const * g)
 {
-	return new Node(Field, tile, g);
+	return new FieldNode(tile, g);
 }
 
 inline Node * newCityNode(Tile * tile, Game const * g, uchar open, bool pennant = false)
@@ -98,9 +98,9 @@ inline Node * newRoadNode(Tile * tile, Game const * g, uchar open)
 	return new RoadNode(tile, g, open);
 }
 
-inline Node * newCloisterNode(Tile * tile, Game const * g)
+inline CloisterNode * newCloisterNode(Tile * tile, Game const * g)
 {
-	return new Node(Cloister, tile, g);
+	return new CloisterNode(tile, g);
 }
 
 inline void convertSide(QString const & str, int & side, int & subside)
@@ -148,18 +148,18 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 	{
 		if (xml.name() == "cloister")
 		{
-			Node * cloister = newCloisterNode(tile, g);
+			CloisterNode * cloister = newCloisterNode(tile, g);
+			tile->cloister = cloister;
 			nodes.append(cloister);
 		}
 		else if (xml.name() == "farm")
 		{
-			Node * field = newFieldNode(tile, g);
+			FieldNode * field = newFieldNode(tile, g);
 			xml.readNext();
 			for (QString const & str : xml.text().toString().split(' ', QString::SkipEmptyParts))
 			{
 				int side;
 				int subside = 1;
-
 				convertSide(str, side, subside);
 				if (side < 0)
 				{
@@ -177,6 +177,27 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 
 			//TODO
 			QString const & city = xml.attributes().value("city").toString();
+			for (QString const & str : city.split(' ', QString::SkipEmptyParts))
+			{
+				int side;
+				int subside = 1;
+				convertSide(str, side, subside);
+				
+				if (side < 0)
+				{
+					qWarning() << "unknown side:" << str;
+					break;
+				}
+
+				CityNode * city = dynamic_cast<CityNode *>(edgeConnectors[side][subside]);
+				if (city == 0)
+				{
+					qWarning() << "city does not exist at" << str;
+					break;
+				}
+				city->fields.insert(field);
+				field->cities.insert(city);
+			}
 
 			if (field != 0)
 				nodes.append(field);

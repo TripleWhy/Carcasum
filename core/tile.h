@@ -20,12 +20,14 @@ struct Node
 {
 	friend class Tile;
 	friend class Game;
-
 public:
+	typedef std::vector<Node **>       PointersType;
+	typedef std::unordered_set<Tile *> TilesType;
+
 	TerrainType t;
-	std::unordered_set<Tile *> tiles;
+	TilesType tiles;
 private:
-	QList<Node **> pointers;
+	PointersType pointers;
 	uchar * const meeples; // Number of meeples on this node per player.
 	uchar maxMeples = 0;
 
@@ -39,21 +41,38 @@ public:
 	inline uchar const * getMeeples() const { return meeples; }
 
 	virtual void connect(Node * n, Game * /*g*/);
+	virtual void checkClose(Game * /*g*/) = 0;
+	virtual uchar getScore() = 0;
+	virtual Node * clone(Tile * parent, Game const * g) const = 0;
+//protected:
+//	inline void addPointer(Node ** p) { pointers.push_back(p); }
+};
+
+struct CityNode;
+struct FieldNode : public Node
+{
+	uchar closedCities = 0;
+	std::unordered_set<CityNode *> cities;
+
+	FieldNode(Tile * parent, Game const * g)
+		: Node(Field, parent, g)
+	{}
+
+	virtual void connect(Node * n, Game * g);
 	virtual void checkClose(Game * /*g*/) {}
+	inline virtual uchar getScore() { return closedCities * 3; }
 	virtual Node * clone(Tile * parent, Game const * g) const
 	{
-		return new Node(t, parent, g);
+		return new FieldNode(parent, g);
 	}
-protected:
-	inline void addPointer(Node ** p) { pointers.push_back(p); }
 };
 
 struct CityNode : public Node
 {
 	uchar open;
 	uchar bonus;
+	std::unordered_set<FieldNode *> fields;
 
-public:
 	CityNode(Tile * parent, Game const * g, uchar open, uchar bonus = 0)
 		: Node(City, parent, g),
 		  open(open),
@@ -62,7 +81,7 @@ public:
 
 	virtual void connect(Node * n, Game * g);
 	virtual void checkClose(Game * g);
-
+	inline virtual uchar getScore() { return tiles.size(); }
 	virtual Node * clone(Tile * parent, Game const * g) const
 	{
 		return new CityNode(parent, g, open, bonus);
@@ -73,7 +92,6 @@ struct RoadNode : public Node
 {
 	uchar open;
 
-public:
 	RoadNode(Tile * parent, Game const * g, uchar open)
 		: Node(Road, parent, g),
 		  open(open)
@@ -81,10 +99,34 @@ public:
 
 	virtual void connect(Node * n, Game * g);
 	virtual void checkClose(Game * g);
-
+	inline virtual uchar getScore() { return tiles.size(); }
 	virtual Node * clone(Tile * parent, Game const * g) const
 	{
 		return new RoadNode(parent, g, open);
+	}
+};
+
+struct CloisterNode : public Node
+{
+	uchar surroundingTiles;
+	
+	CloisterNode(Tile * parent, Game const * g, uchar surroundingTiles = 1)
+	    : Node(Cloister, parent, g),
+	      surroundingTiles(surroundingTiles)
+	{}
+	
+	virtual void connect(Node * /*n*/, Game * /*g*/) { Q_ASSERT(false); }
+	virtual void checkClose(Game * g);
+	inline virtual uchar getScore() { return surroundingTiles; }
+	virtual Node * clone(Tile * parent, Game const * g) const
+	{
+		return new CloisterNode(parent, g, surroundingTiles);
+	}
+	inline void addSurroundingTile(Game * g)
+	{
+		++surroundingTiles;
+		if (isOccupied())
+			checkClose(g);
 	}
 };
 
@@ -109,6 +151,7 @@ private:
 	int nodeCount;           // lenght of nodes
 	Node ** nodes;           // array of node pointers
 	EdgeType * edgeNodes[4]; // 4 arrays of edge connectors
+	CloisterNode * cloister = 0;
 
 public:
 	Side orientation = left;
@@ -127,7 +170,8 @@ public:
 	~Tile();
 	TerrainType const & getEdge(Side side) const;
 	TerrainType const & getEdge(Side side, Side orientation) const;
-	bool connect(Side s, Tile * other, Game * game);
+	void connect(Side s, Tile * other, Game * game);
+	void connectDiagonal(Tile * other, Game * game);
 	Tile * clone(Game const * g);
 	Tile&& operator=(Tile&& t) = delete;
 	Tile& operator= (Tile const& t) = delete;

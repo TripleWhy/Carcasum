@@ -62,6 +62,7 @@ public:
 
 	void cityClosed(CityNode * n);
 	void roadClosed(RoadNode * n);
+	void cloisterClosed(CloisterNode * n);
 	void scoreNode(Node * n, const int score);
 
 	inline int getPlayerCount() const { return playerCount; }

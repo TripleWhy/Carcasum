@@ -11,6 +11,7 @@ Node::Node(TerrainType t, Tile * parent, const Game * g)
 	  meeples(new uchar[g->getPlayerCount()]())
 {
 	Q_ASSERT(g != 0);
+	
 	tiles.insert(parent);
 }
 
@@ -21,12 +22,17 @@ Node::~Node()
 
 void Node::connect(Node * n, Game * g)
 {
+	Q_ASSERT_X(n->t == this->t, "Node::connect", "TerrainType does not match");
+	Q_ASSERT_X(typeid(*n) == typeid(*this), "Node::connect", "classes do not match");
+	
 	if (this == n)
 		return;
 
 	for (Node ** p : n->pointers)
+	{
 		*p = this;
-	pointers.append(n->pointers);
+		pointers.push_back(p);
+	}
 	tiles.insert(n->tiles.begin(), n->tiles.end());
 	for (uchar * tm = meeples, * end = meeples + (g->getPlayerCount()), * nm = n->meeples;
 		 tm < end;
@@ -43,17 +49,40 @@ void Node::connect(Node * n, Game * g)
 	delete n;
 }
 
+void FieldNode::connect(Node * n, Game * g)
+{
+	if (this != n)
+	{
+		FieldNode * f = static_cast<FieldNode *>(n);
+		for (CityNode * city : f->cities)
+		{
+			city->fields.erase(f);
+			city->fields.insert(this);
+		}
+		
+		Node::connect(n, g);
+	}
+}
+
 void CityNode::connect(Node * n, Game * g)
 {
-	Q_ASSERT_X(n->t == this->t, "CityNode::connect", "TerrainType does not match");
-	Q_ASSERT_X(typeid(*n) == typeid(*this), "CityNode::connect", "other node is no CityNode");
-
 	open -= 2;
 	if (this != n)
 	{
 		CityNode * c = static_cast<CityNode *>(n);
 		bonus += c->bonus;
 		open += c->open;
+		
+		for (FieldNode * field : c->fields)
+		{
+			field->cities.erase(c);
+			field->cities.insert(this);
+		}
+		
+		if (open == 0)
+			for (FieldNode * f : fields)
+				++f->closedCities;
+		
 		Node::connect(n, g);
 	}
 	Q_ASSERT(uchar(open + 2) > open);
@@ -62,7 +91,9 @@ void CityNode::connect(Node * n, Game * g)
 void CityNode::checkClose(Game * g)
 {
 	if (open == 0)
+	{
 		g->cityClosed(this);
+	}
 }
 
 void RoadNode::connect(Node * n, Game * g)
@@ -86,6 +117,14 @@ void RoadNode::checkClose(Game * g)
 		g->roadClosed(this);
 }
 
+void CloisterNode::checkClose(Game *g)
+{
+	if (surroundingTiles == 9)
+		g->cloisterClosed(this);
+}
+
+
+
 Tile::Tile(TileSet tileSet, int tileType)
 	: edges {None, None, None, None},
 	  tileSet(tileSet),
@@ -106,7 +145,7 @@ Tile::Tile(TileSet tileSet, int tileType, TerrainType const edges[4], int const 
 	createEdgeList(down);
 
 	for (int i = 0; i < nodeCount; ++i)
-		nodes[i]->pointers.append(nodes + i);
+		nodes[i]->pointers.push_back(nodes + i);
 }
 
 Tile::~Tile()
@@ -128,7 +167,7 @@ const TerrainType & Tile::getEdge(Side side, Side orientation) const
 	return edges[(4 + side - orientation) % 4];
 }
 
-bool Tile::connect(Tile::Side side, Tile * other, Game * game)
+void Tile::connect(Tile::Side side, Tile * other, Game * game)
 {
 	Tile::Side otherSide = (Tile::Side)((side + 2) % 4);
 	TerrainType t = getEdge(side);
@@ -151,8 +190,19 @@ bool Tile::connect(Tile::Side side, Tile * other, Game * game)
 		thisNode->connect(otherNode, game);
 #endif
 	}
+	
+	if (cloister != 0)
+		cloister->addSurroundingTile(game);
+	if (other->cloister != 0)
+		other->cloister->addSurroundingTile(game);
+}
 
-	return true;
+void Tile::connectDiagonal(Tile * other, Game * game)
+{
+	if (cloister != 0)
+		cloister->addSurroundingTile(game);
+	if (other->cloister != 0)
+		other->cloister->addSurroundingTile(game);
 }
 
 Tile * Tile::clone(const Game * g)	//TODO? This process only works on unconnected tiles.
@@ -167,13 +217,14 @@ Tile * Tile::clone(const Game * g)	//TODO? This process only works on unconnecte
 	for (int i = 0; i < nodeCount; ++i)
 	{
 		copy->nodes[i] = nodes[i]->clone(copy, g);
-		copy->nodes[i]->pointers.append(copy->nodes + i);
+		copy->nodes[i]->pointers.push_back(copy->nodes + i);
 #if NODE_VARIANT
 		nodeMap[nodes + i] = copy->nodes + i;
 #else
 		nodeMap[nodes[i]] = copy->nodes[i];
 #endif
 	}
+	
 	for (int i = 0; i < 4; ++i)
 	{
 		int const enc = edgeNodeCount(edges[i]);
@@ -184,6 +235,35 @@ Tile * Tile::clone(const Game * g)	//TODO? This process only works on unconnecte
 			copy->setEdgeNode((Side)i, j, nodeMap[edgeNodes[(Side)i][j]]);
 #endif
 	}
+	
+	for (int i = 0; i < nodeCount; ++i)
+	{
+		switch (nodes[i]->t)
+		{
+			case City:
+			{
+				CityNode * tc = static_cast<CityNode *>(nodes[i]);
+				CityNode * cc = static_cast<CityNode *>(copy->nodes[i]);
+				for (FieldNode * f : tc->fields)
+					cc->fields.insert(static_cast<FieldNode *>(nodeMap[f]));
+				break;
+			}
+			case Field:
+			{
+				FieldNode * tf = static_cast<FieldNode *>(nodes[i]);
+				FieldNode * cf = static_cast<FieldNode *>(copy->nodes[i]);
+				for (CityNode * c : tf->cities)
+					cf->cities.insert(static_cast<CityNode *>(nodeMap[c]));
+				break;
+			}
+			default:
+				break;
+		}
+	}
+	
+	if (cloister)
+		copy->cloister = static_cast<CloisterNode *>(nodeMap[cloister]);
+	
 	return copy;
 }
 
@@ -205,7 +285,7 @@ void Tile::setEdgeNode(Tile::Side side, int index, Node * n)
 	}
 #else
 	edgeNodes[side][index] = n;
-	n->pointers.append(&(edgeNodes[side][index]));
+	n->pointers.push_back(&(edgeNodes[side][index]));
 #endif
 }
 
