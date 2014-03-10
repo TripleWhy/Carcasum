@@ -3,6 +3,7 @@
 #include "jcz/tilefactory.h"
 
 #include "player/randomplayer.h"
+#include "player/montecarloplayer.h"
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -19,15 +20,17 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(boardUi, SIGNAL(sceneRectChanged(QRectF)), this, SLOT(recenter(QRectF)));
 
 	Player * p1 = &RandomPlayer::instance;
+	Player * p2 = new MonteCarloPlayer(tileFactory);
 
 	game->addWatchingPlayer(boardUi);
 	
 	game->addPlayer(p1);
-	game->addPlayer(p1);
-	game->addPlayer(p1);
-	game->addPlayer(p1);
-	game->addPlayer(p1);
 //	game->addPlayer(p1);
+//	game->addPlayer(p1);
+//	game->addPlayer(p1);
+//	game->addPlayer(p1);
+//	game->addPlayer(p1);
+	game->addPlayer(p2);
 	game->addPlayer(boardUi);
 	game->newGame(Tile::BaseGame, tileFactory);
 

@@ -48,7 +48,7 @@ public:
 	Tile * getTile(uint x, uint y);
 	const Tile * getTile(uint x, uint y) const;
 	void setStartTile(Tile  * tile);
-	void addTile(uint x, uint y, Tile * tile);
+	void addTile(Tile * tile, const TileMove & move);
 	uint getInternalSize() const;
 
 	TileMovesType getPossibleTilePlacements(Tile const * tile) const;

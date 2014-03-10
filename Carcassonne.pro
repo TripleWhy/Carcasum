@@ -58,7 +58,8 @@ SOURCES += core/tile.cpp \
     jcz/xmlparser.cpp \
     jcz/tilefactory.cpp \
     jcz/location.cpp \
-    jcz/expansion.cpp
+    jcz/expansion.cpp \
+    player/montecarloplayer.cpp
 
 HEADERS += \
 	core/tile.h \
@@ -70,7 +71,8 @@ HEADERS += \
     jcz/tilefactory.h \
     jcz/xmlparser.h \
     jcz/location.h \
-    jcz/expansion.h
+    jcz/expansion.h \
+    player/montecarloplayer.h
 
 QMAKE_CXXFLAGS += -std=c++11
 QMAKE_CXXFLAGS_WARN_ON += -Wextra -Werror=switch -Werror=return-type -Werror=delete-non-virtual-dtor

@@ -57,7 +57,7 @@ void BoardGraphicsScene::setTileFactory(jcz::TileFactory * factory)
 	tileFactory = factory;
 }
 
-TileMove BoardGraphicsScene::getTileMove(int /*player*/, Tile const * const tile, TileMovesType const & placements, Game const * const /*game*/)
+TileMove BoardGraphicsScene::getTileMove(int /*player*/, Tile const * const tile, const MoveHistoryEntry & /*move*/, TileMovesType const & placements, Game const * const /*game*/)
 {
 	std::unique_lock<std::mutex> lck(lock);
 	if (running != 0)
@@ -147,7 +147,7 @@ void BoardGraphicsScene::displayGetTileMove(void * data, int callDepth)
 	delete d;
 }
 
-MeepleMove BoardGraphicsScene::getMeepleMove(int player, Tile const * const tile, MeepleMovesType const & possible, Game const * const /*game*/)
+MeepleMove BoardGraphicsScene::getMeepleMove(int player, Tile const * const tile, const MoveHistoryEntry & /*move*/, MeepleMovesType const & possible, Game const * const /*game*/)
 {
 	std::unique_lock<std::mutex> lck(lock);
 	if (running != 0)
@@ -295,11 +295,11 @@ void BoardGraphicsScene::displayNewGame(int callDepth)
 	placeOpen();
 }
 
-void BoardGraphicsScene::playerMoved(int player, Tile const * const tile, const Move & move, const Game * const /*game*/)
+void BoardGraphicsScene::playerMoved(int player, const Tile * const tile, const MoveHistoryEntry & move, const Game * const /*game*/)
 {
 	Q_ASSERT(tileFactory != 0);
 
-	DPMData * callData = new DPMData { player, tile, move };
+	DPMData * callData = new DPMData { player, tile, move.move };
 	displayPlayerMoved(callData);
 }
 

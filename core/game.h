@@ -19,7 +19,7 @@ struct TileMove
 	TileMove() noexcept : x(-1) {}
 	TileMove(uint x, uint y, Tile::Side orientation) noexcept : x(x), y(y), orientation(orientation) {}
 
-	inline bool isNull()
+	inline bool isNull() const
 	{
 		return x == (uint)-1;
 	}
@@ -39,8 +39,15 @@ struct Move
 	MeepleMove meepleMove;
 };
 
+struct MoveHistoryEntry
+{
+	int tile;
+	Move move;
+};
+
 class Game
 {
+public:
 
 private:
 	int ply = -1;
@@ -54,12 +61,17 @@ private:
 	int * returnMeeples = 0;
 	int * playerScores = 0;
 	int playerCount = 0;
+	
+	std::vector<MoveHistoryEntry> moveHistory;
+	Tile::TileSets tileSets;
 
 public:
 	Game();
 	~Game();
 
 	void newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory);
+	void newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory, std::vector<MoveHistoryEntry> history);
+	void restartGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory);
 	void addPlayer(Player * player);
 	void addWatchingPlayer(Player * player);
 //	void setPlayer(int index, Player * player);
@@ -68,6 +80,8 @@ public:
 	Board const * getBoard() const;
 	bool isFinished();
 	void step();
+	void step(int tileIndex, TileMove const & tileMove, int playerIndex, Player * player);
+	void step(MoveHistoryEntry const & entry);
 	//getWinner()
 	//undo(...)
 
@@ -77,6 +91,9 @@ public:
 	void scoreNode(Node * n, const int score);
 
 	inline int getPlayerCount() const { return playerCount; }
+	inline std::vector<MoveHistoryEntry> const & getMoveHistory() const { return moveHistory; }
+	inline Tile::TileSets const & getTileSets() const { return tileSets; }
+	inline int const * getScores() const { return playerScores; }
 
 private:
 	void cleanUp();

@@ -18,6 +18,11 @@ Node::Node(TerrainType t, Tile * parent, const Game * g)
 Node::~Node()
 {
 	delete meeples;
+	for (Node ** p : pointers)
+	{
+		if (p)
+			*p = 0;
+	}
 }
 
 void Node::connect(Node * n, Game * g)
@@ -28,10 +33,11 @@ void Node::connect(Node * n, Game * g)
 	if (this == n)
 		return;
 
-	for (Node ** p : n->pointers)
+	for (Node ** & p : n->pointers)
 	{
 		*p = this;
 		pointers.push_back(p);
+		p = 0;
 	}
 	tiles.insert(n->tiles.begin(), n->tiles.end());
 	for (uchar * tm = meeples, * end = meeples + (g->getPlayerCount()), * nm = n->meeples;
@@ -150,6 +156,8 @@ Tile::Tile(TileSet tileSet, uchar tileType, TerrainType const edges[4], const uc
 
 Tile::~Tile()
 {
+	for (int i = 0; i < nodeCount; ++i)
+		delete nodes[i];
 	delete[] nodes;
 	delete[] edgeNodes[left];
 	delete[] edgeNodes[up];

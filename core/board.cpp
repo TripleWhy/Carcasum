@@ -15,11 +15,11 @@ Board::Board(Game * game, const uint s)
 
 Board::~Board()
 {
-	for (uint y = 0; y < size; ++y)
+	for (uint i = 0; i < size; ++i)
 	{
-		for (uint x = 0; x < size; ++x)
-			delete board[x][y];
-		delete[] board[y];
+		for (uint j = 0; j < size; ++j)
+			delete board[i][j];
+		delete[] board[i];
 	}
 	delete[] board;
 }
@@ -50,11 +50,14 @@ void Board::setStartTile(Tile * tile)
 //	open.insert(QPoint( 0, +1));
 }
 
-void Board::addTile(uint x, uint y, Tile * tile)
+void Board::addTile(Tile * tile, TileMove const & move)
 {
+	uint x = move.x;
+	uint y = move.y;
 	Q_ASSERT_X(x < size && y < size, "addTile", "position out of bounds");
 	Q_ASSERT_X(board[x][y] == 0, "addTile", "position not empty");
 
+	tile->orientation = move.orientation;
 	board[x][y] = tile;
 	open.remove(QPoint(x, y));
 
