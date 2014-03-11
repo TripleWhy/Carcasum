@@ -26,30 +26,38 @@ void MonteCarloPlayer::playerMoved(int player, const Tile * const tile, const Mo
 	Q_UNUSED(game);
 }
 
+#include <QElapsedTimer>
 TileMove MonteCarloPlayer::getTileMove(int player, const Tile * const /*tile*/, const MoveHistoryEntry & move, const TileMovesType & placements, const Game * const game)
 {
+	QElapsedTimer t;
 	int const playerCount = game->getPlayerCount();
 	int const placementSize = placements.size();
 	auto utilities = QVarLengthArray<long long int, 128>(placementSize);
 	for (int i = 0; i < placementSize; ++i)
 		utilities[i] = 0;
 
+	t.start();
 	Game g;
 	for (int i = 0; i < playerCount; ++i)
 		g.addPlayer(&RandomPlayer::instance);
 	g.newGame(game->getTileSets(), tileFactory);
+	t1 += t.nsecsElapsed();
 	
 	int moveIndex = 0;
 	for (TileMove const & tileMove : placements)
 	{
 		for (int j = 0; j < N; ++j)
 		{
+			t.start();
 			g.restartGame(tileFactory, game->getMoveHistory());
 	//		g.step(move.tile, tileMove, player, this);
 			g.step(move.tile, tileMove, player, &RandomPlayer::instance);
+			t2 += t.nsecsElapsed();
 			
+			t.start();
 			while (!g.isFinished())
 				g.step();
+			t3 += t.nsecsElapsed();
 			utilities[moveIndex] += utility(g.getScores(), g.getPlayerCount(), player);
 		}
 		++moveIndex;
@@ -73,16 +81,19 @@ TileMove MonteCarloPlayer::getTileMove(int player, const Tile * const /*tile*/, 
 
 MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * const /*tile*/, const MoveHistoryEntry & move, const MeepleMovesType & possible, const Game * const game)
 {
+	QElapsedTimer t;
 	int const playerCount = game->getPlayerCount();
 	int const possibleSize = possible.size();
 	auto utilities = QVarLengthArray<long long int, 128>(possibleSize);
 	for (int i = 0; i < possibleSize; ++i)
 		utilities[i] = 0;
 	
+	t.start();
 	Game g;
 	for (int i = 0; i < playerCount; ++i)
 		g.addPlayer(&RandomPlayer::instance);
 	g.newGame(game->getTileSets(), tileFactory);
+	t4 += t.nsecsElapsed();
 	
 	int moveIndex = 0;
 	for (MeepleMove const & meepleMove : possible)
@@ -91,11 +102,15 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * const /*tile
 		m.move.meepleMove = meepleMove;
 		for (int j = 0; j < N; ++j)
 		{
+			t.start();
 			g.restartGame(tileFactory, game->getMoveHistory());
 			g.step(m);
+			t5 += t.nsecsElapsed();
 			
+			t.start();
 			while (!g.isFinished())
 				g.step();
+			t6 += t.nsecsElapsed();
 			utilities[moveIndex] += utility(g.getScores(), g.getPlayerCount(), player);
 		}
 		++moveIndex;

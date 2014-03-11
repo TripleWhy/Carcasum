@@ -10,6 +10,13 @@ class MonteCarloPlayer : public Player
 	
 private:
 	jcz::TileFactory * tileFactory;
+public:
+	qint64 t1 = 0;
+	qint64 t2 = 0;
+	qint64 t3 = 0;
+	qint64 t4 = 0;
+	qint64 t5 = 0;
+	qint64 t6 = 0;
 	
 public:
 	MonteCarloPlayer(jcz::TileFactory * tileFactory);

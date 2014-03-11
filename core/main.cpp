@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 	Game * game = new Game();
 	
 	Player * p1 = &RandomPlayer::instance;
-	Player * p2 = new MonteCarloPlayer(tileFactory);
+	MonteCarloPlayer * p2 = new MonteCarloPlayer(tileFactory);
 
 	game->addPlayer(p1);
 	game->addPlayer(p2);
@@ -37,6 +37,10 @@ int main(int argc, char *argv[])
 		int e = t.elapsed();
 		sum += e;
 		std::cout << e << std::endl;
+		std::cout << p2->t1 << "\t" << p2->t2 << "\t" << p2->t3 << "\t" << std::endl;
+		std::cout << p2->t4 << "\t" << p2->t5 << "\t" << p2->t6 << "\t" << std::endl;
+		std::cout << (p2->t1 + p2->t4) << "\t" << (p2->t2 + p2->t5) << "\t" << (p2->t3 + p2->t6) << "\t" << std::endl;
+		p2->t1 = p2->t2 = p2->t3 = p2->t4 = p2->t5 = p2->t6 = 0;
 	}
 	std::cout << (sum / n) << std::endl;
 
