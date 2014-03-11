@@ -6,7 +6,7 @@
 
 #include <QDebug>
 
-Node::Node(TerrainType t, Tile * parent, const Game * g)
+Node::Node(TerrainType t, const Tile * parent, const Game * g)
 	: t(t),
 	  meeples(new uchar[g->getPlayerCount()]())
 {
@@ -17,7 +17,7 @@ Node::Node(TerrainType t, Tile * parent, const Game * g)
 
 Node::~Node()
 {
-	delete meeples;
+	delete[] meeples;
 	for (Node ** p : pointers)
 	{
 		if (p)
@@ -138,10 +138,8 @@ Tile::Tile(TileSet tileSet, uchar tileType)
 {
 }
 
-Tile::Tile(TileSet tileSet, uchar tileType, TerrainType const edges[4], const uchar nodeCount, Node ** nodes)
+Tile::Tile(TileSet tileSet, uchar tileType, TerrainType const edges[4])
 	: edges { edges[0], edges[1], edges[2], edges[3] },
-	  nodeCount(nodeCount),
-	  nodes(nodes),
 	  tileSet(tileSet),
 	  tileType(tileType)
 {
@@ -149,9 +147,6 @@ Tile::Tile(TileSet tileSet, uchar tileType, TerrainType const edges[4], const uc
 	createEdgeList(up);
 	createEdgeList(right);
 	createEdgeList(down);
-
-	for (int i = 0; i < nodeCount; ++i)
-		nodes[i]->pointers.push_back(nodes + i);
 }
 
 Tile::~Tile()
@@ -215,7 +210,7 @@ void Tile::connectDiagonal(Tile * other, Game * game)
 
 Tile * Tile::clone(const Game * g)	//TODO? This process only works on unconnected tiles.
 {
-	Tile * copy = new Tile(tileSet, tileType, edges, 0, 0);
+	Tile * copy = new Tile(tileSet, tileType, edges);
 	copy->orientation = orientation;
 
 	copy->nodeCount = nodeCount;

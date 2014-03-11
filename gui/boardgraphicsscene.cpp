@@ -77,7 +77,7 @@ TileMove BoardGraphicsScene::getTileMove(int /*player*/, Tile const * const tile
 			m = userMove;
 			userMoveReady = false;
 
-			if (placements.contains(m))
+			if (std::find (placements.cbegin(), placements.cend(), m) != placements.cend())
 				break;
 		}
 		else

@@ -6,6 +6,8 @@
 
 class MonteCarloPlayer : public Player
 {
+	static int const N = 100;
+	
 private:
 	jcz::TileFactory * tileFactory;
 	

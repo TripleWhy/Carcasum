@@ -8,7 +8,10 @@
 class Game;
 class Tile;
 
-typedef QList<TileMove> TileMovesType;
+#define TILE_ARRAY_LENGTH 256
+#define NODE_ARRAY_LENGTH 16
+
+typedef QVarLengthArray<TileMove, TILE_ARRAY_LENGTH> TileMovesType;
 typedef QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> MeepleMovesType;
 
 class Player

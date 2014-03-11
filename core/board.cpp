@@ -96,6 +96,19 @@ uint Board::getInternalSize() const
 	return size;
 }
 
+void Board::clear()
+{
+	for (uint i = 0; i < size; ++i)
+	{
+		for (uint j = 0; j < size; ++j)
+		{
+			delete board[i][j];
+			board[i][j] = 0;
+		}
+	}
+	open.clear();
+}
+
 TileMovesType Board::getPossibleTilePlacements(const Tile * tile) const
 {
 	TileMovesType possible;

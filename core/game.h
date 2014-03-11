@@ -9,8 +9,6 @@ class Tile;
 class Node;
 class Board;
 
-#define NODE_ARRAY_LENGTH 16
-
 struct TileMove
 {
 	uint x, y;
@@ -70,8 +68,9 @@ public:
 	~Game();
 
 	void newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory);
-	void newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory, std::vector<MoveHistoryEntry> history);
-	void restartGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory);
+	void newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory, std::vector<MoveHistoryEntry> const & history);
+	void restartGame(jcz::TileFactory * tileFactory);
+	void restartGame(jcz::TileFactory * tileFactory, std::vector<MoveHistoryEntry> const & history);
 	void addPlayer(Player * player);
 	void addWatchingPlayer(Player * player);
 //	void setPlayer(int index, Player * player);
@@ -94,9 +93,11 @@ public:
 	inline std::vector<MoveHistoryEntry> const & getMoveHistory() const { return moveHistory; }
 	inline Tile::TileSets const & getTileSets() const { return tileSets; }
 	inline int const * getScores() const { return playerScores; }
+	inline int getPly() const { return ply; }
 
 private:
 	void cleanUp();
+	void applyHistory(std::vector<MoveHistoryEntry> const & history);
 };
 
 inline bool operator==(TileMove const& lhs, TileMove const& rhs)

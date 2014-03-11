@@ -38,22 +38,37 @@ void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)
 		allPlayers[i]->newGame(i, this);
 }
 
-void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory, std::vector<MoveHistoryEntry> history)
+void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory, const std::vector<MoveHistoryEntry> & history)
 {
 	newGame(tileSets, tileFactory);
-	
-	for (MoveHistoryEntry const & e : history)
-		step(e);
-	for (int * r = returnMeeples, * end = r + getPlayerCount(), * m = playerMeeples; r < end; ++r, ++m)
-	{
-		*m += *r;
-		*r = 0;
-	}
+	applyHistory(history);
 }
 
-void Game::restartGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)
+void Game::restartGame(jcz::TileFactory * tileFactory)
 {
-	//TODO optimized version of newGame that assumes players stay the same
+	moveHistory.clear();
+	qDeleteAll(tiles);
+	tiles.clear();
+	
+	int const playerCount = getPlayerCount();
+	memset(playerScores, 0, sizeof(*playerScores) * playerCount);
+	memset(returnMeeples, 0, sizeof(*returnMeeples) * playerCount);
+	for (int i = 0; i < playerCount; ++i)
+		playerMeeples[i] = 7;
+	
+	ply = 0;
+	tiles = tileFactory->createPack(tileSets, this);
+	board->clear();
+	board->setStartTile(tiles.takeFirst());
+
+//	for (uint i = 0; i < allPlayers.size(); ++i)
+	//		allPlayers[i]->newGame(i, this);
+}
+
+void Game::restartGame(jcz::TileFactory * tileFactory, const std::vector<MoveHistoryEntry> & history)
+{
+	restartGame(tileFactory);
+	applyHistory(history);
 }
 
 void Game::addPlayer(Player * player)
@@ -132,6 +147,7 @@ void Game::step()
 		tile = tiles.takeAt(entry.tile);
 		placements = board->getPossibleTilePlacements(tile);
 	}
+	Q_ASSERT_X(placements.size() <= TILE_ARRAY_LENGTH, "Game::step()", "placements initial size too low");
 //	qDebug() << "tile type:" << tile->tileType << "possible placements:" << placements.size();
 
 	int const playerIndex = currentPlayer = (currentPlayer + 1) % getPlayerCount();
@@ -165,7 +181,7 @@ void Game::step()
 				--playerMeeples[playerIndex];
 				
 //				qDebug() << "player" << playerIndex << "placed meeple on" << n->t;
-				tile->printSides(n);
+//				tile->printSides(n);
 			}
 //			else
 //				qDebug() << "player" << playerIndex << "placed no meeple";
@@ -316,8 +332,6 @@ void Game::cloisterClosed(CloisterNode * n)
 //	qDebug() << "   cloister closed, value:" << score;
 	
 	scoreNode(n, score);
-	
-	board->cloisterClosed(n);
 }
 
 void Game::scoreNode(Node * n, int const score)
@@ -338,10 +352,23 @@ void Game::scoreNode(Node * n, int const score)
 
 void Game::cleanUp()
 {
+	moveHistory.clear();
+	
 	delete board;
 	qDeleteAll(tiles);
 	tiles.clear();
 	delete[] playerScores;
 	delete[] playerMeeples;
 	delete[] returnMeeples;
+}
+
+void Game::applyHistory(const std::vector<MoveHistoryEntry> & history)
+{
+	for (MoveHistoryEntry const & e : history)
+		step(e);
+	for (int * r = returnMeeples, * end = r + getPlayerCount(), * m = playerMeeples; r < end; ++r, ++m)
+	{
+		*m += *r;
+		*r = 0;
+	}
 }

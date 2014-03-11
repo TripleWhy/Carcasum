@@ -11,6 +11,8 @@
 #include <thread>
 #include <chrono>
 
+//#define RANDOM_SEED 17
+
 class Random
 {
 private:
@@ -20,7 +22,11 @@ private:
 
 public:
 	Random()
+#ifndef RANDOM_SEED
 		: generator(std::chrono::system_clock::now().time_since_epoch().count() + (++add))
+#else
+	    : generator(RANDOM_SEED + (++add))
+#endif
 	{
 		distribution.reset();
 	}

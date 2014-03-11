@@ -7,7 +7,7 @@
 QT       += core
 
 core {
-	QT       -= gui
+#	QT       -= gui  #QTransform needs this
 
 	TARGET = carcassonne_core
 
@@ -15,6 +15,12 @@ core {
 	CONFIG   -= app_bundle
 
 	TEMPLATE = app
+
+	SOURCES += \
+		core/main.cpp
+
+	DEFINES += QT_NO_DEBUG_OUTPUT
+	DEFINES += QT_NO_WARNING_OUTPUT
 
 } else {
 	QT       += gui svg
@@ -45,7 +51,6 @@ core {
 	}
 
 	RESOURCES += \
-		jcz/jcz.qrc \
 		gui/graphics.qrc
 
 }
@@ -74,6 +79,11 @@ HEADERS += \
     jcz/expansion.h \
     player/montecarloplayer.h
 
+RESOURCES += \
+	jcz/jcz.qrc
+
 QMAKE_CXXFLAGS += -std=c++11
 QMAKE_CXXFLAGS_WARN_ON += -Wextra -Werror=switch -Werror=return-type -Werror=delete-non-virtual-dtor
 
+QMAKE_CXXFLAGS_RELEASE += -g
+QMAKE_CFLAGS_RELEASE += -g

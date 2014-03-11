@@ -20,9 +20,10 @@ struct Node
 {
 	friend class Tile;
 	friend class Game;
+	friend class DeepCloner;
 public:
 	typedef std::vector<Node **>       PointersType;
-	typedef std::unordered_set<Tile *> TilesType;
+	typedef std::unordered_set<Tile const *> TilesType;
 
 	TerrainType t;
 	TilesType tiles;
@@ -32,7 +33,7 @@ private:
 	uchar maxMeples = 0;
 
 public:
-	Node(TerrainType t, Tile * parent, Game const * g);
+	Node(TerrainType t, Tile const * parent, Game const * g);
 	virtual ~Node();
 
 	inline void addMeeple(int player, Game * g) { if (++meeples[player] > maxMeples) maxMeples = meeples[player]; checkClose(g); }
@@ -43,7 +44,7 @@ public:
 	virtual void connect(Node * n, Game * /*g*/);
 	virtual void checkClose(Game * /*g*/) = 0;
 	virtual uchar getScore() = 0;
-	virtual Node * clone(Tile * parent, Game const * g) const = 0;
+	virtual Node * clone(Tile const * parent, Game const * g) const = 0;
 //protected:
 //	inline void addPointer(Node ** p) { pointers.push_back(p); }
 };
@@ -54,14 +55,14 @@ struct FieldNode : public Node
 	uchar closedCities = 0;
 	std::unordered_set<CityNode *> cities;
 
-	FieldNode(Tile * parent, Game const * g)
+	FieldNode(Tile const * parent, Game const * g)
 		: Node(Field, parent, g)
 	{}
 
 	virtual void connect(Node * n, Game * g);
 	virtual void checkClose(Game * /*g*/) {}
 	inline virtual uchar getScore() { return closedCities * 3; }
-	virtual Node * clone(Tile * parent, Game const * g) const
+	virtual Node * clone(Tile const * parent, Game const * g) const
 	{
 		return new FieldNode(parent, g);
 	}
@@ -73,7 +74,7 @@ struct CityNode : public Node
 	uchar bonus;
 	std::unordered_set<FieldNode *> fields;
 
-	CityNode(Tile * parent, Game const * g, uchar open, uchar bonus = 0)
+	CityNode(Tile const * parent, Game const * g, uchar open, uchar bonus = 0)
 		: Node(City, parent, g),
 		  open(open),
 		  bonus(bonus)
@@ -82,7 +83,7 @@ struct CityNode : public Node
 	virtual void connect(Node * n, Game * g);
 	virtual void checkClose(Game * g);
 	inline virtual uchar getScore() { return tiles.size(); }
-	virtual Node * clone(Tile * parent, Game const * g) const
+	virtual Node * clone(Tile const * parent, Game const * g) const
 	{
 		return new CityNode(parent, g, open, bonus);
 	}
@@ -92,7 +93,7 @@ struct RoadNode : public Node
 {
 	uchar open;
 
-	RoadNode(Tile * parent, Game const * g, uchar open)
+	RoadNode(Tile const * parent, Game const * g, uchar open)
 		: Node(Road, parent, g),
 		  open(open)
 	{}
@@ -100,7 +101,7 @@ struct RoadNode : public Node
 	virtual void connect(Node * n, Game * g);
 	virtual void checkClose(Game * g);
 	inline virtual uchar getScore() { return tiles.size(); }
-	virtual Node * clone(Tile * parent, Game const * g) const
+	virtual Node * clone(Tile const * parent, Game const * g) const
 	{
 		return new RoadNode(parent, g, open);
 	}
@@ -110,7 +111,7 @@ struct CloisterNode : public Node
 {
 	uchar surroundingTiles;
 	
-	CloisterNode(Tile * parent, Game const * g, uchar surroundingTiles = 1)
+	CloisterNode(Tile const * parent, Game const * g, uchar surroundingTiles = 1)
 	    : Node(Cloister, parent, g),
 	      surroundingTiles(surroundingTiles)
 	{}
@@ -118,7 +119,7 @@ struct CloisterNode : public Node
 	virtual void connect(Node * /*n*/, Game * /*g*/) { Q_ASSERT(false); }
 	virtual void checkClose(Game * g);
 	inline virtual uchar getScore() { return surroundingTiles; }
-	virtual Node * clone(Tile * parent, Game const * g) const
+	virtual Node * clone(Tile const * parent, Game const * g) const
 	{
 		return new CloisterNode(parent, g, surroundingTiles);
 	}
@@ -133,6 +134,7 @@ struct CloisterNode : public Node
 class Tile
 {
 	friend class jcz::TileFactory;
+	friend class DeepCloner;
 
 public:
 	enum Side { left = 0, up = 1, right = 2, down = 3 };
@@ -148,8 +150,8 @@ public:
 
 private:
 	TerrainType edges[4];    // array of edge types
-	uchar nodeCount;         // lenght of nodes
-	Node ** nodes;           // array of node pointers
+	uchar nodeCount = 0;     // length of nodes
+	Node ** nodes = 0;       // array of node pointers
 	EdgeType * edgeNodes[4]; // 4 arrays of edge connectors
 	CloisterNode * cloister = 0;
 
@@ -164,7 +166,7 @@ private:
 	Tile(TileSet tileSet, uchar tileType);
 
 public:
-	Tile(TileSet tileSet, uchar tileType, TerrainType const edges[4], const uchar nodeCount, Node ** nodes);
+	Tile(TileSet tileSet, uchar tileType, TerrainType const edges[4]);
 	Tile(const Tile & t) = delete; // I don't want implicit copies. Use clone() instead.
 	Tile (Tile&& t) = delete; // I don't actually want this to happen.
 	~Tile();

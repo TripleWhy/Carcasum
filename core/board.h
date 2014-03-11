@@ -39,7 +39,6 @@ private:
 	uint const size;
 //	uint const offset;
 	QHash<QPoint, TerrainWrapper> open; //TODO ist is unsorted_map faster? Should I maybe use a custom point type?
-	std::unordered_map<CloisterNode *, QPoint> openCloisters;
 
 public:
 	Board(Game * game, uint const size);
@@ -50,13 +49,13 @@ public:
 	void setStartTile(Tile  * tile);
 	void addTile(Tile * tile, const TileMove & move);
 	uint getInternalSize() const;
+	void clear();
 
 	TileMovesType getPossibleTilePlacements(Tile const * tile) const;
 	QList<QPoint> getOpenPlaces() const;
 
 	QPoint positionOf(Tile * t) const;
 	
-	inline void cloisterClosed(CloisterNode * n) { openCloisters.erase(n); }
 	void scoreEndGame();
 };
 
