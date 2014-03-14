@@ -48,12 +48,14 @@ class Game
 public:
 
 private:
-	int ply = -1;
-	int currentPlayer = -1;
+//	int ply = -1;
+	int active = false;
+	int nextPlayer = -1;
 	QList<Player *> players;
 	std::vector<Player *> allPlayers;
 	Board * board = 0;
 	QList<Tile *> tiles;
+	std::vector<Tile *> discardedTiles;
 	Random r;
 	int * playerMeeples = 0;
 	int * returnMeeples = 0;
@@ -77,38 +79,42 @@ public:
 	void setPlayers(QList<Player *> players);
 	void clearPlayers();
 	Board const * getBoard() const;
-	bool isFinished();
 	void step();
 	void step(int tileIndex, TileMove const & tileMove, int playerIndex, Player * player);
 	void step(MoveHistoryEntry const & entry);
-	//getWinner()
-	//undo(...)
+	void undo();
 
 	void cityClosed(CityNode * n);
+	void cityUnclosed(CityNode * n);
 	void roadClosed(RoadNode * n);
+	void roadUnclosed(RoadNode * n);
 	void cloisterClosed(CloisterNode * n);
+	void cloisterUnclosed(CloisterNode * n);
 	void scoreNode(Node * n, const int score);
+	void unscoreNode(Node * n, const int score);
+	
+	bool equals(const Game & other) const;
 
+	inline bool isFinished() const { return !active; }
 	inline int getPlayerCount() const { return playerCount; }
 	inline std::vector<MoveHistoryEntry> const & getMoveHistory() const { return moveHistory; }
 	inline Tile::TileSets const & getTileSets() const { return tileSets; }
 	inline int const * getScores() const { return playerScores; }
-	inline int getPly() const { return ply; }
+//	inline int getPly() const { return ply; }
 
 private:
 	void cleanUp();
 	void applyHistory(std::vector<MoveHistoryEntry> const & history);
 };
 
-inline bool operator==(TileMove const& lhs, TileMove const& rhs)
-{
-	return (lhs.x == rhs.x) && (lhs.y == rhs.y) && (lhs.orientation == rhs.orientation);
-}
-
-inline bool operator!=(TileMove const& lhs, TileMove const& rhs)
-{
-	return !(lhs == rhs);
-}
+inline bool operator==(TileMove const& lhs, TileMove const& rhs) { return (lhs.x == rhs.x) && (lhs.y == rhs.y) && (lhs.orientation == rhs.orientation); }
+inline bool operator!=(TileMove const& lhs, TileMove const& rhs) { return !(lhs == rhs); }
+inline bool operator==(MeepleMove const& lhs, MeepleMove const& rhs) { return (lhs.nodeIndex == rhs.nodeIndex); }
+inline bool operator!=(MeepleMove const& lhs, MeepleMove const& rhs) { return !(lhs == rhs); }
+inline bool operator==(Move const& lhs, Move const& rhs) { return (lhs.tileMove == rhs.tileMove) && (lhs.meepleMove == rhs.meepleMove); }
+inline bool operator!=(Move const& lhs, Move const& rhs) { return !(lhs == rhs); }
+inline bool operator==(MoveHistoryEntry const& lhs, MoveHistoryEntry const& rhs) { return (lhs.tile == rhs.tile) && (lhs.move == rhs.move); }
+inline bool operator!=(MoveHistoryEntry const& lhs, MoveHistoryEntry const& rhs) { return !(lhs == rhs); }
 
 
 #endif // GAME_H

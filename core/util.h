@@ -11,7 +11,7 @@
 #include <thread>
 #include <chrono>
 
-//#define RANDOM_SEED 17
+#define RANDOM_SEED 17
 
 class Random
 {
