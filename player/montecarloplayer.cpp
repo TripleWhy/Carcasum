@@ -37,20 +37,25 @@ TileMove MonteCarloPlayer::getTileMove(int player, const Tile * const /*tile*/, 
 	Game g;
 	for (int i = 0; i < playerCount; ++i)
 		g.addPlayer(&RandomPlayer::instance);
-	g.newGame(game->getTileSets(), tileFactory);
+	g.newGame(game->getTileSets(), tileFactory, game->getMoveHistory());
+	Q_ASSERT(game->equals(g));
 	
 	int moveIndex = 0;
 	for (TileMove const & tileMove : placements)
 	{
 		for (int j = 0; j < N; ++j)
 		{
-			g.restartGame(tileFactory, game->getMoveHistory());
-	//		g.step(move.tile, tileMove, player, this);
 			g.step(move.tile, tileMove, player, &RandomPlayer::instance);
-			
-			while (!g.isFinished())
+
+			int steps = 1;
+			for ( ; !g.isFinished(); ++steps)
 				g.step();
+			
 			utilities[moveIndex] += utility(g.getScores(), g.getPlayerCount(), player);
+			
+			for (int i = 0; i < steps; ++i)
+				g.undo();
+			Q_ASSERT(game->equals(g));
 		}
 		++moveIndex;
 	}
@@ -83,6 +88,7 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * const /*tile
 	for (int i = 0; i < playerCount; ++i)
 		g.addPlayer(&RandomPlayer::instance);
 	g.newGame(game->getTileSets(), tileFactory);
+	Q_ASSERT(game->equals(g));
 	
 	int moveIndex = 0;
 	for (MeepleMove const & meepleMove : possible)
@@ -91,12 +97,17 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * const /*tile
 		m.move.meepleMove = meepleMove;
 		for (int j = 0; j < N; ++j)
 		{
-			g.restartGame(tileFactory, game->getMoveHistory());
 			g.step(m);
 			
-			while (!g.isFinished())
+			int steps = 1;
+			for ( ; !g.isFinished(); ++steps)
 				g.step();
+			
 			utilities[moveIndex] += utility(g.getScores(), g.getPlayerCount(), player);
+			
+			for (int i = 0; i < steps; ++i)
+				g.undo();
+			Q_ASSERT(game->equals(g));
 		}
 		++moveIndex;
 	}

@@ -11,9 +11,38 @@
 int main(int argc, char *argv[])
 {
 	QCoreApplication a(argc, argv);
-	
 	jcz::TileFactory * tileFactory = new jcz::TileFactory();
 	Game * game = new Game();
+	
+	if (false)
+	{
+		Game g1, g2;
+		Q_ASSERT(g1.equals(g2));
+		Q_ASSERT(g2.equals(g1));
+		for (int i = 0; i < 3; ++i)
+		{
+			g1.addPlayer(&RandomPlayer::instance);
+			g2.addPlayer(&RandomPlayer::instance);
+		}
+		Q_ASSERT(g1.equals(g2));
+		Q_ASSERT(g2.equals(g1));
+		g1.newGame(Tile::BaseGame, tileFactory, game->getMoveHistory());
+		g2.newGame(Tile::BaseGame, tileFactory, game->getMoveHistory());
+		Q_ASSERT(g1.equals(g2));
+		Q_ASSERT(g2.equals(g1));
+		
+		int steps = 0;
+//		for ( ; steps < 23; ++steps)
+		for ( ; !g1.isFinished(); ++steps)
+			g1.step();
+		for (int i = 0; i < steps; ++i)
+			g1.undo();
+		Q_ASSERT(g1.equals(g2));
+		Q_ASSERT(g2.equals(g1));
+		
+		return 0;
+	}
+	
 	
 	Player * p1 = &RandomPlayer::instance;
 	Player * p2 = new MonteCarloPlayer(tileFactory);
@@ -29,10 +58,10 @@ int main(int argc, char *argv[])
 		game->newGame(Tile::BaseGame, tileFactory);
 	
 		t.start();
-		while (!game->isFinished())
+		for (int ply = 0; !game->isFinished(); ++ply)
 		{
 			game->step();
-//			std::cout << game->getPly() << std::endl;
+			std::cout << ply << std::endl;
 		}
 		int e = t.elapsed();
 		sum += e;
