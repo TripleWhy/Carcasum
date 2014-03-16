@@ -90,9 +90,14 @@ public:
 	void roadUnclosed(RoadNode * n);
 	void cloisterClosed(CloisterNode * n);
 	void cloisterUnclosed(CloisterNode * n);
+	void scoreNodeEndGame(Node * n);
+	void scoreNodeMidGame(Node * n, const int score);
+	void unscoreNodeEndGame(Node * n);
+private:
 	void scoreNode(Node * n, const int score);
 	void unscoreNode(Node * n, const int score);
 	
+public:
 	bool equals(const Game & other) const;
 
 	inline bool isFinished() const { return !active; }

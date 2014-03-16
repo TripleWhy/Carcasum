@@ -7,208 +7,304 @@
 #include <QDebug>
 
 Node::Node(TerrainType t, const Tile * parent, const Game * g)
-	: t(t),
-	  meeples(new uchar[g->getPlayerCount()]())
+    : data(this, g->getPlayerCount())
 {
 	Q_ASSERT(g != 0);
 	
-	tiles.insert(parent);
+	data.t = t;
+	
+	data.tiles.insert(parent);
 }
 
 Node::~Node()
 {
-	delete[] meeples;
-	for (Node ** p : pointers)
-	{
-		if (p)
-			*p = 0;
-	}
+//	for (Node ** p : pointers)
+//	{
+//		if (p)
+//			*p = 0;
+//	}
 }
 
 void Node::removeMeeple(int player, Game * g)
 {
 	checkUnclose(g);
-	if (meeples[player]-- == maxMeples)
+	if (d->meeples[player]-- == d->maxMeples)
 	{
-		maxMeples = 0;
+		d->maxMeples = 0;
 		for (int i = 0; i < g->getPlayerCount(); ++i)
-			if (meeples[i] > maxMeples)
-				maxMeples = meeples[i];
+			if (d->meeples[i] > d->maxMeples)
+				d->maxMeples = d->meeples[i];
 	}
 }
 
 void Node::connect(Node * n, Game * g)
 {
-	Q_ASSERT_X(n->t == this->t, "Node::connect", "TerrainType does not match");
+	Q_ASSERT_X(n->getTerrain() == this->getTerrain(), "Node::connect", "TerrainType does not match");
 	Q_ASSERT_X(typeid(*n) == typeid(*this), "Node::connect", "classes do not match");
+	Q_ASSERT(getScored() == NotScored);
+	Q_ASSERT(n->getScored() == NotScored);
+	Q_ASSERT(data.scored == NotScored);
+	Q_ASSERT(n->data.scored == NotScored);
 	
-	if (this == n)
-		return;
+	qDebug() << "  connect:" << n->id() << "->" << id() << "   BEFORE";
+//	for (Tile const * t : d->tiles)
+//		qDebug() << "    " << id() << t->id;
+//	for (Tile const * t : n->d->tiles)
+//		qDebug() << "    " << n->id() << t->id;
+	
+	if (!isSame(n))
+	{
+//	for (Node ** & p : n->pointers)
+//	{
+//		*p = this;
+//		pointers.push_back(p);
+////		p = 0;
+//	}
+		d->tiles.insert(n->d->tiles.begin(), n->d->tiles.end());
+		for (uchar * tm = d->meeples, * end = d->meeples + (g->getPlayerCount()), * nm = n->d->meeples;
+			 tm < end;
+			 ++tm, ++nm)
+		{
+			*tm += *nm;
+			if (*tm > d->maxMeples)
+				d->maxMeples = *tm;
+		}
+		
+		if (isOccupied())
+			checkClose(g);
+		
+		d->nodes.insert(n->d->nodes.begin(), n->d->nodes.end());
+//		qDebug() << "  connect:" << n->id() << "->" << id();
+	}
+	else
+	{
+//		qDebug() << "  connect:" << n->id() << "->" << id() << "skipped";
+//		qDebug() << "  skpped";
+	}
+	
+//	qDebug() << "  connect:" << n->id() << "->" << id() << "   AFTER";
+//	for (Tile const * t : d->tiles)
+//		qDebug() << "    " << id() << t->id;
+//	for (Tile const * t : n->d->tiles)
+//		qDebug() << "    " << n->id() << t->id;
+	
+//	Q_ASSERT(n->d == &n->data);
 
-	for (Node ** & p : n->pointers)
+	for (Node * o : d->nodes)
 	{
-		*p = this;
-		pointers.push_back(p);
-//		p = 0;
+		if (o == this)
+			continue;
+		o->ds.push_back(d);
+		o->d = d;
 	}
-	tiles.insert(n->tiles.begin(), n->tiles.end());
-	for (uchar * tm = meeples, * end = meeples + (g->getPlayerCount()), * nm = n->meeples;
-		 tm < end;
-		 ++tm, ++nm)
-	{
-		*tm += *nm;
-		if (*tm > maxMeples)
-			maxMeples = *tm;
-	}
-	
-	if (isOccupied())
-		checkClose(g);
-	qDebug() << "  connect:" << n->id << "->" << id;
-	
-//	delete n;
 }
 
 void Node::disconnect(Node * n, Game * g)	//only works in reverse order of connecting.
 {
-	if (this == n)
+	for (Node * o : d->nodes)
+	{
+		if (o == this)
+			continue;
+		o->ds.pop_back();
+		Q_ASSERT(o->ds.size() > 0);
+		o->d = o->ds.back();
+	}
+	
+	qDebug() << "  disconnect:" << n->id() << "->" << id() << "   BEFORE";
+//	for (Tile const * t : d->tiles)
+//		qDebug() << "    " << id() << t->id;
+//	for (Tile const * t : n->d->tiles)
+//		qDebug() << "    " << n->id() << t->id;
+	
+	if (!isSame(n))
+	{	
+		for (auto const & t : n->d->nodes)
+		{
+			auto const & i = d->nodes.find(t);
+			Q_ASSERT(i != d->nodes.end());
+			d->nodes.erase(i);
+		}
+		
+		if (isOccupied())
+			checkUnclose(g);
+		
+		d->maxMeples = 0;
+		for (uchar * tm = d->meeples, * end = d->meeples + (g->getPlayerCount()), * nm = n->d->meeples;
+			 tm < end;
+			 ++tm, ++nm)
+		{
+			*tm -= *nm;
+			if (*tm > d->maxMeples)
+				d->maxMeples = *tm;
+		}
+		
+		for (auto const & t : n->d->tiles)
+			d->tiles.erase(d->tiles.find(t));
+		
+	//	for (Node ** & p : n->pointers)
+	//	{
+	//		*p = n;
+	//		pointers.pop_back();
+	////		p = ?;
+	//	}
+		
+	//	qDebug() << "  disconnect:" << n->id() << "->" << id();
+	}
+	else
+	{
+//		qDebug() << "  disconnect:" << n->id() << "->" << id() << "skipped";
+//		qDebug() << "  skipped";
 		return;
-	
-	if (isOccupied())
-		checkUnclose(g);
-	
-	maxMeples = 0;
-	for (uchar * tm = meeples, * end = meeples + (g->getPlayerCount()), * nm = n->meeples;
-		 tm < end;
-		 ++tm, ++nm)
-	{
-		*tm -= *nm;
-		if (*tm > maxMeples)
-			maxMeples = *tm;
 	}
 	
-	for (auto const & t : n->tiles)
-		tiles.erase(t);
-	
-	for (Node ** & p : n->pointers)
-	{
-		*p = n;
-		pointers.pop_back();
-//		p = ?;
-	}
-	
-	qDebug() << "  disconnect:" << n->id << "->" << id;
+//	qDebug() << "  disconnect:" << n->id() << "->" << id() << "   AFTER";
+//	for (Tile const * t : d->tiles)
+//		qDebug() << "    " << id() << t->id;
+//	for (Tile const * t : n->d->tiles)
+//		qDebug() << "    " << n->id() << t->id;
 }
 
 bool Node::equals(const Node & other, const Game * g) const
 {
-	if (t != other.t)
+	if (ds.size() != other.ds.size())
 		return false;
-	if (tiles.size() != other.tiles.size())
+	if (data.t != other.data.t)
+		return false;
+	if (data.tiles.size() != other.data.tiles.size())
 		return false;
 	for (int i = 0; i < g->getPlayerCount(); ++i)
-		if (meeples[i] != other.meeples[i])
+		if (data.meeples[i] != other.data.meeples[i])
 			return false;
-	if (maxMeples != other.maxMeples)
+	if (data.maxMeples != other.data.maxMeples)
 		return false;
+	if (data.scored != other.data.scored)
+		return false;
+	if (data.nodes.size() != other.data.nodes.size())
+		return false;
+#if DEBUG_IDS
+	if (data.id != other.data.id)
+		return false;
+#endif
+	
+	if ((d == &data) != (other.d == &other.data))
+		return false;
+	if (d != &data)
+	{
+		if (d->t != other.d->t)
+			return false;
+		if (d->tiles.size() != other.d->tiles.size())
+			return false;
+		for (int i = 0; i < g->getPlayerCount(); ++i)
+			if (d->meeples[i] != other.d->meeples[i])
+				return false;
+		if (d->maxMeples != other.d->maxMeples)
+			return false;
+		if (d->scored != other.d->scored)
+			return false;
+		if (d->nodes.size() != other.d->nodes.size())
+			return false;
+#if DEBUG_IDS
+		if (d->id != other.d->id)
+			return false;
+#endif
+	}
+	
 	return true;
 }
 
 void FieldNode::connect(Node * n, Game * g)
 {
-	if (this == n)
-		return;
-	
-	FieldNode * f = static_cast<FieldNode *>(n);
-	cities.insert(cities.end(), f->cities.begin(), f->cities.end());
+	if (!isSame(n))
+	{
+		FieldNode * f = static_cast<FieldNode *>(n);
+		getFieldData()->cities.insert(getFieldData()->cities.end(), f->getFieldData()->cities.begin(), f->getFieldData()->cities.end());
+	}
 	
 	Node::connect(n, g);
 }
 
 void FieldNode::disconnect(Node * n, Game * g)
 {
-	if (this == n)
-		return;
-	
 	Node::disconnect(n, g);
-	
-	FieldNode * f = static_cast<FieldNode *>(n);
-	cities.erase(cities.end() - f->cities.size(), cities.end());
+	if (!isSame(n))
+	{
+		FieldNode * f = static_cast<FieldNode *>(n);
+		getFieldData()->cities.erase(getFieldData()->cities.end() - f->getFieldData()->cities.size(), getFieldData()->cities.end());
+	}
 }
 
 void CityNode::connect(Node * n, Game * g)
 {
-	open -= 2;
-	if (this != n)
+	getCityData()->open -= 2;
+	if (!isSame(n))
 	{
 		CityNode * c = static_cast<CityNode *>(n);
-		bonus += c->bonus;
-		open += c->open;
-		
-		Node::connect(n, g);
+		getCityData()->bonus += c->getCityData()->bonus;
+		getCityData()->open += c->getCityData()->open;
 	}
-	Q_ASSERT(uchar(open + 2) > open);
+	Node::connect(n, g);
+	Q_ASSERT(uchar(getCityData()->open + 2) > getCityData()->open);
 }
 
 void CityNode::disconnect(Node * n, Game * g)
 {
-	if (this != n)
+	Node::disconnect(n, g);
+	if (!isSame(n))
 	{
-		Node::disconnect(n, g);
-		
 		CityNode * c = static_cast<CityNode *>(n);
-		open -= c->open;
-		bonus -= c->bonus;
+		getCityData()->open -= c->getCityData()->open;
+		getCityData()->bonus -= c->getCityData()->bonus;
 	}
-	open += 2;
+	getCityData()->open += 2;
 }
 
 void CityNode::checkClose(Game * g)
 {
-	if (open == 0)
+	if (getCityData()->open == 0)
 		g->cityClosed(this);
 }
 
 void CityNode::checkUnclose(Game * g)
 {
-	if (open == 0)
+	if (getCityData()->open == 0)
 		g->cityUnclosed(this);
 }
 
 void RoadNode::connect(Node * n, Game * g)
 {
-	Q_ASSERT_X(n->t == this->t, "RoadNode::connect", "TerrainType does not match");
+	Q_ASSERT_X(n->getTerrain() == this->getTerrain(), "RoadNode::connect", "TerrainType does not match");
 	Q_ASSERT_X(typeid(*n) == typeid(*this), "RoadNode::connect", "other node is no RoadNode");
 	
-	open -= 2;
-	if (this != n)
+	getRoadData()->open -= 2;
+	if (!isSame(n))
 	{
 		RoadNode * r = static_cast<RoadNode *>(n);
-		open += r->open;
-		Node::connect(n, g);
+		getRoadData()->open += r->getRoadData()->open;
 	}
-	Q_ASSERT(uchar(open + 2) > open);
+	Node::connect(n, g);
+	Q_ASSERT(uchar(getRoadData()->open + 2) > getRoadData()->open);
 }
 
 void RoadNode::disconnect(Node * n, Game * g)
 {
-	if (n != this)
+	Node::disconnect(n, g);
+	if (!isSame(n))
 	{
-		Node::disconnect(n, g);
 		RoadNode * r = static_cast<RoadNode *>(n);
-		open -= r->open;
+		getRoadData()->open -= r->getRoadData()->open;
 	}
-	open += 2;
+	getRoadData()->open += 2;
 }
 
 void RoadNode::checkClose(Game * g)
 {
-	if (open == 0)
+	if (getRoadData()->open == 0)
 		g->roadClosed(this);
 }
 
 void RoadNode::checkUnclose(Game * g)
 {
-	if (open == 0)
+	if (getRoadData()->open == 0)
 		g->roadUnclosed(this);
 }
 
@@ -314,10 +410,10 @@ void Tile::disconnect(Tile::Side side, Tile * other, Game * game)
 	EdgeType * otherNodeList = other->getEdgeNodes(otherSide);
 	for (int i = 0; i < nodeCount; ++i)
 	{
-//		EdgeType otherNode = otherNodeList[nodeCount - i - 1];
-//		EdgeType thisNode = nodeList[i];
-		EdgeType otherNode = otherNodeList[i];
-		EdgeType thisNode = nodeList[nodeCount - i - 1];
+		EdgeType otherNode = otherNodeList[nodeCount - i - 1];
+		EdgeType thisNode = nodeList[i];
+//		EdgeType otherNode = otherNodeList[i];
+//		EdgeType thisNode = nodeList[nodeCount - i - 1];
 		
 #if NODE_VARIANT
 		(*thisNode)->disconnect(*otherNode, game);
@@ -355,7 +451,7 @@ Tile * Tile::clone(const Game * g)	//TODO? This process only works on unconnecte
 	for (int i = 0; i < nodeCount; ++i)
 	{
 		copy->nodes[i] = nodes[i]->clone(copy, g);
-		copy->nodes[i]->pointers.push_back(copy->nodes + i);
+//		copy->nodes[i]->pointers.push_back(copy->nodes + i);
 #if NODE_VARIANT
 		nodeMap[nodes + i] = copy->nodes + i;
 #else
@@ -376,14 +472,14 @@ Tile * Tile::clone(const Game * g)	//TODO? This process only works on unconnecte
 	
 	for (int i = 0; i < nodeCount; ++i)
 	{
-		switch (nodes[i]->t)
+		switch (nodes[i]->getTerrain())
 		{
 			case Field:
 			{
 				FieldNode * tf = static_cast<FieldNode *>(nodes[i]);
 				FieldNode * cf = static_cast<FieldNode *>(copy->nodes[i]);
-				for (CityNode * c : tf->cities)
-					cf->cities.push_back(static_cast<CityNode *>(nodeMap[c]));
+				for (CityNode * c : tf->getFieldData()->cities)
+					cf->getFieldData()->cities.push_back(static_cast<CityNode *>(nodeMap[c]));
 				break;
 			}
 			default:
@@ -415,7 +511,7 @@ void Tile::setEdgeNode(Tile::Side side, uchar index, Node * n)
 	}
 #else
 	edgeNodes[side][index] = n;
-	n->pointers.push_back(&(edgeNodes[side][index]));
+//	n->pointers.push_back(&(edgeNodes[side][index]));
 #endif
 }
 

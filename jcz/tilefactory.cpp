@@ -38,7 +38,7 @@ void jcz::TileFactory::createPack(Tile::TileSet tileSet, QList<Tile *> & pack, G
 #if DEBUG_IDS
 		c->id = tileId++;
 		for (int i = 0; i < c->nodeCount; ++i)
-			c->nodes[i]->id = nodeId++;
+			c->nodes[i]->data.id = nodeId++;
 #endif
 
 		for (uint i = 1; i < data.count; ++i)
@@ -48,7 +48,7 @@ void jcz::TileFactory::createPack(Tile::TileSet tileSet, QList<Tile *> & pack, G
 #if DEBUG_IDS
 			c->id = tileId++;
 			for (int i = 0; i < c->nodeCount; ++i)
-				c->nodes[i]->id = nodeId++;
+				c->nodes[i]->data.id = nodeId++;
 #endif
 		}
 	}
@@ -214,7 +214,7 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 					qWarning() << "city does not exist at" << str;
 					break;
 				}
-				field->cities.push_back(city);
+				field->getFieldData()->cities.push_back(city);
 			}
 
 			if (field != 0)

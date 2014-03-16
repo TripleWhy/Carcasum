@@ -61,6 +61,7 @@ public:
 	void scoreEndGame();
 	void unscoreEndGame();
 	
+	std::vector<int> countUnscoredMeeples() const;
 	bool equals(Board const & other) const;
 	
 	inline Tile * getTile(uint x, uint y ){ return board[x][y]; }

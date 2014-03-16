@@ -234,7 +234,6 @@ QPoint Board::positionOf(Tile * t) const
 void Board::scoreEndGame()
 {
 //	qDebug() << "SCORE END" << this << game;
-	std::unordered_set<Node *> scored;
 	for (uint y = 0; y < size; ++y)
 	{
 		for (uint x = 0; x < size; ++x)
@@ -243,15 +242,9 @@ void Board::scoreEndGame()
 			{
 				for (Node * const * n = board[x][y]->getNodes(), * const * end = n + board[x][y]->getNodeCount(); n < end; ++n)
 				{
-					if ((*n)->isOccupied() && scored.find(*n) == scored.end())
+					if ((*n)->isOccupied())
 					{
-						scored.insert(*n);
-						int const score = (*n)->getScore();
-						if (score != 0)
-						{
-							game->scoreNode(*n, score);
-//							qDebug() << score << "for" << (*n)->t;
-						}
+						game->scoreNodeEndGame(*n);
 					}
 				}
 			}
@@ -262,7 +255,6 @@ void Board::scoreEndGame()
 void Board::unscoreEndGame()
 {
 //	qDebug() << "UNSCORE END" << this << game;
-	std::unordered_set<Node *> scored;
 	for (uint y = 0; y < size; ++y)
 	{
 		for (uint x = 0; x < size; ++x)
@@ -271,20 +263,49 @@ void Board::unscoreEndGame()
 			{
 				for (Node * const * n = board[x][y]->getNodes(), * const * end = n + board[x][y]->getNodeCount(); n < end; ++n)
 				{
-					if ((*n)->isOccupied() && scored.find(*n) == scored.end())
+					if ((*n)->isOccupied())
 					{
-						scored.insert(*n);
-						int const score = (*n)->getScore();
-						if (score != 0)
-						{
-							game->unscoreNode(*n, score);
-//							qDebug() << score << "for" << (*n)->t;
-						}
+						game->unscoreNodeEndGame(*n);
 					}
 				}
 			}
 		}
 	}
+}
+
+std::vector<int> Board::countUnscoredMeeples() const
+{
+	std::vector<int> meeples;
+	for (int i = 0; i < game->getPlayerCount(); ++i)
+		meeples.push_back(0);
+	std::unordered_set<int> nodeIds;
+	for (uint y = 0; y < size; ++y)
+	{
+		for (uint x = 0; x < size; ++x)
+		{
+			if (board[x][y] != 0)
+			{
+				for (Node * const * n = board[x][y]->getNodes(), * const * end = n + board[x][y]->getNodeCount(); n < end; ++n)
+				{
+//					if ((*n)->getScored() == NotScored && nodeIds.find((*n)->id()) == nodeIds.end())
+					if ((*n)->getScored() == NotScored)
+						if (nodeIds.find((*n)->id()) == nodeIds.end())
+					{
+						nodeIds.insert((*n)->id());
+						
+						QString s;
+						for (int i = 0; i < game->getPlayerCount(); ++i)
+						{
+							meeples[i] += (*n)->getMeeples()[i];
+							s = s + ", " + QString::number((*n)->getMeeples()[i]);
+						}
+//						qDebug() << "unscored" << (*n)->getTerrain() << "\t" << (*n)->id() << "on tile" << board[x][y]->id << "\t" << s;
+					}
+				}
+			}
+		}
+	}
+	return meeples;
 }
 
 bool Board::equals(const Board & other) const
