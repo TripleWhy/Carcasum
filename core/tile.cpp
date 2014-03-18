@@ -334,7 +334,7 @@ void CloisterNode::checkClose(Game *g)
 void CloisterNode::checkUnclose(Game * g)
 {
 	if (surroundingTiles == 9)
-		g->cloisterClosed(this);
+		g->cloisterUnclosed(this);
 }
 
 
