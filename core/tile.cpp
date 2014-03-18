@@ -4,9 +4,6 @@
 
 #include <unordered_map>
 
-#define PRINT_CONNECTIONS 0
-
-
 #if PRINT_CONNECTIONS
 #include <QDebug>
 #endif
@@ -181,6 +178,23 @@ void Node::disconnect(Node * n, Game * g)	//only works in reverse order of conne
 #endif
 }
 
+#if USE_RESET
+void Node::reset(Tile const * parent, Game const * g)
+{
+	data.tiles.clear();
+	data.tiles.insert(parent);
+	for (uchar * m = data.meeples, * end = data.meeples + g->getPlayerCount(); m < end; ++m)
+		*m = 0;
+	data.maxMeples = 0;
+	data.scored = NotScored;
+	data.nodes.clear();
+	data.nodes.insert(this);
+	d = &data;
+	ds.clear();
+	ds.push_back(d);
+}
+#endif
+
 bool Node::equals(const Node & other, const Game * g) const
 {
 	if (ds.size() != other.ds.size())
@@ -250,6 +264,14 @@ void FieldNode::disconnect(Node * n, Game * g)
 	}
 }
 
+#if USE_RESET
+void FieldNode::reset(const Tile * parent, const Game * g)
+{
+	Node::reset(parent, g);
+	fieldData = originalFieldData;
+}
+#endif
+
 void CityNode::connect(Node * n, Game * g)
 {
 	getCityData()->open -= 2;
@@ -286,6 +308,14 @@ void CityNode::checkUnclose(Game * g)
 	if (getCityData()->open == 0)
 		g->cityUnclosed(this);
 }
+
+#if USE_RESET
+void CityNode::reset(const Tile * parent, const Game * g)
+{
+	Node::reset(parent, g);
+	cityData = originalCityData;
+}
+#endif
 
 void RoadNode::connect(Node * n, Game * g)
 {
@@ -325,6 +355,14 @@ void RoadNode::checkUnclose(Game * g)
 		g->roadUnclosed(this);
 }
 
+#if USE_RESET
+void RoadNode::reset(const Tile * parent, const Game * g)
+{
+	Node::reset(parent, g);
+	roadData = originalRoadData;
+}
+#endif
+
 void CloisterNode::checkClose(Game *g)
 {
 	if (surroundingTiles == 9)
@@ -336,6 +374,14 @@ void CloisterNode::checkUnclose(Game * g)
 	if (surroundingTiles == 9)
 		g->cloisterUnclosed(this);
 }
+
+#if USE_RESET
+void CloisterNode::reset(const Tile * parent, const Game * g)
+{
+	Node::reset(parent, g);
+	surroundingTiles = 1;
+}
+#endif
 
 
 
@@ -513,6 +559,15 @@ Tile * Tile::clone(const Game * g)	//TODO? This process only works on unconnecte
 	
 	return copy;
 }
+
+#if USE_RESET
+void Tile::reset(Game const * g)
+{
+	for (Node ** n = nodes, ** end = nodes + nodeCount; n < end; ++n)
+		(*n)->reset(this, g);
+	orientation = left;
+}
+#endif
 
 Tile::EdgeType * Tile::getEdgeNodes(Tile::Side side)
 {

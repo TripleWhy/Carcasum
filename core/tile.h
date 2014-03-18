@@ -1,12 +1,10 @@
 #ifndef TILE_H
 #define TILE_H
 
+#include "static.h"
 #include <unordered_set>
 #include <QList>
 #include <QDebug>
-
-#define NODE_VARIANT 0
-#define DEBUG_IDS 1
 
 namespace jcz
 {
@@ -28,7 +26,6 @@ public:
 	typedef std::vector<Node **>                  PointersType;
 	typedef std::unordered_multiset<Tile const *> TilesType;
 
-private:
 	struct NodeData
 	{
 		TerrainType t;
@@ -46,6 +43,7 @@ private:
 		inline NodeData(Node * parent, int const playerCount) : meeples(new uchar[playerCount]()) { nodes.insert(parent); }
 		inline ~NodeData() { delete[] meeples; }
 	};
+private:
 	NodeData data;
 #if DEBUG_IDS
 public:
@@ -68,6 +66,7 @@ public:
 	inline TerrainType getTerrain() const { return d->t; }
 	inline Scored getScored() const { return d->scored; }
 	inline void setScored(Scored s) { d->scored = s; }
+	inline NodeData const * getData() const { return d; }
 
 	virtual void connect(Node * n, Game * g);
 	virtual void disconnect(Node * n, Game * g);
@@ -75,6 +74,9 @@ public:
 	virtual void checkUnclose(Game * g) = 0;
 	virtual uchar getScore() = 0;
 	virtual Node * clone(Tile const * parent, Game const * g) const = 0;
+#if USE_RESET
+	virtual void reset(Tile const * parent, Game const * g);
+#endif
 	
 	inline uint uniqueTileCount()
 	{
@@ -103,6 +105,9 @@ private:
 		uchar bonus;
 	};
 	CityNodeData cityData;
+#if USE_RESET
+	CityNodeData originalCityData;
+#endif
 	inline CityNodeData * getCityData() { return static_cast<CityNodeData *>(d->dd); }
 	inline CityNodeData const * getCityData() const { return static_cast<CityNodeData *>(d->dd); }
 
@@ -113,12 +118,18 @@ public:
 		d->dd = &cityData;
 		cityData.open = open;
 		cityData.bonus = bonus;
+#if USE_RESET
+		originalCityData = cityData;
+#endif
 	}
 
 	virtual void connect(Node * n, Game * g);
 	virtual void disconnect(Node * n, Game * g);
 	virtual void checkClose(Game * g);
 	virtual void checkUnclose(Game * g);
+#if USE_RESET
+	virtual void reset(Tile const * parent, Game const * g);
+#endif
 	inline virtual uchar getScore()
 	{
 		return uniqueTileCount() + getCityData()->bonus;
@@ -151,6 +162,10 @@ private:
 		std::vector<CityNode *> cities;
 	};
 	FieldNodeData fieldData;
+#if USE_RESET
+friend class jcz::TileFactory;
+	FieldNodeData originalFieldData;
+#endif
 public:
 	inline FieldNodeData * getFieldData() { return static_cast<FieldNodeData *>(d->dd); }
 	inline FieldNodeData const * getFieldData() const { return static_cast<FieldNodeData *>(d->dd); }
@@ -166,6 +181,9 @@ public:
 	virtual void disconnect(Node * n, Game * g);
 	virtual void checkClose(Game * /*g*/) {}
 	virtual void checkUnclose(Game * /*g*/) {}
+#if USE_RESET
+	virtual void reset(Tile const * parent, Game const * g);
+#endif
 	inline virtual uchar getScore()
 	{
 		std::unordered_set<Node *> closedCities;
@@ -198,6 +216,9 @@ private:
 		uchar open;
 	};
 	RoadNodeData roadData;
+#if USE_RESET
+	RoadNodeData originalRoadData;
+#endif
 	inline RoadNodeData * getRoadData() { return static_cast<RoadNodeData *>(d->dd); }
 	inline RoadNodeData const * getRoadData() const { return static_cast<RoadNodeData *>(d->dd); }
 
@@ -207,6 +228,9 @@ public:
 	{
 		d->dd = &roadData;
 		roadData.open = open;
+#if USE_RESET
+		originalRoadData = roadData;
+#endif
 	}
 
 	virtual void connect(Node * n, Game * g);
@@ -214,6 +238,9 @@ public:
 	virtual void checkClose(Game * g);
 	inline virtual uchar getScore() { return uniqueTileCount(); }
 	virtual void checkUnclose(Game * g);
+#if USE_RESET
+	virtual void reset(Tile const * parent, Game const * g);
+#endif
 	virtual Node * clone(Tile const * parent, Game const * g) const
 	{
 		return new RoadNode(parent, g, getRoadData()->open);
@@ -236,9 +263,9 @@ private:
 	uchar surroundingTiles;
 	
 public:
-	CloisterNode(Tile const * parent, Game const * g, uchar surroundingTiles = 1)
+	CloisterNode(Tile const * parent, Game const * g)
 	    : Node(Cloister, parent, g),
-	      surroundingTiles(surroundingTiles)
+		  surroundingTiles(1)
 	{}
 	
 	virtual void connect(Node * /*n*/, Game * /*g*/) { Q_ASSERT(false); }
@@ -246,9 +273,12 @@ public:
 	virtual void checkClose(Game * g);
 	inline virtual uchar getScore() { return surroundingTiles; }
 	virtual void checkUnclose(Game * g);
+#if USE_RESET
+	virtual void reset(Tile const * parent, Game const * g);
+#endif
 	virtual Node * clone(Tile const * parent, Game const * g) const
 	{
-		return new CloisterNode(parent, g, surroundingTiles);
+		return new CloisterNode(parent, g);
 	}
 	inline void addSurroundingTile(Game * g)
 	{
@@ -277,7 +307,6 @@ public:
 class Tile
 {
 	friend class jcz::TileFactory;
-	friend class DeepCloner;
 
 public:
 	enum Side { left = 0, up = 1, right = 2, down = 3 };
@@ -322,6 +351,9 @@ public:
 	void connectDiagonal(Tile * other, Game * game);
 	void disconnectDiagonal(Tile * other, Game * game);
 	Tile * clone(Game const * g);
+#if USE_RESET
+	void reset(const Game * g);
+#endif
 	Tile&& operator=(Tile&& t) = delete;
 	Tile& operator= (Tile const& t) = delete;
 

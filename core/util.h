@@ -1,6 +1,7 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include "static.h"
 #include "tile.h"
 
 #include <QPoint>
@@ -10,9 +11,6 @@
 #include <random>
 #include <thread>
 #include <chrono>
-
-//#define RANDOM_SEED 17
-//#define RANDOM_SEED 13
 
 class Random
 {

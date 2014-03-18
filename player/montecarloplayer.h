@@ -1,6 +1,7 @@
 #ifndef MONTECARLOPLAYER_H
 #define MONTECARLOPLAYER_H
 
+#include "static.h"
 #include "core/player.h"
 #include "jcz/tilefactory.h"
 

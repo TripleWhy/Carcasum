@@ -77,7 +77,8 @@ HEADERS += \
     jcz/xmlparser.h \
     jcz/location.h \
     jcz/expansion.h \
-    player/montecarloplayer.h
+    player/montecarloplayer.h \
+    static.h
 
 RESOURCES += \
 	jcz/jcz.qrc

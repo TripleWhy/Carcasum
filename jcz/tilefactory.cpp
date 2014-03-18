@@ -216,6 +216,9 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 				}
 				field->getFieldData()->cities.push_back(city);
 			}
+#if USE_RESET
+			field->originalFieldData = field->fieldData;
+#endif
 
 			if (field != 0)
 				nodes.append(field);

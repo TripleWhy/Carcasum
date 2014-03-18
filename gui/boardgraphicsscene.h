@@ -1,6 +1,7 @@
 #ifndef BOARDGRAPHICSSCENE_H
 #define BOARDGRAPHICSSCENE_H
 
+#include "static.h"
 #include "core/game.h"
 #include "core/player.h"
 #include "jcz/tilefactory.h"
@@ -13,8 +14,6 @@
 
 #include <atomic>
 #include <mutex>
-
-#define DRAW_TILE_POSITION_TEXT 1
 
 class BoardGraphicsScene : public QGraphicsScene, public Player
 {

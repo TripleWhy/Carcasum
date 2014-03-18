@@ -52,6 +52,7 @@ public:
 	void removeTile(const TileMove & move);
 	uint getInternalSize() const;
 	void clear();
+	void reset();
 
 	TileMovesType getPossibleTilePlacements(Tile const * tile) const;
 	QList<QPoint> getOpenPlaces() const;

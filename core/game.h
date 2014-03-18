@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include "static.h"
 #include "tile.h"
 #include "util.h"
 
@@ -55,6 +56,7 @@ private:
 	std::vector<Player *> allPlayers;
 	Board * board = 0;
 	QList<Tile *> tiles;
+	QList<Tile *> originalTiles;
 	std::vector<Tile *> discardedTiles;
 	Random r;
 	int * playerMeeples = 0;
@@ -64,6 +66,9 @@ private:
 	
 	std::vector<MoveHistoryEntry> moveHistory;
 	Tile::TileSets tileSets;
+#if !USE_RESET
+	jcz::TileFactory * tileFactory;
+#endif
 
 public:
 	Game();
@@ -71,8 +76,8 @@ public:
 
 	void newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory);
 	void newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory, std::vector<MoveHistoryEntry> const & history);
-	void restartGame(jcz::TileFactory * tileFactory);
-	void restartGame(jcz::TileFactory * tileFactory, std::vector<MoveHistoryEntry> const & history);
+	void restartGame();
+	void restartGame(std::vector<MoveHistoryEntry> const & history);
 	void addPlayer(Player * player);
 	void addWatchingPlayer(Player * player);
 //	void setPlayer(int index, Player * player);

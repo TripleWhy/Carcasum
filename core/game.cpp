@@ -5,9 +5,6 @@
 
 #include <QVarLengthArray>
 
-#define PRINT_STEPS 0
-#define WATCH_SCORES 1
-
 Game::Game()
 {
 }
@@ -34,12 +31,16 @@ void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)
 	active = true;
 	nextPlayer = 0;
 	this->tileSets = tileSets;
-	tiles = tileFactory->createPack(tileSets, this);
+	tiles = originalTiles = tileFactory->createPack(tileSets, this);
 	board = new Board(this, tiles.size());
 	board->setStartTile(tiles.takeFirst());
 
 	for (uint i = 0; i < allPlayers.size(); ++i)
 		allPlayers[i]->newGame(i, this);
+
+#if !USE_RESET
+	this->tileFactory = tileFactory;
+#endif
 }
 
 void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory, const std::vector<MoveHistoryEntry> & history)
@@ -49,13 +50,12 @@ void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory, cons
 		applyHistory(history);
 }
 
-void Game::restartGame(jcz::TileFactory * tileFactory)
+void Game::restartGame()
 {
+#if USE_RESET
 	moveHistory.clear();
-	qDeleteAll(tiles);
-	tiles.clear();
-	qDeleteAll(discardedTiles);
 	discardedTiles.clear();
+	tiles = originalTiles;
 	
 	int const playerCount = getPlayerCount();
 	memset(playerScores, 0, sizeof(*playerScores) * playerCount);
@@ -65,23 +65,42 @@ void Game::restartGame(jcz::TileFactory * tileFactory)
 	
 	active = true;
 	nextPlayer = 0;
+	board->reset();
+	for (Tile * t : tiles)
+		t->reset(this);
+
+	board->setStartTile(tiles.takeFirst());
+#else
+	moveHistory.clear();
+	qDeleteAll(tiles);
+	tiles.clear();
+	qDeleteAll(discardedTiles);
+	discardedTiles.clear();
+
+	int const playerCount = getPlayerCount();
+	memset(playerScores, 0, sizeof(*playerScores) * playerCount);
+	memset(returnMeeples, 0, sizeof(*returnMeeples) * playerCount);
+	for (int i = 0; i < playerCount; ++i)
+		playerMeeples[i] = 7;
+
+	active = true;
+	nextPlayer = 0;
 	tiles = tileFactory->createPack(tileSets, this);
 	board->clear();
 	board->setStartTile(tiles.takeFirst());
-
-//	for (uint i = 0; i < allPlayers.size(); ++i)
-	//		allPlayers[i]->newGame(i, this);
+#endif
 }
 
-void Game::restartGame(jcz::TileFactory * tileFactory, const std::vector<MoveHistoryEntry> & history)
+
+void Game::restartGame(const std::vector<MoveHistoryEntry> & history)
 {
-	restartGame(tileFactory);
+	restartGame();
 	applyHistory(history);
 }
 
 void Game::addPlayer(Player * player)
 {
-	if (!isFinished())
+	if (!isFinished() || players.length() >= MAX_PLAYERS)
 		return;
 	players.append(player);
 	addWatchingPlayer(player);
@@ -101,7 +120,7 @@ void Game::addWatchingPlayer(Player * player)
 
 void Game::setPlayers(QList<Player *> newPlayers)
 {
-	if (!isFinished())
+	if (!isFinished() || newPlayers.size() > MAX_PLAYERS)
 		return;
 	clearPlayers();
 	players = newPlayers;

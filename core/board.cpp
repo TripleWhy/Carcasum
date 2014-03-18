@@ -182,6 +182,18 @@ void Board::clear()
 	open.clear();
 }
 
+void Board::reset()
+{
+	for (uint i = 0; i < size; ++i)
+	{
+		for (uint j = 0; j < size; ++j)
+		{
+			board[i][j] = 0;
+		}
+	}
+	open.clear();
+}
+
 TileMovesType Board::getPossibleTilePlacements(const Tile * tile) const
 {
 	TileMovesType possible;
@@ -278,7 +290,7 @@ std::vector<int> Board::countUnscoredMeeples() const
 	std::vector<int> meeples;
 	for (int i = 0; i < game->getPlayerCount(); ++i)
 		meeples.push_back(0);
-	std::unordered_set<int> nodeIds;
+	std::unordered_set<Node::NodeData const *> nodeIds;
 	for (uint y = 0; y < size; ++y)
 	{
 		for (uint x = 0; x < size; ++x)
@@ -287,11 +299,9 @@ std::vector<int> Board::countUnscoredMeeples() const
 			{
 				for (Node * const * n = board[x][y]->getNodes(), * const * end = n + board[x][y]->getNodeCount(); n < end; ++n)
 				{
-//					if ((*n)->getScored() == NotScored && nodeIds.find((*n)->id()) == nodeIds.end())
-					if ((*n)->getScored() == NotScored)
-						if (nodeIds.find((*n)->id()) == nodeIds.end())
+					if ((*n)->getScored() == NotScored && nodeIds.find((*n)->getData()) == nodeIds.end())
 					{
-						nodeIds.insert((*n)->id());
+						nodeIds.insert((*n)->getData());
 						
 						QString s;
 						for (int i = 0; i < game->getPlayerCount(); ++i)
