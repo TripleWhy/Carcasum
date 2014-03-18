@@ -85,5 +85,5 @@ RESOURCES += \
 QMAKE_CXXFLAGS += -std=c++11
 QMAKE_CXXFLAGS_WARN_ON += -Wextra -Werror=switch -Werror=return-type -Werror=delete-non-virtual-dtor
 
-QMAKE_CXXFLAGS_RELEASE += -g
-QMAKE_CFLAGS_RELEASE += -g
+#QMAKE_CXXFLAGS_RELEASE += -g
+#QMAKE_CFLAGS_RELEASE += -g

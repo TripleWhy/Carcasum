@@ -16,29 +16,27 @@ int main(int argc, char *argv[])
 	Game * game = new Game();
 	
 	Player * p1 = &RandomPlayer::instance;
-	Player * p2 = new MonteCarloPlayer(tileFactory);
+	MonteCarloPlayer * p2 = new MonteCarloPlayer(tileFactory);
 
 	game->addPlayer(p1);
 	game->addPlayer(p2);
 	
 	QTime t;
 	int const n = 5;
-	double sum = 0;
+	t.start();
 	for (int i = 0; i < n; ++i)
 	{
 		game->newGame(Tile::BaseGame, tileFactory);
 	
-		t.start();
-		while (!game->isFinished())
+		for (int ply = 0; !game->isFinished(); ++ply)
 		{
 			game->step();
-//			std::cout << game->getPly() << std::endl;
+			std::cout << ply << std::endl;
 		}
 		int e = t.elapsed();
-		sum += e;
-		std::cout << e << std::endl;
+		std::cout << i << "   " << p2->playouts << "p / " << e << "ms = " << (p2->playouts) / (e / 1000.0) << " pps" << std::endl;
 	}
-	std::cout << (sum / n) << std::endl;
+	std::cout << (t.elapsed() / n) << std::endl;
 
 	return 0;
 }
