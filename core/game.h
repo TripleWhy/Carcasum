@@ -108,6 +108,16 @@ public:
 //	inline int getPly() const { return ply; }
 
 private:
+	inline void returnMeeplesToPlayers()
+	{
+		for (int * r = returnMeeples, * end = r + getPlayerCount(), * m = playerMeeples; r < end; ++r, ++m)
+		{
+			*m += *r;
+			*r = 0;
+		}
+	}
+
+private:
 	void cleanUp();
 	void applyHistory(std::vector<MoveHistoryEntry> const & history);
 };

@@ -62,7 +62,7 @@ TileMove MonteCarloPlayer::getTileMove(int player, const Tile * const /*tile*/, 
 	
 	long long int bestUtility = std::numeric_limits<long long int>::min();
 	TileMove const * bestMove = 0;
-	for (int i = 0; i < playerCount; ++i)
+	for (int i = 0; i < placementSize; ++i)
 	{
 		auto u = utilities[i];
 		if (u > bestUtility)
@@ -87,8 +87,8 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * const /*tile
 	Game g;
 	for (int i = 0; i < playerCount; ++i)
 		g.addPlayer(&RandomPlayer::instance);
-	g.newGame(game->getTileSets(), tileFactory);
-	Q_ASSERT(game->equals(g));
+	g.newGame(game->getTileSets(), tileFactory, game->getMoveHistory());
+//	Q_ASSERT(game->equals(g));	//Does not equal, since game as the tile already placed, while g doesn't
 	
 	int moveIndex = 0;
 	for (MeepleMove const & meepleMove : possible)
@@ -107,7 +107,7 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * const /*tile
 			
 			for (int i = 0; i < steps; ++i)
 				g.undo();
-			Q_ASSERT(game->equals(g));
+//			Q_ASSERT(game->equals(g));
 		}
 		++moveIndex;
 	}
