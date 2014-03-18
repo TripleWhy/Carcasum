@@ -16,8 +16,10 @@ int main(int argc, char *argv[])
 	
 	if (false)
 	{
+		qDebug() << "CONTROL_GAME" << CONTROL_GAME;
 		for (int i = 0; i < 1000; ++i)
 		{
+			qDebug() << "================================\nRUN" << i;
 			Game g1, g2, g3;
 			Q_ASSERT(g1.equals(g2));
 			Q_ASSERT(g2.equals(g1));

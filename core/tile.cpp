@@ -4,7 +4,12 @@
 
 #include <unordered_map>
 
+#define PRINT_CONNECTIONS 0
+
+
+#if PRINT_CONNECTIONS
 #include <QDebug>
+#endif
 
 Node::Node(TerrainType t, const Tile * parent, const Game * g)
     : data(this, g->getPlayerCount())
@@ -45,12 +50,14 @@ void Node::connect(Node * n, Game * g)
 	Q_ASSERT(n->getScored() == NotScored);
 	Q_ASSERT(data.scored == NotScored);
 	Q_ASSERT(n->data.scored == NotScored);
-	
+
+#if PRINT_CONNECTIONS
 	qDebug() << "  connect:" << n->id() << "->" << id() << "   BEFORE";
 //	for (Tile const * t : d->tiles)
 //		qDebug() << "    " << id() << t->id;
 //	for (Tile const * t : n->d->tiles)
 //		qDebug() << "    " << n->id() << t->id;
+#endif
 	
 	if (!isSame(n))
 	{
@@ -74,12 +81,15 @@ void Node::connect(Node * n, Game * g)
 			checkClose(g);
 		
 		d->nodes.insert(n->d->nodes.begin(), n->d->nodes.end());
+#if PRINT_CONNECTIONS
 //		qDebug() << "  connect:" << n->id() << "->" << id();
+#endif
 	}
+#if PRINT_CONNECTIONS
 	else
 	{
 //		qDebug() << "  connect:" << n->id() << "->" << id() << "skipped";
-//		qDebug() << "  skpped";
+		qDebug() << "  skpped";
 	}
 	
 //	qDebug() << "  connect:" << n->id() << "->" << id() << "   AFTER";
@@ -87,6 +97,7 @@ void Node::connect(Node * n, Game * g)
 //		qDebug() << "    " << id() << t->id;
 //	for (Tile const * t : n->d->tiles)
 //		qDebug() << "    " << n->id() << t->id;
+#endif
 	
 //	Q_ASSERT(n->d == &n->data);
 
@@ -110,11 +121,13 @@ void Node::disconnect(Node * n, Game * g)	//only works in reverse order of conne
 		o->d = o->ds.back();
 	}
 	
+#if PRINT_CONNECTIONS
 	qDebug() << "  disconnect:" << n->id() << "->" << id() << "   BEFORE";
 //	for (Tile const * t : d->tiles)
 //		qDebug() << "    " << id() << t->id;
 //	for (Tile const * t : n->d->tiles)
 //		qDebug() << "    " << n->id() << t->id;
+#endif
 	
 	if (!isSame(n))
 	{	
@@ -148,12 +161,15 @@ void Node::disconnect(Node * n, Game * g)	//only works in reverse order of conne
 	////		p = ?;
 	//	}
 		
+#if PRINT_CONNECTIONS
 	//	qDebug() << "  disconnect:" << n->id() << "->" << id();
+#endif
 	}
+#if PRINT_CONNECTIONS
 	else
 	{
 //		qDebug() << "  disconnect:" << n->id() << "->" << id() << "skipped";
-//		qDebug() << "  skipped";
+		qDebug() << "  skipped";
 		return;
 	}
 	
@@ -162,6 +178,7 @@ void Node::disconnect(Node * n, Game * g)	//only works in reverse order of conne
 //		qDebug() << "    " << id() << t->id;
 //	for (Tile const * t : n->d->tiles)
 //		qDebug() << "    " << n->id() << t->id;
+#endif
 }
 
 bool Node::equals(const Node & other, const Game * g) const
@@ -363,7 +380,9 @@ const TerrainType & Tile::getEdge(Side side, Side orientation) const
 
 void Tile::connect(Tile::Side side, Tile * other, Game * game)
 {
+#if PRINT_CONNECTIONS
 	qDebug() << "connect tile:" << id << "<->" << other->id;
+#endif
 	Tile::Side otherSide = (Tile::Side)((side + 2) % 4);
 	TerrainType t = getEdge(side);
 
@@ -394,7 +413,9 @@ void Tile::connect(Tile::Side side, Tile * other, Game * game)
 
 void Tile::disconnect(Tile::Side side, Tile * other, Game * game)
 {
+#if PRINT_CONNECTIONS
 	qDebug() << "disconnect tile:" << id << "<->" << other->id;
+#endif
 	Tile::Side otherSide = (Tile::Side)((side + 2) % 4);
 	TerrainType t = getEdge(side);
 
