@@ -69,6 +69,9 @@ TileMove MonteCarloPlayer::getTileMove(int player, const Tile * const /*tile*/, 
 			Q_ASSERT(game->equals(g));
 #endif
 		}
+#if COUNT_PLAYOUTS
+			playouts += N;
+#endif
 		++moveIndex;
 	}
 	
@@ -132,6 +135,9 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * const /*tile
 //			Q_ASSERT(game->equals(g));
 #endif
 		}
+#if COUNT_PLAYOUTS
+			playouts += N;
+#endif
 		++moveIndex;
 	}
 	

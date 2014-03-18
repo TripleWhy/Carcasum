@@ -8,6 +8,10 @@
 class MonteCarloPlayer : public Player
 {
 	static int const N = 100;
+#if COUNT_PLAYOUTS
+public:
+	int playouts = 0;
+#endif
 	
 private:
 	jcz::TileFactory * tileFactory;

@@ -26,6 +26,8 @@
 #define RANDOM_SEED             17
 // BoardGraphicsScene
 #define DRAW_TILE_POSITION_TEXT 1
+// MonteCarloPlayer
+#define COUNT_PLAYOUTS          1
 
 
 #endif // STATIC_H
