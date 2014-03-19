@@ -32,6 +32,9 @@ private:
 			t[Tile::right] = right;
 			t[Tile::down] = down;
 		}
+		
+		inline bool operator==(TerrainWrapper const& rhs) const { return (t[0] == rhs.t[0]) && (t[1] == rhs.t[1]) && (t[2] == rhs.t[2]) && (t[3] == rhs.t[3]); }
+		inline bool operator!=(TerrainWrapper const& rhs) const { return !operator==(rhs); }
 	};
 
 	Game * game;
@@ -44,12 +47,12 @@ public:
 	Board(Game * game, uint const size);
 	~Board();
 
-	Tile * getTile(uint x, uint y);
-	const Tile * getTile(uint x, uint y) const;
 	void setStartTile(Tile  * tile);
 	void addTile(Tile * tile, const TileMove & move);
+	void removeTile(const TileMove & move);
 	uint getInternalSize() const;
 	void clear();
+	void reset();
 
 	TileMovesType getPossibleTilePlacements(Tile const * tile) const;
 	QList<QPoint> getOpenPlaces() const;
@@ -57,6 +60,15 @@ public:
 	QPoint positionOf(Tile * t) const;
 	
 	void scoreEndGame();
+	void unscoreEndGame();
+	
+	std::vector<int> countUnscoredMeeples() const;
+	bool equals(Board const & other) const;
+	
+	inline Tile * getTile(uint x, uint y ){ return board[x][y]; }
+	inline const Tile * getTile(uint x, uint y) const { return board[x][y]; }
+	inline Tile * getTile(TileMove const & m) { return board[m.x][m.y]; }
+	inline const Tile * getTile(TileMove const & m) const { return board[m.x][m.y]; }
 };
 
 #endif // BOARD_H

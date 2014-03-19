@@ -24,17 +24,6 @@ Board::~Board()
 	delete[] board;
 }
 
-Tile * Board::getTile(uint x, uint y)
-{
-//	return board[x + offset][y + offset];
-	return board[x][y];
-}
-
-Tile const * Board::getTile(uint x, uint y) const
-{
-	return board[x][y];
-}
-
 void Board::setStartTile(Tile * tile)
 {
 	int offset = size / 2;
@@ -52,8 +41,8 @@ void Board::setStartTile(Tile * tile)
 
 void Board::addTile(Tile * tile, TileMove const & move)
 {
-	uint x = move.x;
-	uint y = move.y;
+	uint const x = move.x;
+	uint const y = move.y;
 	Q_ASSERT_X(x < size && y < size, "addTile", "position out of bounds");
 	Q_ASSERT_X(board[x][y] == 0, "addTile", "position not empty");
 
@@ -91,6 +80,90 @@ void Board::addTile(Tile * tile, TileMove const & move)
 		board[x + 1][y + 1]->connectDiagonal(tile, game);
 }
 
+void Board::removeTile(const TileMove & move)
+{
+	uint const x = move.x;
+	uint const y = move.y;
+	Q_ASSERT_X(x < size && y < size, "removeTile", "position out of bounds");
+	Q_ASSERT_X(board[x][y] != 0, "removeTile", "position empty");
+
+	Tile * tile = board[x][y];
+	
+	if (board[x + 1][y + 1])
+		board[x + 1][y + 1]->disconnectDiagonal(tile, game);
+	if (board[x - 1][y + 1])
+		board[x - 1][y + 1]->disconnectDiagonal(tile, game);
+	if (board[x + 1][y - 1])
+		board[x + 1][y - 1]->disconnectDiagonal(tile, game);
+	if (board[x - 1][y - 1])
+		board[x - 1][y - 1]->disconnectDiagonal(tile, game);
+	
+	
+	TerrainWrapper & tw = open[QPoint(x, y)];
+	if (board[x][y + 1] == 0)
+	{
+		QPoint const & p = QPoint(x,  y + 1);
+		TerrainWrapper & t = open[p];
+		t.t[Tile::up] = None;
+		if (t.t[0] == None && t.t[1] == None && t.t[2] == None && t.t[3] == None)
+			open.remove(p);
+	}
+	else
+	{
+		Tile * t = board[x][y + 1];
+		t->disconnect(Tile::up, tile, game);
+		tw.t[Tile::down] = t->getEdge(Tile::up);
+	}
+	
+	if (board[x][y - 1] == 0)
+	{
+		QPoint const & p = QPoint(x,  y - 1);
+		TerrainWrapper & t = open[p];
+		t.t[Tile::down] = None;
+		if (t.t[0] == None && t.t[1] == None && t.t[2] == None && t.t[3] == None)
+			open.remove(p);
+	}
+	else
+	{
+		Tile * t = board[x][y - 1];
+		t->disconnect(Tile::down, tile, game);
+		tw.t[Tile::up] = t->getEdge(Tile::down);
+	}
+	
+	if (board[x + 1][y] == 0)
+	{
+		QPoint const & p = QPoint(x + 1,  y);
+		TerrainWrapper & t = open[p];
+		t.t[Tile::left] = None;
+		if (t.t[0] == None && t.t[1] == None && t.t[2] == None && t.t[3] == None)
+			open.remove(p);
+	}
+	else
+	{
+		Tile * t = board[x + 1][y];
+		t->disconnect(Tile::left, tile, game);
+		tw.t[Tile::right] = t->getEdge(Tile::left);
+	}
+	
+	if (board[x - 1][y] == 0)
+	{
+		QPoint const & p = QPoint(x - 1,  y);
+		TerrainWrapper & t = open[p];
+		t.t[Tile::right] = None;
+		if (t.t[0] == None && t.t[1] == None && t.t[2] == None && t.t[3] == None)
+			open.remove(p);
+	}
+	else
+	{
+		Tile * t = board[x - 1][y];
+		t->disconnect(Tile::right, tile, game);
+		tw.t[Tile::left] = t->getEdge(Tile::right);
+	}
+	
+	board[x][y] = 0;
+	tile->orientation = Tile::Side();	//TODO this is probably not neccessary
+}
+
 uint Board::getInternalSize() const
 {
 	return size;
@@ -103,6 +176,18 @@ void Board::clear()
 		for (uint j = 0; j < size; ++j)
 		{
 			delete board[i][j];
+			board[i][j] = 0;
+		}
+	}
+	open.clear();
+}
+
+void Board::reset()
+{
+	for (uint i = 0; i < size; ++i)
+	{
+		for (uint j = 0; j < size; ++j)
+		{
 			board[i][j] = 0;
 		}
 	}
@@ -160,7 +245,7 @@ QPoint Board::positionOf(Tile * t) const
 
 void Board::scoreEndGame()
 {
-	std::unordered_set<Node *> scored;
+//	qDebug() << "SCORE END" << this << game;
 	for (uint y = 0; y < size; ++y)
 	{
 		for (uint x = 0; x < size; ++x)
@@ -169,15 +254,85 @@ void Board::scoreEndGame()
 			{
 				for (Node * const * n = board[x][y]->getNodes(), * const * end = n + board[x][y]->getNodeCount(); n < end; ++n)
 				{
-					if ((*n)->isOccupied() && scored.find(*n) == scored.end())
+					if ((*n)->isOccupied())
 					{
-						scored.insert(*n);
-						int const score = (*n)->getScore();
-						if (score != 0)
-							game->scoreNode(*n, score);
+						game->scoreNodeEndGame(*n);
 					}
 				}
 			}
 		}
 	}
+}
+
+void Board::unscoreEndGame()
+{
+//	qDebug() << "UNSCORE END" << this << game;
+	for (uint y = 0; y < size; ++y)
+	{
+		for (uint x = 0; x < size; ++x)
+		{
+			if (board[x][y])
+			{
+				for (Node * const * n = board[x][y]->getNodes(), * const * end = n + board[x][y]->getNodeCount(); n < end; ++n)
+				{
+					if ((*n)->isOccupied())
+					{
+						game->unscoreNodeEndGame(*n);
+					}
+				}
+			}
+		}
+	}
+}
+
+std::vector<int> Board::countUnscoredMeeples() const
+{
+	std::vector<int> meeples;
+	for (int i = 0; i < game->getPlayerCount(); ++i)
+		meeples.push_back(0);
+	std::unordered_set<Node::NodeData const *> nodeIds;
+	for (uint y = 0; y < size; ++y)
+	{
+		for (uint x = 0; x < size; ++x)
+		{
+			if (board[x][y] != 0)
+			{
+				for (Node * const * n = board[x][y]->getNodes(), * const * end = n + board[x][y]->getNodeCount(); n < end; ++n)
+				{
+					if ((*n)->getScored() == NotScored && nodeIds.find((*n)->getData()) == nodeIds.end())
+					{
+						nodeIds.insert((*n)->getData());
+						
+						QString s;
+						for (int i = 0; i < game->getPlayerCount(); ++i)
+						{
+							meeples[i] += (*n)->getMeeples()[i];
+							s = s + ", " + QString::number((*n)->getMeeples()[i]);
+						}
+//						qDebug() << "unscored" << (*n)->getTerrain() << "\t" << (*n)->id() << "on tile" << board[x][y]->id << "\t" << s;
+					}
+				}
+			}
+		}
+	}
+	return meeples;
+}
+
+bool Board::equals(const Board & other) const
+{
+	if (size != other.size)
+		return false;
+	for (uint y = 0; y < size; ++y)
+	{
+		for (uint x = 0; x < size; ++x)
+		{
+			if ((board[x][y] == 0) != (other.board[x][y] == 0))
+				return false;
+			if (board[x][y] != 0 && !board[x][y]->equals(*other.board[x][y], game))
+				return false;
+		}
+	}
+	if (open != other.open)
+		return false;
+	return true;
 }

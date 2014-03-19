@@ -22,16 +22,35 @@ void jcz::TileFactory::createPack(Tile::TileSet tileSet, QList<Tile *> & pack, G
 {
 	if (!tileTemplates.contains(tileSet))
 		readXMLPack(tileSet, g);
+#if DEBUG_IDS
+	uint tileId = 0;
+	uint nodeId = 0;
+#endif
 	for (Tile * t : tileTemplates[tileSet])
 	{
 		TileMetaData const & data = tileMetaData[t];
+		Tile * c = t->clone(g);
 		if (data.hasPosition)
-			pack.prepend(t->clone(g));
+			pack.prepend(c);
 		else
-			pack.append(t->clone(g));
+			pack.append(c);
+		
+#if DEBUG_IDS
+		c->id = tileId++;
+		for (int i = 0; i < c->nodeCount; ++i)
+			c->nodes[i]->data.id = nodeId++;
+#endif
 
 		for (uint i = 1; i < data.count; ++i)
-			pack.append(t->clone(g));
+		{
+			c = t->clone(g);
+			pack.append(c);
+#if DEBUG_IDS
+			c->id = tileId++;
+			for (int i = 0; i < c->nodeCount; ++i)
+				c->nodes[i]->data.id = nodeId++;
+#endif
+		}
 	}
 }
 
@@ -195,9 +214,11 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 					qWarning() << "city does not exist at" << str;
 					break;
 				}
-				city->fields.insert(field);
-				field->cities.insert(city);
+				field->getFieldData()->cities.push_back(city);
 			}
+#if USE_RESET
+			field->originalFieldData = field->fieldData;
+#endif
 
 			if (field != 0)
 				nodes.append(field);

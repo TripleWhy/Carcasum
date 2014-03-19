@@ -1,15 +1,13 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+#include "static.h"
 #include "game.h"
 
 #include <QList>
 
 class Game;
 class Tile;
-
-#define TILE_ARRAY_LENGTH 256
-#define NODE_ARRAY_LENGTH 16
 
 typedef QVarLengthArray<TileMove, TILE_ARRAY_LENGTH> TileMovesType;
 typedef QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> MeepleMovesType;

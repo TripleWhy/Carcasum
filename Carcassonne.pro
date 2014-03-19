@@ -19,8 +19,8 @@ core {
 	SOURCES += \
 		core/main.cpp
 
-	DEFINES += QT_NO_DEBUG_OUTPUT
-	DEFINES += QT_NO_WARNING_OUTPUT
+#	DEFINES += QT_NO_DEBUG_OUTPUT
+#	DEFINES += QT_NO_WARNING_OUTPUT
 
 } else {
 	QT       += gui svg
@@ -77,7 +77,8 @@ HEADERS += \
     jcz/xmlparser.h \
     jcz/location.h \
     jcz/expansion.h \
-    player/montecarloplayer.h
+    player/montecarloplayer.h \
+    static.h
 
 RESOURCES += \
 	jcz/jcz.qrc

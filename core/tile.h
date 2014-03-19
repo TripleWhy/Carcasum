@@ -1,11 +1,10 @@
 #ifndef TILE_H
 #define TILE_H
 
+#include "static.h"
 #include <unordered_set>
 #include <QList>
 #include <QDebug>
-
-#define NODE_VARIANT 0
 
 namespace jcz
 {
@@ -15,113 +14,271 @@ class Tile;
 class Game;
 
 enum TerrainType { None = 0, Field, City, Road, Cloister };
+enum Scored { NotScored, ScoredMidGame, ScoredEndGame };
 
 struct Node
 {
 	friend class Tile;
-	friend class Game;
-	friend class DeepCloner;
+#if DEBUG_IDS
+	friend class jcz::TileFactory;
+#endif
 public:
-	typedef std::vector<Node **>       PointersType;
-	typedef std::unordered_set<Tile const *> TilesType;
+	typedef std::vector<Node **>                  PointersType;
+	typedef std::unordered_multiset<Tile const *> TilesType;
 
-	TerrainType t;
-	TilesType tiles;
+	struct NodeData
+	{
+		TerrainType t;
+		TilesType tiles;
+//		PointersType pointers;
+		uchar * const meeples; // Number of meeples on this node per player.
+		uchar maxMeples = 0;
+		void * dd = 0;
+		Scored scored = NotScored;
+		std::unordered_multiset<Node *> nodes; // This may actually also work faster in a linked version.
+#if DEBUG_IDS
+		uint id = -1;
+#endif
+		
+		inline NodeData(Node * parent, int const playerCount) : meeples(new uchar[playerCount]()) { nodes.insert(parent); }
+		inline ~NodeData() { delete[] meeples; }
+	};
 private:
-	PointersType pointers;
-	uchar * const meeples; // Number of meeples on this node per player.
-	uchar maxMeples = 0;
+	NodeData data;
+#if DEBUG_IDS
+public:
+	inline int id() const { return d-> id; }
+#endif
+protected:
+	NodeData * d = &data;
+	std::vector<NodeData *> ds = { d };
+	inline bool isSame (Node const * n) { return d == n->d; }
 
 public:
 	Node(TerrainType t, Tile const * parent, Game const * g);
 	virtual ~Node();
 
-	inline void addMeeple(int player, Game * g) { if (++meeples[player] > maxMeples) maxMeples = meeples[player]; checkClose(g); }
-	inline bool isOccupied() const { return maxMeples; }
-	inline uchar getMaxMeeples() const { return maxMeples; }
-	inline uchar const * getMeeples() const { return meeples; }
-
-	virtual void connect(Node * n, Game * /*g*/);
-	virtual void checkClose(Game * /*g*/) = 0;
-	virtual uchar getScore() = 0;
-	virtual Node * clone(Tile const * parent, Game const * g) const = 0;
-//protected:
-//	inline void addPointer(Node ** p) { pointers.push_back(p); }
-};
-
-struct CityNode;
-struct FieldNode : public Node
-{
-	uchar closedCities = 0;
-	std::unordered_set<CityNode *> cities;
-
-	FieldNode(Tile const * parent, Game const * g)
-		: Node(Field, parent, g)
-	{}
+	inline void addMeeple(int player, Game * g) { if (++d->meeples[player] > d->maxMeples) d->maxMeples = d->meeples[player]; checkClose(g); }
+	void removeMeeple(int player, Game * g);
+	inline bool isOccupied() const { return d->maxMeples; }
+	inline uchar getMaxMeeples() const { return d->maxMeples; }
+	inline uchar const * getMeeples() const { return d->meeples; }
+	inline TerrainType getTerrain() const { return d->t; }
+	inline Scored getScored() const { return d->scored; }
+	inline void setScored(Scored s) { d->scored = s; }
+	inline NodeData const * getData() const { return d; }
 
 	virtual void connect(Node * n, Game * g);
-	virtual void checkClose(Game * /*g*/) {}
-	inline virtual uchar getScore() { return closedCities * 3; }
-	virtual Node * clone(Tile const * parent, Game const * g) const
+	virtual void disconnect(Node * n, Game * g);
+	virtual void checkClose(Game * g) = 0;
+	virtual void checkUnclose(Game * g) = 0;
+	virtual uchar getScore() = 0;
+	virtual Node * clone(Tile const * parent, Game const * g) const = 0;
+#if USE_RESET
+	virtual void reset(Tile const * parent, Game const * g);
+#endif
+	
+	inline uint uniqueTileCount()
 	{
-		return new FieldNode(parent, g);
+		int uniqueTiles = 0;
+		Tile const * last = 0;
+		for (Tile const * t : d->tiles)
+		{
+			if (t != last)
+			{
+				++uniqueTiles;
+				last = t;
+			}
+		}
+		return uniqueTiles;
 	}
+	
+	virtual bool equals(Node const & other, Game const * g) const;
 };
 
 struct CityNode : public Node
 {
-	uchar open;
-	uchar bonus;
-	std::unordered_set<FieldNode *> fields;
+private:
+	struct CityNodeData
+	{
+		uchar open;
+		uchar bonus;
+	};
+	CityNodeData cityData;
+#if USE_RESET
+	CityNodeData originalCityData;
+#endif
+	inline CityNodeData * getCityData() { return static_cast<CityNodeData *>(d->dd); }
+	inline CityNodeData const * getCityData() const { return static_cast<CityNodeData *>(d->dd); }
 
+public:
 	CityNode(Tile const * parent, Game const * g, uchar open, uchar bonus = 0)
-		: Node(City, parent, g),
-		  open(open),
-		  bonus(bonus)
-	{}
+		: Node(City, parent, g)
+	{
+		d->dd = &cityData;
+		cityData.open = open;
+		cityData.bonus = bonus;
+#if USE_RESET
+		originalCityData = cityData;
+#endif
+	}
 
 	virtual void connect(Node * n, Game * g);
+	virtual void disconnect(Node * n, Game * g);
 	virtual void checkClose(Game * g);
-	inline virtual uchar getScore() { return tiles.size(); }
+	virtual void checkUnclose(Game * g);
+#if USE_RESET
+	virtual void reset(Tile const * parent, Game const * g);
+#endif
+	inline virtual uchar getScore()
+	{
+		return uniqueTileCount() + getCityData()->bonus;
+	}
 	virtual Node * clone(Tile const * parent, Game const * g) const
 	{
-		return new CityNode(parent, g, open, bonus);
+		return new CityNode(parent, g, getCityData()->open, getCityData()->bonus);
+	}
+	inline bool isClosed() const
+	{
+		return getCityData()->open == 0;
+	}
+	
+	virtual bool equals(Node const & other, Game const * g) const
+	{
+		CityNode const * c = dynamic_cast<CityNode const *>(&other);
+		if (c == 0)
+			return false;
+		if (!Node::equals(other, g))
+			return false;
+		return (getCityData()->open == c->getCityData()->open) && (getCityData()->bonus == c->getCityData()->bonus);
+	}
+};
+
+struct FieldNode : public Node
+{
+private:
+	struct FieldNodeData
+	{
+		std::vector<CityNode *> cities;
+	};
+	FieldNodeData fieldData;
+#if USE_RESET
+friend class jcz::TileFactory;
+	FieldNodeData originalFieldData;
+#endif
+public:
+	inline FieldNodeData * getFieldData() { return static_cast<FieldNodeData *>(d->dd); }
+	inline FieldNodeData const * getFieldData() const { return static_cast<FieldNodeData *>(d->dd); }
+
+public:
+	FieldNode(Tile const * parent, Game const * g)
+		: Node(Field, parent, g)
+	{
+		d->dd = &fieldData;
+	}
+
+	virtual void connect(Node * n, Game * g);
+	virtual void disconnect(Node * n, Game * g);
+	virtual void checkClose(Game * /*g*/) {}
+	virtual void checkUnclose(Game * /*g*/) {}
+#if USE_RESET
+	virtual void reset(Tile const * parent, Game const * g);
+#endif
+	inline virtual uchar getScore()
+	{
+		std::unordered_set<Node *> closedCities;
+		for (CityNode * c : getFieldData()->cities)
+			if (c->isClosed())
+				closedCities.insert(c);
+		return closedCities.size() * 3;
+	}
+	virtual Node * clone(Tile const * parent, Game const * g) const
+	{
+		return new FieldNode(parent, g);
+	}
+	
+	virtual bool equals(Node const & other, Game const * g) const
+	{
+		FieldNode const * f = dynamic_cast<FieldNode const *>(&other);
+		if (f == 0)
+			return false;
+		if (!Node::equals(other, g))
+			return false;
+		return getFieldData()->cities.size() == f->getFieldData()->cities.size();
 	}
 };
 
 struct RoadNode : public Node
 {
-	uchar open;
+private:
+	struct RoadNodeData
+	{
+		uchar open;
+	};
+	RoadNodeData roadData;
+#if USE_RESET
+	RoadNodeData originalRoadData;
+#endif
+	inline RoadNodeData * getRoadData() { return static_cast<RoadNodeData *>(d->dd); }
+	inline RoadNodeData const * getRoadData() const { return static_cast<RoadNodeData *>(d->dd); }
 
+public:
 	RoadNode(Tile const * parent, Game const * g, uchar open)
-		: Node(Road, parent, g),
-		  open(open)
-	{}
+		: Node(Road, parent, g)
+	{
+		d->dd = &roadData;
+		roadData.open = open;
+#if USE_RESET
+		originalRoadData = roadData;
+#endif
+	}
 
 	virtual void connect(Node * n, Game * g);
+	virtual void disconnect(Node * n, Game * g);
 	virtual void checkClose(Game * g);
-	inline virtual uchar getScore() { return tiles.size(); }
+	inline virtual uchar getScore() { return uniqueTileCount(); }
+	virtual void checkUnclose(Game * g);
+#if USE_RESET
+	virtual void reset(Tile const * parent, Game const * g);
+#endif
 	virtual Node * clone(Tile const * parent, Game const * g) const
 	{
-		return new RoadNode(parent, g, open);
+		return new RoadNode(parent, g, getRoadData()->open);
+	}
+	
+	virtual bool equals(Node const & other, Game const * g) const
+	{
+		RoadNode const * r = dynamic_cast<RoadNode const *>(&other);
+		if (r == 0)
+			return false;
+		if (!Node::equals(other, g))
+			return false;
+		return (getRoadData()->open == r->getRoadData()->open);
 	}
 };
 
 struct CloisterNode : public Node
 {
+private:
 	uchar surroundingTiles;
 	
-	CloisterNode(Tile const * parent, Game const * g, uchar surroundingTiles = 1)
+public:
+	CloisterNode(Tile const * parent, Game const * g)
 	    : Node(Cloister, parent, g),
-	      surroundingTiles(surroundingTiles)
+		  surroundingTiles(1)
 	{}
 	
 	virtual void connect(Node * /*n*/, Game * /*g*/) { Q_ASSERT(false); }
+	virtual void disconnect(Node * /*n*/, Game * /*g*/) { Q_ASSERT(false); }
 	virtual void checkClose(Game * g);
 	inline virtual uchar getScore() { return surroundingTiles; }
+	virtual void checkUnclose(Game * g);
+#if USE_RESET
+	virtual void reset(Tile const * parent, Game const * g);
+#endif
 	virtual Node * clone(Tile const * parent, Game const * g) const
 	{
-		return new CloisterNode(parent, g, surroundingTiles);
+		return new CloisterNode(parent, g);
 	}
 	inline void addSurroundingTile(Game * g)
 	{
@@ -129,12 +286,27 @@ struct CloisterNode : public Node
 		if (isOccupied())
 			checkClose(g);
 	}
+	inline void removeSurroundingTile(Game * g)
+	{
+		if (isOccupied())
+			checkUnclose(g);
+		--surroundingTiles;
+	}
+	
+	virtual bool equals(Node const & other, Game const * g) const
+	{
+		CloisterNode const * c = dynamic_cast<CloisterNode const *>(&other);
+		if (c == 0)
+			return false;
+		if (!Node::equals(other, g))
+			return false;
+		return (surroundingTiles == c->surroundingTiles);
+	}
 };
 
 class Tile
 {
 	friend class jcz::TileFactory;
-	friend class DeepCloner;
 
 public:
 	enum Side { left = 0, up = 1, right = 2, down = 3 };
@@ -146,14 +318,16 @@ public:
 	typedef Node * EdgeType;
 #endif
 
-
-
 private:
 	TerrainType edges[4];    // array of edge types
 	uchar nodeCount = 0;     // length of nodes
 	Node ** nodes = 0;       // array of node pointers
 	EdgeType * edgeNodes[4]; // 4 arrays of edge connectors
 	CloisterNode * cloister = 0;
+#if DEBUG_IDS
+public:
+	uint id = -1;
+#endif
 
 public:
 	Side orientation = left;
@@ -172,9 +346,14 @@ public:
 	~Tile();
 	TerrainType const & getEdge(Side side) const;
 	TerrainType const & getEdge(Side side, Side orientation) const;
-	void connect(Side s, Tile * other, Game * game);
+	void connect(Side side, Tile * other, Game * game);
+	void disconnect(Side side, Tile * other, Game * game);
 	void connectDiagonal(Tile * other, Game * game);
+	void disconnectDiagonal(Tile * other, Game * game);
 	Tile * clone(Game const * g);
+#if USE_RESET
+	void reset(const Game * g);
+#endif
 	Tile&& operator=(Tile&& t) = delete;
 	Tile& operator= (Tile const& t) = delete;
 
@@ -205,6 +384,7 @@ public:
 	inline Node * const * getNodes() { return nodes; }
 
 	void printSides(Node * n);
+	bool equals(Tile const & other, const Game * g) const;
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(Tile::TileSets)
 
