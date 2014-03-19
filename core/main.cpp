@@ -75,6 +75,9 @@ int main(int argc, char *argv[])
 	t.start();
 	for (int i = 0; i < n; ++i)
 	{
+#if !COUNT_PLAYOUTS
+		t.start();
+#endif
 		game->newGame(Tile::BaseGame, tileFactory);
 	
 		for (int ply = 0; !game->isFinished(); ++ply)
@@ -83,7 +86,11 @@ int main(int argc, char *argv[])
 //			std::cout << ply << std::endl;
 		}
 		int e = t.elapsed();
+#if COUNT_PLAYOUTS
 		std::cout << i << "   " << p2->playouts << "p / " << e << "ms = " << (p2->playouts) / (e / 1000.0) << " pps" << std::endl;
+#else
+		std::cout << i << "   " << e << std::endl;
+#endif
 	}
 	std::cout << (t.elapsed() / n) << std::endl;
 

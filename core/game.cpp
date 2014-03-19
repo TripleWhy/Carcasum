@@ -170,7 +170,11 @@ void Game::step()
 	{
 		discardedTiles.push_back(tile);
 #if PRINT_STEPS
+ #if DEBUG_IDS
 		qDebug() << (moveHistory.size() + 1) << "discarged Tile" << tile->id << "total:" << discardedTiles.size();
+ #else
+		qDebug() << (moveHistory.size() + 1) << "discarged Tile  type" << tile->tileType << "total:" << discardedTiles.size();
+ #endif
 #endif
 		moveHistory.push_back(entry);
 		tiles.removeAt(entry.tile);
@@ -197,6 +201,7 @@ void Game::step()
 	//	qDebug() << (moveHistory.size() + 1) << "player" << playerIndex << tileMove.x << tileMove.y << tileMove.orientation;
 		board->addTile(tile, tileMove);
 	
+		MeepleMove & meepleMove = move.meepleMove;
 		if (playerMeeples[playerIndex] > 0)
 		{
 			MeepleMovesType possibleMeeples(1);
@@ -210,7 +215,6 @@ void Game::step()
 		
 			if (possibleMeeples.size() > 1)
 			{
-				MeepleMove & meepleMove = move.meepleMove;
 				meepleMove = player->getMeepleMove(playerIndex, tile, entry, possibleMeeples, this);
 				if (!meepleMove.isNull())
 				{
@@ -228,7 +232,7 @@ void Game::step()
 		returnMeeplesToPlayers();
 		nextPlayer = (nextPlayer + 1) % getPlayerCount();
 		
-#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+#if PRINT_STEPS || !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
 		auto && unscoredMeeples = board->countUnscoredMeeples();
 #endif
 #if PRINT_STEPS
@@ -264,7 +268,7 @@ void Game::step()
 		returnMeeplesToPlayers();
 		active = false;
 		
-#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+#if PRINT_STEPS || !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
 		auto && unscoredMeeples = board->countUnscoredMeeples();
 #endif
 #if PRINT_STEPS
@@ -450,7 +454,7 @@ void Game::undo()
 //		*r = 0;
 //	}
 
-#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+#if PRINT_STEPS || !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
 	auto && unscoredMeeples = board->countUnscoredMeeples();
 #endif
 #if PRINT_STEPS

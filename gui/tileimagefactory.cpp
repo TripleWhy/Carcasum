@@ -27,7 +27,7 @@ const QPixmap TileImageFactory::getImage(Tile::TileSet tileSet, int tileType)
 
 QString TileImageFactory::getMeepleFillSvg(const Node * node) const
 {
-	switch (node->t)
+	switch (node->getTerrain())
 	{
 		case Field:
 			return ":/img/meeple/laying-fill";
@@ -38,7 +38,7 @@ QString TileImageFactory::getMeepleFillSvg(const Node * node) const
 
 QString TileImageFactory::getMeepleOutlineSvg(const Node * node) const
 {
-	switch (node->t)
+	switch (node->getTerrain())
 	{
 		case Field:
 			return ":/img/meeple/laying-outline";

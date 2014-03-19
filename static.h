@@ -23,11 +23,11 @@
 #define PRINT_CONNECTIONS       0
 #define DEBUG_IDS               0
 // Ranodm
-#define RANDOM_SEED             17
+//#define RANDOM_SEED             17
 // BoardGraphicsScene
 #define DRAW_TILE_POSITION_TEXT 1
 // MonteCarloPlayer
-#define COUNT_PLAYOUTS          1
+#define COUNT_PLAYOUTS          0
 
 
 #endif // STATIC_H

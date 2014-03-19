@@ -54,7 +54,7 @@ TileMove MonteCarloPlayer::getTileMove(int player, const Tile * const /*tile*/, 
 			while (!g.isFinished())
 				g.step();
 
-			utilities[moveIndex] += utility(g.getScores(), g.getPlayerCount(), player);
+			utilities[moveIndex] += utility(g.getScores(), playerCount, player);
 #else
 			g.step(move.tile, tileMove, player, &RandomPlayer::instance);
 
@@ -62,7 +62,7 @@ TileMove MonteCarloPlayer::getTileMove(int player, const Tile * const /*tile*/, 
 			for ( ; !g.isFinished(); ++steps)
 				g.step();
 			
-			utilities[moveIndex] += utility(g.getScores(), g.getPlayerCount(), player);
+			utilities[moveIndex] += utility(g.getScores(), playerCount, player);
 			
 			for (int i = 0; i < steps; ++i)
 				g.undo();
@@ -120,7 +120,7 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * const /*tile
 			while (!g.isFinished())
 				g.step();
 
-			utilities[moveIndex] += utility(g.getScores(), g.getPlayerCount(), player);
+			utilities[moveIndex] += utility(g.getScores(), playerCount, player);
 #else
 			g.step(m);
 			
@@ -128,7 +128,7 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * const /*tile
 			for ( ; !g.isFinished(); ++steps)
 				g.step();
 			
-			utilities[moveIndex] += utility(g.getScores(), g.getPlayerCount(), player);
+			utilities[moveIndex] += utility(g.getScores(), playerCount, player);
 			
 			for (int i = 0; i < steps; ++i)
 				g.undo();
@@ -143,7 +143,7 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * const /*tile
 	
 	long long int bestUtility = std::numeric_limits<long long int>::min();
 	MeepleMove const * bestMove = 0;
-	for (int i = 0; i < playerCount; ++i)
+	for (int i = 0; i < possibleSize; ++i)
 	{
 		auto u = utilities[i];
 		if (u > bestUtility)
