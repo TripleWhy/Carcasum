@@ -7,7 +7,7 @@
 
 class MonteCarloPlayer : public Player
 {
-	static int const N = 100;
+	static int const N = 50;
 #if COUNT_PLAYOUTS
 public:
 	int playouts = 0;

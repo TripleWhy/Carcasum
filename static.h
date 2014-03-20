@@ -28,7 +28,7 @@
 // BoardGraphicsScene
 #define DRAW_TILE_POSITION_TEXT 1
 // MonteCarloPlayer
-#define COUNT_PLAYOUTS          0
+#define COUNT_PLAYOUTS          1
 
 
 #endif // STATIC_H
