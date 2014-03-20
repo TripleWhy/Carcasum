@@ -16,7 +16,8 @@ BoardGraphicsView::BoardGraphicsView(QWidget *parent) :
 
 void BoardGraphicsView::mousePressEvent(QMouseEvent *event)
 {
-	lastPos = event->pos();
+	if (event->buttons().testFlag(Qt::MidButton))
+		lastPos = event->pos();
 	QGraphicsView::mousePressEvent(event);
 }
 

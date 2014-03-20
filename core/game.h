@@ -52,7 +52,7 @@ private:
 //	int ply = -1;
 	int active = false;
 	int nextPlayer = -1;
-	QList<Player *> players;
+	std::vector<Player *> players;
 	std::vector<Player *> allPlayers;
 	Board * board = 0;
 	QList<Tile *> tiles;
@@ -81,7 +81,7 @@ public:
 	void addPlayer(Player * player);
 	void addWatchingPlayer(Player * player);
 //	void setPlayer(int index, Player * player);
-	void setPlayers(QList<Player *> players);
+//	void setPlayers(QList<Player *> players);
 	void clearPlayers();
 	Board const * getBoard() const;
 	void step();
@@ -110,7 +110,8 @@ public:
 	inline std::vector<MoveHistoryEntry> const & getMoveHistory() const { return moveHistory; }
 	inline Tile::TileSets const & getTileSets() const { return tileSets; }
 	inline int const * getScores() const { return playerScores; }
-//	inline int getPly() const { return ply; }
+	inline int getPlayerMeeples(int player) const { return playerMeeples[player]; }
+	inline int getPlayerScore(int player) const { return playerScores[player]; }
 
 private:
 	inline void returnMeeplesToPlayers()

@@ -4,6 +4,7 @@
 // Some numbers
 // Game
 #define MAX_PLAYERS 6
+#define MEEPLE_COUNT 7
 //P layer
 #define TILE_ARRAY_LENGTH 256
 #define NODE_ARRAY_LENGTH 16

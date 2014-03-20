@@ -26,7 +26,7 @@ void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)
 	returnMeeples = new int[playerCount]();
 	playerMeeples = new int[playerCount];
 	for (int i = 0; i < playerCount; ++i)
-		playerMeeples[i] = 7;
+		playerMeeples[i] = MEEPLE_COUNT;
 	
 	active = true;
 	nextPlayer = 0;
@@ -36,7 +36,9 @@ void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)
 	board->setStartTile(tiles.takeFirst());
 
 	for (uint i = 0; i < allPlayers.size(); ++i)
-		allPlayers[i]->newGame(i, this);
+		allPlayers[i]->newGame(-1, this);
+	for (uint i = 0; i < players.size(); ++i)
+		players[i]->newGame(i, this);
 
 #if !USE_RESET
 	this->tileFactory = tileFactory;
@@ -61,7 +63,7 @@ void Game::restartGame()
 	memset(playerScores, 0, sizeof(*playerScores) * playerCount);
 	memset(returnMeeples, 0, sizeof(*returnMeeples) * playerCount);
 	for (int i = 0; i < playerCount; ++i)
-		playerMeeples[i] = 7;
+		playerMeeples[i] = MEEPLE_COUNT;
 	
 	active = true;
 	nextPlayer = 0;
@@ -81,7 +83,7 @@ void Game::restartGame()
 	memset(playerScores, 0, sizeof(*playerScores) * playerCount);
 	memset(returnMeeples, 0, sizeof(*returnMeeples) * playerCount);
 	for (int i = 0; i < playerCount; ++i)
-		playerMeeples[i] = 7;
+		playerMeeples[i] = MEEPLE_COUNT;
 
 	active = true;
 	nextPlayer = 0;
@@ -100,9 +102,9 @@ void Game::restartGame(const std::vector<MoveHistoryEntry> & history)
 
 void Game::addPlayer(Player * player)
 {
-	if (!isFinished() || players.length() >= MAX_PLAYERS)
+	if (!isFinished() || players.size() >= MAX_PLAYERS)
 		return;
-	players.append(player);
+	players.push_back(player);
 	addWatchingPlayer(player);
 	playerCount = players.size();
 }
@@ -118,16 +120,16 @@ void Game::addWatchingPlayer(Player * player)
 //	players[index] = player;
 //}
 
-void Game::setPlayers(QList<Player *> newPlayers)
-{
-	if (!isFinished() || newPlayers.size() > MAX_PLAYERS)
-		return;
-	clearPlayers();
-	players = newPlayers;
-	for (Player * p : newPlayers)
-		addWatchingPlayer(p);
-	playerCount = players.size();
-}
+//void Game::setPlayers(QList<Player *> newPlayers)
+//{
+//	if (!isFinished() || newPlayers.size() > MAX_PLAYERS)
+//		return;
+//	clearPlayers();
+//	players = newPlayers;
+//	for (Player * p : newPlayers)
+//		addWatchingPlayer(p);
+//	playerCount = players.size();
+//}
 
 void Game::clearPlayers()
 {
@@ -135,7 +137,7 @@ void Game::clearPlayers()
 		return;
 	for (auto it = allPlayers.begin(); it < allPlayers.end(); )
 	{
-		if (players.contains(*it))
+		if (std::find(players.begin(), players.end(), *it) != players.end())
 			it = allPlayers.erase(it);
 		else
 			++it;
@@ -248,7 +250,7 @@ void Game::step()
 #endif
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
 		for (int i = 0; i < getPlayerCount(); ++i)
-			Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == 7);
+			Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT);
 #endif
 #if WATCH_SCORES
 		for (int i = 0; i < getPlayerCount(); ++i)
@@ -278,7 +280,7 @@ void Game::step()
 #endif
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
 		for (int i = 0; i < getPlayerCount(); ++i)
-			Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == 7);
+			Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT);
 #endif
 	}
 }
@@ -441,7 +443,7 @@ void Game::undo()
 		Node * n = nodes[meepleMove.nodeIndex];
 		++playerMeeples[playerIndex];
 		n->removeMeeple(playerIndex, this);
-		Q_ASSERT(playerMeeples[playerIndex] <= 7);
+		Q_ASSERT(playerMeeples[playerIndex] <= MEEPLE_COUNT);
 	}
 	
 	board->removeTile(tileMove);
@@ -473,7 +475,7 @@ void Game::undo()
 #endif
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
 	for (int i = 0; i < getPlayerCount(); ++i)
-		Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == 7);
+		Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT);
 #endif
 #if WATCH_SCORES
 		for (int i = 0; i < getPlayerCount(); ++i)

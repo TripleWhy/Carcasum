@@ -6,11 +6,11 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsColorizeEffect>
 
-BoardGraphicsScene::BoardGraphicsScene(jcz::TileFactory * tileFactory, QObject * parent)
+BoardGraphicsScene::BoardGraphicsScene(jcz::TileFactory * tileFactory, TileImageFactory * imgFactory, QObject * parent)
 	: QGraphicsScene(parent),
 	  game(0),
 	  tileFactory(tileFactory),
-	  imgFactory(tileFactory),
+	  imgFactory(imgFactory),
 	  running(0),
 	  userMoveReady(false)
 {
@@ -55,6 +55,11 @@ void BoardGraphicsScene::setGame(Game const *const g)
 void BoardGraphicsScene::setTileFactory(jcz::TileFactory * factory)
 {
 	tileFactory = factory;
+}
+
+void BoardGraphicsScene::setTileImageFactory(TileImageFactory * factory)
+{
+	imgFactory = factory;
 }
 
 TileMove BoardGraphicsScene::getTileMove(int /*player*/, Tile const * const tile, const MoveHistoryEntry & /*move*/, TileMovesType const & placements, Game const * const /*game*/)
@@ -119,7 +124,7 @@ void BoardGraphicsScene::displayGetTileMove(void * data, int callDepth)
 	}
 	
 	possiblePlacements = d->placements;
-	placementTile->setPixmap(imgFactory.getImage(d->tileSet, d->tileType));
+	placementTile->setPixmap(imgFactory->getImage(d->tileSet, d->tileType));
 	placementLayer->addToGroup(placementTile);
 	for(auto it = openTiles.begin(); it != openTiles.end(); )
 	{
@@ -209,7 +214,7 @@ void BoardGraphicsScene::displayGetMeepleMove(void * data, int callDepth)
 	
 	placementTile->setPos(d->tileMove.x * TILE_SIZE, d->tileMove.y * TILE_SIZE);
 
-	QMap<uchar, QPoint> const & pointMap = imgFactory.getPoints(d->tile);
+	QMap<uchar, QPoint> const & pointMap = imgFactory->getPoints(d->tile);
 	QHash<QPoint, QGraphicsItemGroup *> points;
 	for (MeepleMove const & p : d->possible)
 	{
@@ -218,7 +223,7 @@ void BoardGraphicsScene::displayGetMeepleMove(void * data, int callDepth)
 
 		Q_ASSERT(pointMap.contains(p.nodeIndex));
 		QPoint point = pointMap[p.nodeIndex];
-		QGraphicsItemGroup * svg = createMeeple(d->tile->getCNodes()[p.nodeIndex], point, d->tileMove, imgFactory.getPlayerColor(d->player));
+		QGraphicsItemGroup * svg = createMeeple(d->tile->getCNodes()[p.nodeIndex], point, d->tileMove, imgFactory->getPlayerColor(d->player));
 		svg->setData(0, qVariantFromValue(p.nodeIndex));
 		svg->setOpacity(0.7);
 		meeplePlacementLayer->addToGroup(svg);
@@ -280,7 +285,7 @@ void BoardGraphicsScene::displayNewGame(int callDepth)
 			if (t == 0)
 				continue;
 
-			QPixmap const & img = imgFactory.getImage(t);
+			QPixmap const & img = imgFactory->getImage(t);
 			QGraphicsPixmapItem * item = new QGraphicsPixmapItem(img);
 			item->setTransformationMode(Qt::SmoothTransformation);
 			item->setShapeMode(QGraphicsPixmapItem::BoundingRectShape);
@@ -331,7 +336,7 @@ void BoardGraphicsScene::displayPlayerMoved(void * data, int callDepth)
 	TileMove const & tileMove = d->move.tileMove;
 	MeepleMove const & meepleMove = d->move.meepleMove;
 	
-	QPixmap const & img = imgFactory.getImage(d->tile);
+	QPixmap const & img = imgFactory->getImage(d->tile);
 	QGraphicsPixmapItem * item = new QGraphicsPixmapItem(img);
 	item->setTransformationMode(Qt::SmoothTransformation);
 	item->setShapeMode(QGraphicsPixmapItem::BoundingRectShape);
@@ -342,8 +347,8 @@ void BoardGraphicsScene::displayPlayerMoved(void * data, int callDepth)
 
 	if (!meepleMove.isNull())
 	{
-		QPoint meeplePoint = imgFactory.getPoints(d->tile)[meepleMove.nodeIndex];
-		auto meeple = createMeeple(d->tile->getCNodes()[meepleMove.nodeIndex], meeplePoint, tileMove, imgFactory.getPlayerColor(d->player));
+		QPoint meeplePoint = imgFactory->getPoints(d->tile)[meepleMove.nodeIndex];
+		auto meeple = createMeeple(d->tile->getCNodes()[meepleMove.nodeIndex], meeplePoint, tileMove, imgFactory->getPlayerColor(d->player));
 		meepleLayer->addToGroup(meeple);
 //		meeple->ensureVisible();
 	}
@@ -530,8 +535,8 @@ QGraphicsItemGroup *BoardGraphicsScene::createMeeple(Node const * n, QPoint & po
 
 	QGraphicsItemGroup * svg = new QGraphicsItemGroup();
 
-	QGraphicsSvgItem * fill = new QGraphicsSvgItem(imgFactory.getMeepleFillSvg(n), svg);
-	QGraphicsSvgItem * outline = new QGraphicsSvgItem(imgFactory.getMeepleOutlineSvg(n), svg);
+	QGraphicsSvgItem * fill = new QGraphicsSvgItem(imgFactory->getMeepleFillSvg(n), svg);
+	QGraphicsSvgItem * outline = new QGraphicsSvgItem(imgFactory->getMeepleOutlineSvg(n), svg);
 	auto colorEffect = new QGraphicsColorizeEffect(fill);
 	colorEffect->setColor(color);
 	fill->setGraphicsEffect(colorEffect);

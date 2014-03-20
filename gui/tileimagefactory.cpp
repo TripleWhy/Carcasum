@@ -1,6 +1,9 @@
 #include "tileimagefactory.h"
 #include "boardgraphicsscene.h"
 
+#include <QtSvg/QSvgRenderer>
+#include <QPainter>
+
 TileImageFactory::TileImageFactory(jcz::TileFactory * tileFactory)
 	: tileFactory(tileFactory)
 {
@@ -47,6 +50,16 @@ QString TileImageFactory::getMeepleOutlineSvg(const Node * node) const
 	}
 }
 
+QString TileImageFactory::getMeepleFillSvgStanding() const
+{
+	return ":/img/meeple/standing-fill";
+}
+
+QString TileImageFactory::getMeepleOutlineSvgStanding() const
+{
+	return ":/img/meeple/standing-outline";
+}
+
 QColor TileImageFactory::getPlayerColor(int player) const
 {
 	//TODO make dynamic
@@ -67,6 +80,33 @@ QColor TileImageFactory::getPlayerColor(int player) const
 		default:
 			return Qt::magenta;
 	}
+}
+
+QPixmap TileImageFactory::generateMeepleStanding(int size, QColor color)
+{
+	QSvgRenderer renderer(getMeepleFillSvgStanding());
+	qreal r = renderer.viewBoxF().width() / renderer.viewBoxF().height();
+	int w = size;
+	int h = size;
+	if (r < 1.0)
+		w = r * h;
+	else
+		h = w / r;
+	
+	QPixmap pixmap(w, h);
+	pixmap.fill(Qt::transparent);
+	
+	QPainter painter(&pixmap);
+	renderer.render(&painter);
+	
+	painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
+	painter.fillRect(pixmap.rect(), color);
+	
+	painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+	renderer.load(getMeepleOutlineSvgStanding());
+	renderer.render(&painter);
+	
+	return pixmap;
 }
 
 QMap<uchar, QPoint> TileImageFactory::getPoints(Tile const * tile)

@@ -35,14 +35,17 @@ core {
 		gui/mainwindow.cpp \
 		gui/tileimagefactory.cpp \
 		gui/boardgraphicsview.cpp \
-		gui/boardgraphicsscene.cpp
+		gui/boardgraphicsscene.cpp \
+		gui/playerinfoview.cpp
 
 	HEADERS  += gui/mainwindow.h \
 		gui/tileimagefactory.h \
 		gui/boardgraphicsview.h \
-		gui/boardgraphicsscene.h
+		gui/boardgraphicsscene.h \
+		gui/playerinfoview.h
 
-	FORMS    += gui/mainwindow.ui
+	FORMS    += gui/mainwindow.ui \
+		gui/playerinfoview.ui
 
 	classicTiles {
 		RESOURCES += jcz/jczTilesClassic.qrc

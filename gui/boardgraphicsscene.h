@@ -38,7 +38,7 @@ private:
 //	QList<QGraphicsSvgItem *> meepleOutlines;
 	QGraphicsPixmapItem * placementTile;
 	jcz::TileFactory * tileFactory;
-	TileImageFactory imgFactory;
+	TileImageFactory * imgFactory;
 	QHash<QPoint, QGraphicsItemGroup *> possibleMeeplePlaces;
 	TileMovesType possiblePlacements;
 
@@ -49,11 +49,12 @@ private:
 	MeepleMove userMeepleMove;
 
 public:
-	explicit BoardGraphicsScene(jcz::TileFactory * tileFactory = 0, QObject * parent = 0);
+	explicit BoardGraphicsScene(jcz::TileFactory * tileFactory = 0, TileImageFactory * imgFactory = 0, QObject * parent = 0);
 	~BoardGraphicsScene();
 
 	void setGame(const Game * const g);
 	void setTileFactory(jcz::TileFactory * factory);
+	void setTileImageFactory(TileImageFactory * factory);
 	virtual TileMove getTileMove(int player, Tile const * const tile, MoveHistoryEntry const & move, TileMovesType const & placements, Game const * const game);
 	virtual MeepleMove getMeepleMove(int player, Tile const * const tile, MoveHistoryEntry const & move, MeepleMovesType const & possible, Game const * const game);
 	virtual void newGame(int player, Game const * const game);

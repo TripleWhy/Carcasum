@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+
+#include "playerinfoview.h"
 #include "jcz/tilefactory.h"
 
 #include "player/randomplayer.h"
@@ -10,8 +12,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 	ui->setupUi(this);
 
-	jcz::TileFactory * tileFactory = new jcz::TileFactory();
-	boardUi = new BoardGraphicsScene(tileFactory, ui->boardView);
+	boardUi = new BoardGraphicsScene(&tileFactory, &imgFactory, ui->boardView);
 	game = new Game();
 
 	boardUi->setGame(game);
@@ -20,7 +21,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(boardUi, SIGNAL(sceneRectChanged(QRectF)), this, SLOT(recenter(QRectF)));
 
 	Player * p1 = &RandomPlayer::instance;
-	Player * p2 = new MonteCarloPlayer(tileFactory);
+	Player * p2 = new MonteCarloPlayer(&tileFactory);
 
 	game->addWatchingPlayer(boardUi);
 	
@@ -31,8 +32,8 @@ MainWindow::MainWindow(QWidget *parent) :
 //	game->addPlayer(p1);
 //	game->addPlayer(p1);
 	game->addPlayer(p2);
-	game->addPlayer(boardUi);
-	game->newGame(Tile::BaseGame, tileFactory);
+	game->addPlayer(this);
+	game->newGame(Tile::BaseGame, &tileFactory);
 
 	new std::thread( [this]() {
 		while (!game->isFinished())
@@ -52,6 +53,41 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
 	delete ui;
+}
+
+void MainWindow::newGame(int player, const Game * const game)
+{
+	if (player == -1)
+	{
+		QVBoxLayout * l = ui->playerInfoLayout;
+		qDeleteAll(playerInfos);
+		playerInfos.clear();
+		for (int i = 0; i < game->getPlayerCount(); ++i)
+		{
+			PlayerInfoView * pi = new PlayerInfoView(i, game, &imgFactory);
+			l->insertWidget(i, pi);
+			playerInfos.push_back(pi);
+		}
+	}
+	
+	boardUi->newGame(player, game);
+}
+
+void MainWindow::playerMoved(int player, const Tile * const tile, const MoveHistoryEntry & move, const Game * const game)
+{
+	for (PlayerInfoView * pi : playerInfos)
+		pi->updateView();
+	boardUi->playerMoved(player, tile, move, game);
+}
+
+TileMove MainWindow::getTileMove(int player, const Tile * const tile, const MoveHistoryEntry & move, const TileMovesType & placements, const Game * const game)
+{
+	return boardUi->getTileMove(player, tile, move, placements, game);
+}
+
+MeepleMove MainWindow::getMeepleMove(int player, const Tile * const tile, const MoveHistoryEntry & move, const MeepleMovesType & possible, const Game * const game)
+{
+	return boardUi->getMeepleMove(player, tile, move, possible, game);
 }
 
 void MainWindow::timeout()
