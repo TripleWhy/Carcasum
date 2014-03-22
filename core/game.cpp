@@ -249,7 +249,7 @@ void Game::step()
 		qDebug();
 #endif
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
-		for (int i = 0; i < getPlayerCount(); ++i)
+		for (uint i = 0; i < getPlayerCount(); ++i)
 			Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT);
 #endif
 #if WATCH_SCORES
@@ -269,6 +269,9 @@ void Game::step()
 		board->scoreEndGame();
 		returnMeeplesToPlayers();
 		active = false;
+
+		for (Player * p : allPlayers)
+			p->endGame(this);
 		
 #if PRINT_STEPS || !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
 		auto && unscoredMeeples = board->countUnscoredMeeples();
@@ -279,7 +282,7 @@ void Game::step()
 			qDebug() << (moveHistory.size() + 1) << "player" << i << "score:" << playerScores[i] << "meeples:" << playerMeeples[i] << "+" << unscoredMeeples[i] << "=" << (playerMeeples[i]+unscoredMeeples[i]);
 #endif
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
-		for (int i = 0; i < getPlayerCount(); ++i)
+		for (uint i = 0; i < getPlayerCount(); ++i)
 			Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT);
 #endif
 	}
@@ -342,6 +345,9 @@ void Game::step(int tileIndex, const TileMove & tileMove, int playerIndex, Playe
 		board->scoreEndGame();
 		returnMeeplesToPlayers();
 		active = false;
+
+		for (Player * p : allPlayers)
+			p->endGame(this);
 	}
 }
 
@@ -391,6 +397,9 @@ void Game::step(const MoveHistoryEntry & entry)
 	{
 		board->scoreEndGame();
 		active = false;
+
+		for (Player * p : allPlayers)
+			p->endGame(this);
 	}
 }
 
@@ -474,7 +483,7 @@ void Game::undo()
 		qDebug() << (moveHistory.size()) << "player" << i << "score:" << playerScores[i] << "meeples:" << playerMeeples[i] << "+" << unscoredMeeples[i] << "=" << (playerMeeples[i]+unscoredMeeples[i]);
 #endif
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
-	for (int i = 0; i < getPlayerCount(); ++i)
+	for (uint i = 0; i < getPlayerCount(); ++i)
 		Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT);
 #endif
 #if WATCH_SCORES
@@ -629,7 +638,7 @@ bool Game::equals(Game const & other) const
 			return false;
 	if (playerMeeples != 0)
 	{
-		for (int i = 0; i < getPlayerCount(); ++i)
+		for (uint i = 0; i < getPlayerCount(); ++i)
 		{
 			if (playerMeeples[i] != other.playerMeeples[i])
 				return false;

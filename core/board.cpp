@@ -288,7 +288,7 @@ void Board::unscoreEndGame()
 std::vector<int> Board::countUnscoredMeeples() const
 {
 	std::vector<int> meeples;
-	for (int i = 0; i < game->getPlayerCount(); ++i)
+	for (uint i = 0; i < game->getPlayerCount(); ++i)
 		meeples.push_back(0);
 	std::unordered_set<Node::NodeData const *> nodeIds;
 	for (uint y = 0; y < size; ++y)
@@ -304,7 +304,7 @@ std::vector<int> Board::countUnscoredMeeples() const
 						nodeIds.insert((*n)->getData());
 						
 						QString s;
-						for (int i = 0; i < game->getPlayerCount(); ++i)
+						for (uint i = 0; i < game->getPlayerCount(); ++i)
 						{
 							meeples[i] += (*n)->getMeeples()[i];
 							s = s + ", " + QString::number((*n)->getMeeples()[i]);

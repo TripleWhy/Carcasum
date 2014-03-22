@@ -33,7 +33,7 @@ void Node::removeMeeple(int player, Game * g)
 	if (d->meeples[player]-- == d->maxMeples)
 	{
 		d->maxMeples = 0;
-		for (int i = 0; i < g->getPlayerCount(); ++i)
+		for (uint i = 0; i < g->getPlayerCount(); ++i)
 			if (d->meeples[i] > d->maxMeples)
 				d->maxMeples = d->meeples[i];
 	}
@@ -203,7 +203,7 @@ bool Node::equals(const Node & other, const Game * g) const
 		return false;
 	if (data.tiles.size() != other.data.tiles.size())
 		return false;
-	for (int i = 0; i < g->getPlayerCount(); ++i)
+	for (uint i = 0; i < g->getPlayerCount(); ++i)
 		if (data.meeples[i] != other.data.meeples[i])
 			return false;
 	if (data.maxMeples != other.data.maxMeples)
@@ -225,7 +225,7 @@ bool Node::equals(const Node & other, const Game * g) const
 			return false;
 		if (d->tiles.size() != other.d->tiles.size())
 			return false;
-		for (int i = 0; i < g->getPlayerCount(); ++i)
+		for (uint i = 0; i < g->getPlayerCount(); ++i)
 			if (d->meeples[i] != other.d->meeples[i])
 				return false;
 		if (d->maxMeples != other.d->maxMeples)

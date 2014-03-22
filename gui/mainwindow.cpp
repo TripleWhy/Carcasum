@@ -57,15 +57,16 @@ MainWindow::~MainWindow()
 
 void MainWindow::newGame(int player, const Game * const game)
 {
-	if (player == -1)
+	if (playerInfos.size() != game->getPlayerCount())
 	{
-		QVBoxLayout * l = ui->playerInfoLayout;
 		qDeleteAll(playerInfos);
 		playerInfos.clear();
-		for (int i = 0; i < game->getPlayerCount(); ++i)
+		QVBoxLayout * l = ui->playerInfoLayout;
+		for (uint i = 0; i < game->getPlayerCount(); ++i)
 		{
 			PlayerInfoView * pi = new PlayerInfoView(i, game, &imgFactory);
 			l->insertWidget(i, pi);
+			connect(this, SIGNAL(updateNeeded()), pi, SLOT(updateView()));
 			playerInfos.push_back(pi);
 		}
 	}
@@ -75,8 +76,7 @@ void MainWindow::newGame(int player, const Game * const game)
 
 void MainWindow::playerMoved(int player, const Tile * const tile, const MoveHistoryEntry & move, const Game * const game)
 {
-	for (PlayerInfoView * pi : playerInfos)
-		pi->updateView();
+	emit updateNeeded();
 	boardUi->playerMoved(player, tile, move, game);
 }
 
@@ -88,6 +88,12 @@ TileMove MainWindow::getTileMove(int player, const Tile * const tile, const Move
 MeepleMove MainWindow::getMeepleMove(int player, const Tile * const tile, const MoveHistoryEntry & move, const MeepleMovesType & possible, const Game * const game)
 {
 	return boardUi->getMeepleMove(player, tile, move, possible, game);
+}
+
+void MainWindow::endGame(const Game * const game)
+{
+	emit updateNeeded();;
+	return boardUi->endGame(game);
 }
 
 void MainWindow::timeout()

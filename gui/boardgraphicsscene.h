@@ -59,6 +59,7 @@ public:
 	virtual MeepleMove getMeepleMove(int player, Tile const * const tile, MoveHistoryEntry const & move, MeepleMovesType const & possible, Game const * const game);
 	virtual void newGame(int player, Game const * const game);
 	virtual void playerMoved(int player, Tile const * const tile, MoveHistoryEntry const & move, Game const * const game);
+	virtual void endGame(Game const * const game);
 
 protected:
 	virtual void mousePressEvent (QGraphicsSceneMouseEvent * mouseEvent);

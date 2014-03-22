@@ -308,6 +308,12 @@ void BoardGraphicsScene::playerMoved(int player, const Tile * const tile, const 
 	displayPlayerMoved(callData);
 }
 
+void BoardGraphicsScene::endGame(const Game * const /*game*/)
+{
+	qDeleteAll(openLayer->childItems());
+	openTiles.clear();
+}
+
 void BoardGraphicsScene::displayPlayerMoved(void * data, int callDepth)
 {
 	DPMData * d = static_cast<DPMData *>(data);

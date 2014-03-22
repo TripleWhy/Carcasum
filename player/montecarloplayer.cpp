@@ -156,3 +156,7 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * const /*tile
 	Q_ASSERT(bestMove != 0);
 	return *bestMove;
 }
+
+void MonteCarloPlayer::endGame(const Game * const /*game*/)
+{
+}

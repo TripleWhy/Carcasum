@@ -30,6 +30,8 @@ public:
 	explicit PlayerInfoView(int player, Game const * game, TileImageFactory * tif, QWidget *parent = 0);
 	~PlayerInfoView();
 	void setPlayer(int player, const Game * game, TileImageFactory * tif);
+
+public slots:
 	void updateView();
 
 private:

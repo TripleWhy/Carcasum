@@ -62,7 +62,7 @@ private:
 	int * playerMeeples = 0;
 	int * returnMeeples = 0;
 	int * playerScores = 0;
-	int playerCount = 0;
+	uint playerCount = 0;
 	
 	std::vector<MoveHistoryEntry> moveHistory;
 	Tile::TileSets tileSets;
@@ -106,7 +106,7 @@ public:
 	bool equals(const Game & other) const;
 
 	inline bool isFinished() const { return !active; }
-	inline int getPlayerCount() const { return playerCount; }
+	inline uint getPlayerCount() const { return playerCount; }
 	inline std::vector<MoveHistoryEntry> const & getMoveHistory() const { return moveHistory; }
 	inline Tile::TileSets const & getTileSets() const { return tileSets; }
 	inline int const * getScores() const { return playerScores; }

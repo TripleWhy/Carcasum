@@ -23,6 +23,7 @@ public:
 	virtual void playerMoved(int player, Tile const * const tile, MoveHistoryEntry const & move, Game const * const game);
 	virtual TileMove getTileMove(int player, Tile const * const tile, MoveHistoryEntry const & move, TileMovesType const & placements, Game const * const game);
 	virtual MeepleMove getMeepleMove(int player, Tile const * const tile, MoveHistoryEntry const & move, MeepleMovesType const & possible, Game const * const game);
+	virtual void endGame(Game const * const game);
 	
 private:
 	inline int utility(int const * scores, int const playerCount, int const myIndex)
