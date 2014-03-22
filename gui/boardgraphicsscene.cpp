@@ -426,7 +426,7 @@ void BoardGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent * mouseEvent)
 		}
 		else if (mouseEvent->buttons() == Qt::RightButton)
 		{
-			userMeepleMove = 0;
+			userMeepleMove = -1;
 			userMoveReady = true;
 		}
 	}
