@@ -23,7 +23,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	Player * p1 = &RandomPlayer::instance;
 	Player * p2 = new MonteCarloPlayer(&tileFactory);
 
-	game->addWatchingPlayer(boardUi);
+	game->addWatchingPlayer(this);
 	
 	game->addPlayer(p1);
 //	game->addPlayer(p1);

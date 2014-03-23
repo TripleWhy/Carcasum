@@ -359,6 +359,37 @@ void BoardGraphicsScene::displayPlayerMoved(void * data, int callDepth)
 //		meeple->ensureVisible();
 	}
 
+	{
+		auto const & history = game->getMoveHistory();
+		auto const & children = meepleLayer->childItems();
+		Board const * b = game->getBoard();
+		int j = 0;
+		for (uint i = 0; i < history.size(); ++i)
+		{
+			Move const & m = history[i].move;
+			if (m.tileMove.isNull() || m.meepleMove.isNull())
+				continue;
+			if (j >= children.length())	// This runs in gui thread so game thread can have added a move in between.
+				break;
+
+			Tile const * t = b->getTile(m.tileMove.x, m.tileMove.y);
+			Node const * n = t->getNode(m.meepleMove.nodeIndex);
+			if (n->getScored() != NotScored)
+			{
+				QGraphicsItemGroup * grp = static_cast<QGraphicsItemGroup *>(children[j]);
+				QGraphicsSvgItem * fill = static_cast<QGraphicsSvgItem *>(grp->childItems()[0]);
+				if (grp->graphicsEffect() == 0)
+				{
+					auto effect = new QGraphicsOpacityEffect(fill);
+					effect->setOpacity(0.3);
+					grp->setGraphicsEffect(effect);
+				}
+			}
+
+			++j;
+		}
+	}
+
 	placeOpen();
 	
 	delete d;
