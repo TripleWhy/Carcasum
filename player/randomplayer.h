@@ -3,6 +3,7 @@
 
 #include "core/player.h"
 #include "core/util.h"
+#include "core/game.h"
 
 class RandomPlayer : public Player
 {

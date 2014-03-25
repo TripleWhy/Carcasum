@@ -19,7 +19,7 @@
 // Debug options
 // Game
 #define PRINT_STEPS             0
-#define WATCH_SCORES            0
+#define WATCH_SCORES            !defined(QT_NO_DEBUG)
 // Tile
 #define PRINT_CONNECTIONS       0
 #define DEBUG_IDS               0

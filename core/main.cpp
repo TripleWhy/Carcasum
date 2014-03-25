@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 		for (int i = 0; i < 1000; ++i)
 		{
 			qDebug() << "================================\nRUN" << i;
-			Game g1, g2, g3;
+			Game g1, g2, g3, g4;
 			Q_ASSERT(g1.equals(g2));
 			Q_ASSERT(g2.equals(g1));
 			for (int i = 0; i < 3; ++i)
@@ -28,19 +28,25 @@ int main(int argc, char *argv[])
 				g1.addPlayer(&RandomPlayer::instance);
 				g2.addPlayer(&RandomPlayer::instance);
 				g3.addPlayer(&RandomPlayer::instance);
+				g4.addPlayer(&RandomPlayer::instance);
 			}
 			Q_ASSERT(g1.equals(g2));
 			Q_ASSERT(g2.equals(g1));
 			g1.newGame(Tile::BaseGame, tileFactory);
 			g2.newGame(Tile::BaseGame, tileFactory);
+			g4.newGame(Tile::BaseGame, tileFactory);
 			Q_ASSERT(g1.equals(g2));
 			Q_ASSERT(g2.equals(g1));
 			
 			int steps = 0;
+			bool notDone = true;
 			//for ( ; steps < 23; ++steps)
-			for ( ; !g1.isFinished(); ++steps)
+			for ( ; notDone; ++steps)
 			{
-				g1.step();
+				notDone = g1.step();
+				g4.simStep(g1.getMoveHistory().back());
+				Q_ASSERT(g1.equals(g4));
+				Q_ASSERT(g4.equals(g1));
 #if CONTROL_GAME
 				g3.newGame(Tile::BaseGame, tileFactory, g1.getMoveHistory());
 				Q_ASSERT(g1.equals(g3));
@@ -50,6 +56,9 @@ int main(int argc, char *argv[])
 			for (int i = 0; i < steps; ++i)
 			{
 				g1.undo();
+				g4.undo();
+				Q_ASSERT(g1.equals(g4));
+				Q_ASSERT(g4.equals(g1));
 #if CONTROL_GAME
 				g3.newGame(Tile::BaseGame, tileFactory, g1.getMoveHistory());
 				Q_ASSERT(g1.equals(g3));

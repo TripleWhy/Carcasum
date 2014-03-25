@@ -1,6 +1,6 @@
 #include "montecarloplayer.h"
-
 #include "randomplayer.h"
+#include "core/game.h"
 
 MonteCarloPlayer::MonteCarloPlayer(jcz::TileFactory * tileFactory)
     : tileFactory(tileFactory)
@@ -52,15 +52,15 @@ TileMove MonteCarloPlayer::getTileMove(int player, const Tile * const /*tile*/, 
 			g.step(move.tile, tileMove, player, &RandomPlayer::instance);
 
 			while (!g.isFinished())
-				g.step();
+				g.simStep(&RandomPlayer::instance);
 
 			utilities[moveIndex] += utility(g.getScores(), playerCount, player);
 #else
-			g.step(move.tile, tileMove, player, &RandomPlayer::instance);
+			g.simStep(move.tile, tileMove, player, &RandomPlayer::instance);
 
 			int steps = 1;
 			for ( ; !g.isFinished(); ++steps)
-				g.step();
+				g.simStep(&RandomPlayer::instance);
 			
 			utilities[moveIndex] += utility(g.getScores(), playerCount, player);
 			
@@ -115,18 +115,19 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * const /*tile
 		{
 #if USE_RESET
 			g.restartGame(history);
-			g.step(m);
-
-			while (!g.isFinished())
-				g.step();
+			if (g.step(m))
+				while (g.simStep(&RandomPlayer::instance))
+					;
 
 			utilities[moveIndex] += utility(g.getScores(), playerCount, player);
 #else
-			g.step(m);
-			
 			int steps = 1;
-			for ( ; !g.isFinished(); ++steps)
-				g.step();
+			if (g.simStep(m))
+			{
+				do
+					++steps;
+				while (g.simStep(&RandomPlayer::instance));
+			}
 			
 			utilities[moveIndex] += utility(g.getScores(), playerCount, player);
 			

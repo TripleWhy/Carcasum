@@ -4,6 +4,7 @@
 #include "tile.h"
 #include "util.h"
 #include "player.h"
+#include "game.h"
 
 #include <QHash>
 #include <QPoint>

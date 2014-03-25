@@ -4,6 +4,8 @@
 #include "static.h"
 #include "tile.h"
 #include "util.h"
+#include "player.h"
+#include "util.h"
 
 class Player;
 class Tile;
@@ -84,9 +86,10 @@ public:
 //	void setPlayers(QList<Player *> players);
 	void clearPlayers();
 	Board const * getBoard() const;
-	void step();
-	void step(int tileIndex, TileMove const & tileMove, int playerIndex, Player * player);
-	void step(MoveHistoryEntry const & entry);
+	bool step();
+	bool simStep(Player * player);
+	bool simStep(int tileIndex, TileMove const & tileMove, int playerIndex, Player * player);
+	bool simStep(MoveHistoryEntry const & entry);
 	void undo();
 
 	void cityClosed(CityNode * n);
@@ -101,6 +104,9 @@ public:
 private:
 	void scoreNode(Node * n, const int score);
 	void unscoreNode(Node * n, const int score);
+	void simEndGame();
+	inline void endGame();
+	inline void moveTile(Tile * tile, TileMove const & tileMove);
 	
 public:
 	bool equals(const Game & other) const;
@@ -114,12 +120,49 @@ public:
 	inline int getPlayerScore(int player) const { return playerScores[player]; }
 
 private:
+	inline void setNextPlayer() { nextPlayer = (nextPlayer + 1) % getPlayerCount(); }
+	inline int nextTile() { return r.nextInt(tiles.size()); }
+
 	inline void returnMeeplesToPlayers()
 	{
 		for (int * r = returnMeeples, * end = r + getPlayerCount(), * m = playerMeeples; r < end; ++r, ++m)
 		{
 			*m += *r;
 			*r = 0;
+		}
+	}
+	inline MeepleMovesType getPossibleMeeplePlacements(Tile * tile)
+	{
+		MeepleMovesType possibleMeeples(1);
+//		possibleMeeples[0] = MeepleMove();	// Not neccessary for non-primitive types
+
+		auto nodes = tile->getNodes();
+		for (uchar i = 0, end = tile->getNodeCount(); i < end; ++i)
+			if (Util::isNodeFree(nodes[i]))
+				possibleMeeples.append(MeepleMove(i));
+		Q_ASSERT_X(possibleMeeples.size() <= NODE_ARRAY_LENGTH, "Game::step()", "possibleMeeples initial size too low");
+		return possibleMeeples;
+	}
+	inline void moveMeeple(Tile * tile, int playerIndex, MeepleMove const & meepleMove)
+	{
+		if (!meepleMove.isNull())
+		{
+			Node * n = tile->getNode(meepleMove.nodeIndex);
+			n->addMeeple(playerIndex, this);
+			--playerMeeples[playerIndex];
+		}
+	}
+	inline bool simCheckEndGame()
+	{
+		if (tiles.isEmpty())
+		{
+			simEndGame();
+			return false;
+		}
+		else
+		{
+			returnMeeplesToPlayers();
+			return true;
 		}
 	}
 

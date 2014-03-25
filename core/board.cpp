@@ -225,6 +225,7 @@ TileMovesType Board::getPossibleTilePlacements(const Tile * tile) const
 		}
 		hell2:;
 	}
+	Q_ASSERT_X(possible.size() <= TILE_ARRAY_LENGTH, "Board::getPossibleTilePlacements()", "placements initial size too low");
 
 	return possible;
 }

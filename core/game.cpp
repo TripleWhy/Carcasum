@@ -151,24 +151,24 @@ Board const * Game::getBoard() const
 	return board;
 }
 
-void Game::step()
+bool Game::step()
 {
 	if (isFinished())
-		return;
+		return false;
 #if PRINT_STEPS
 	qDebug() << "STEP:";
 #endif
 #if WATCH_SCORES
 	std::vector<int> oldScores;
-	for (int i = 0; i < getPlayerCount(); ++i)
+	for (uint i = 0; i < getPlayerCount(); ++i)
 		oldScores.push_back(playerScores[i]);
 #endif
 
 	MoveHistoryEntry entry;
-	entry.tile = r.nextInt(tiles.size());
+	entry.tile = nextTile();
 	Tile * tile = tiles[entry.tile];
 	TileMovesType && placements = board->getPossibleTilePlacements(tile);
-	while (placements.isEmpty())
+	if (placements.isEmpty())
 	{
 		discardedTiles.push_back(tile);
 #if PRINT_STEPS
@@ -182,183 +182,179 @@ void Game::step()
 		tiles.removeAt(entry.tile);
 		
 		if (tiles.isEmpty())
-			goto closeGame;   // I am going to hell for this.
-		
-		entry.tile = r.nextInt(tiles.size());
-		tile = tiles[entry.tile];
-		placements = board->getPossibleTilePlacements(tile);
-	}
-	
-	// open new scope to be able to jump over with goto
-	{
-		Q_ASSERT_X(placements.size() <= TILE_ARRAY_LENGTH, "Game::step()", "placements initial size too low");
-	//	qDebug() << "tile type:" << tile->tileType << "possible placements:" << placements.size();
-	
-		int const playerIndex = nextPlayer;
-		Player * player = players[playerIndex];
-	
-		Move & move = entry.move;
-		TileMove & tileMove = move.tileMove;
-		tileMove = player->getTileMove(playerIndex, tile, entry, placements, this);
-	//	qDebug() << (moveHistory.size() + 1) << "player" << playerIndex << tileMove.x << tileMove.y << tileMove.orientation;
-		board->addTile(tile, tileMove);
-	
-		MeepleMove & meepleMove = move.meepleMove;
-		if (playerMeeples[playerIndex] > 0)
 		{
-			MeepleMovesType possibleMeeples(1);
-	//		possibleMeeples[0] = MeepleMove();	// Not neccessary for non-primitive types
-			
-			auto nodes = tile->getNodes();
-			for (uchar i = 0, end = tile->getNodeCount(); i < end; ++i)
-				if (Util::isNodeFree(nodes[i]))
-					possibleMeeples.append(MeepleMove(i));
-			Q_ASSERT_X(possibleMeeples.size() <= NODE_ARRAY_LENGTH, "Game::step()", "possibleMeeples initial size too low");
-		
-			if (possibleMeeples.size() > 1)
-			{
-				meepleMove = player->getMeepleMove(playerIndex, tile, entry, possibleMeeples, this);
-				if (!meepleMove.isNull())
-				{
-					Node * n = nodes[meepleMove.nodeIndex];
-					n->addMeeple(playerIndex, this);
-					--playerMeeples[playerIndex];
-					
-	//				qDebug() << (moveHistory.size() + 1) << "player" << playerIndex << "placed meeple on" << n->t;
-	//				tile->printSides(n);
-				}
-	//			else
-	//				qDebug() << (moveHistory.size() + 1) << "player" << playerIndex << "placed no meeple";
-			}
+			endGame();
+			return false;
 		}
-		returnMeeplesToPlayers();
-		nextPlayer = (nextPlayer + 1) % getPlayerCount();
-		
-#if PRINT_STEPS || !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
-		auto && unscoredMeeples = board->countUnscoredMeeples();
-#endif
-#if PRINT_STEPS
-		qDebug() << "next player:" << nextPlayer;
-		for (int i = 0; i < getPlayerCount(); ++i)
-			qDebug() << moveHistory.size() + 1 << "player" << i << "score:" << playerScores[i] << "meeples:" << playerMeeples[i] << "+" << unscoredMeeples[i] << "=" << (playerMeeples[i]+unscoredMeeples[i]);
-		qDebug() << (moveHistory.size() + 1) << "player" << playerIndex << tileMove.x << tileMove.y << tileMove.orientation;
-		if (!meepleMove.isNull())
-			qDebug() << (moveHistory.size() + 1) << "player" << playerIndex << "placed meeple on" << tile->getNodes()[meepleMove.nodeIndex]->getTerrain();
 		else
-			qDebug() << (moveHistory.size() + 1) << "player" << playerIndex << "placed no meeple";
-		qDebug();
-#endif
-#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
-		for (uint i = 0; i < getPlayerCount(); ++i)
-			Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT);
-#endif
-#if WATCH_SCORES
-		for (int i = 0; i < getPlayerCount(); ++i)
-			Q_ASSERT(playerScores[i] >= oldScores[i]);
-#endif
-		
-		moveHistory.push_back(entry);
-		for (Player * p : allPlayers)
-			p->playerMoved(playerIndex, tile, entry, this);
+		{
+			return true;
+		}
 	}
-
-	tiles.removeAt(entry.tile);
-	if (tiles.isEmpty())
-	{
-		closeGame:
-		board->scoreEndGame();
-		returnMeeplesToPlayers();
-		active = false;
-
-		for (Player * p : allPlayers)
-			p->endGame(this);
-		
-#if PRINT_STEPS || !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
-		auto && unscoredMeeples = board->countUnscoredMeeples();
-#endif
-#if PRINT_STEPS
-		qDebug("GAME OVER:");
-		for (int i = 0; i < getPlayerCount(); ++i)
-			qDebug() << (moveHistory.size() + 1) << "player" << i << "score:" << playerScores[i] << "meeples:" << playerMeeples[i] << "+" << unscoredMeeples[i] << "=" << (playerMeeples[i]+unscoredMeeples[i]);
-#endif
-#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
-		for (uint i = 0; i < getPlayerCount(); ++i)
-			Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT);
-#endif
-	}
-}
-
-void Game::step(int tileIndex, const TileMove & tileMove, int playerIndex, Player * player)
-{
-#if WATCH_SCORES
-	std::vector<int> oldScores;
-	for (int i = 0; i < getPlayerCount(); ++i)
-		oldScores.push_back(playerScores[i]);
-#endif
-	Q_ASSERT(!tileMove.isNull());
-	MoveHistoryEntry entry;
-	entry.tile = tileIndex;
-	Tile * tile = tiles[entry.tile];
-
+	
+//	qDebug() << "tile type:" << tile->tileType << "possible placements:" << placements.size();
+	
+	int const playerIndex = nextPlayer;
+	Player * player = players[playerIndex];
+	
 	Move & move = entry.move;
-	move.tileMove = tileMove;
-	board->addTile(tile, tileMove);
-
+	TileMove & tileMove = move.tileMove;
+	tileMove = player->getTileMove(playerIndex, tile, entry, placements, this);
+//	qDebug() << (moveHistory.size() + 1) << "player" << playerIndex << tileMove.x << tileMove.y << tileMove.orientation;
+	moveTile(tile, tileMove);
+	
+	MeepleMove & meepleMove = move.meepleMove;
 	if (playerMeeples[playerIndex] > 0)
 	{
-		MeepleMovesType possibleMeeples(1);
-		
-		auto nodes = tile->getNodes();
-		for (uchar i = 0, end = tile->getNodeCount(); i < end; ++i)
-			if (Util::isNodeFree(nodes[i]))
-				possibleMeeples.append(MeepleMove(i));
-		Q_ASSERT_X(possibleMeeples.size() <= NODE_ARRAY_LENGTH, "Game::step()", "possibleMeeples initial size too low");
-	
+		MeepleMovesType && possibleMeeples = getPossibleMeeplePlacements(tile);
 		if (possibleMeeples.size() > 1)
 		{
-			MeepleMove & meepleMove = move.meepleMove;
 			meepleMove = player->getMeepleMove(playerIndex, tile, entry, possibleMeeples, this);
-			if (!meepleMove.isNull())
-			{
-				Node * n = nodes[meepleMove.nodeIndex];
-				n->addMeeple(playerIndex, this);
-				--playerMeeples[playerIndex];
-			}
+			moveMeeple(tile, playerIndex, meepleMove);
+//			qDebug() << (moveHistory.size() + 1) << "player" << playerIndex << "placed meeple on" << n->t;
+//			qDebug() << (moveHistory.size() + 1) << "player" << playerIndex << "placed no meeple";
 		}
 	}
 	returnMeeplesToPlayers();
-	nextPlayer = (nextPlayer + 1) % getPlayerCount();
-	
-	moveHistory.push_back(entry);
-//	for (Player * p : allPlayers)
-//		p->playerMoved(playerIndex, tile, entry, this);
-	
+	setNextPlayer();
 
-#if WATCH_SCORES
-		for (int i = 0; i < getPlayerCount(); ++i)
-			Q_ASSERT(playerScores[i] >= oldScores[i]);
+#if PRINT_STEPS || !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+	auto && unscoredMeeples = board->countUnscoredMeeples();
 #endif
+#if PRINT_STEPS
+	qDebug() << "next player:" << nextPlayer;
+	for (uint i = 0; i < getPlayerCount(); ++i)
+		qDebug() << moveHistory.size() + 1 << "player" << i << "score:" << playerScores[i] << "meeples:" << playerMeeples[i] << "+" << unscoredMeeples[i] << "=" << (playerMeeples[i]+unscoredMeeples[i]);
+	qDebug() << (moveHistory.size() + 1) << "player" << playerIndex << tileMove.x << tileMove.y << tileMove.orientation;
+	if (!meepleMove.isNull())
+		qDebug() << (moveHistory.size() + 1) << "player" << playerIndex << "placed meeple on" << tile->getNodes()[meepleMove.nodeIndex]->getTerrain();
+	else
+		qDebug() << (moveHistory.size() + 1) << "player" << playerIndex << "placed no meeple";
+	qDebug();
+#endif
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+	for (uint i = 0; i < getPlayerCount(); ++i)
+		Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT);
+#endif
+#if WATCH_SCORES
+	for (uint i = 0; i < getPlayerCount(); ++i)
+		Q_ASSERT(playerScores[i] >= oldScores[i]);
+#endif
+
+	moveHistory.push_back(entry);
+	for (Player * p : allPlayers)
+		p->playerMoved(playerIndex, tile, entry, this);
 
 	tiles.removeAt(entry.tile);
 	if (tiles.isEmpty())
 	{
-		board->scoreEndGame();
-		returnMeeplesToPlayers();
-		active = false;
-
-		for (Player * p : allPlayers)
-			p->endGame(this);
+		endGame();
+		return false;
 	}
+	else
+		return true;
 }
 
-void Game::step(const MoveHistoryEntry & entry)
+bool Game::simStep(Player * player)
 {
-//	if (isFinished())
-//		return;
-
 #if WATCH_SCORES
 	std::vector<int> oldScores;
-	for (int i = 0; i < getPlayerCount(); ++i)
+	for (uint i = 0; i < getPlayerCount(); ++i)
+		oldScores.push_back(playerScores[i]);
+#endif
+	{
+		MoveHistoryEntry entry;
+		entry.tile = nextTile();
+		Tile * tile = tiles[entry.tile];
+		TileMovesType && placements = board->getPossibleTilePlacements(tile);
+		if (placements.isEmpty())
+		{
+			discardedTiles.push_back(tile);
+		}
+		else
+		{
+			int const playerIndex = nextPlayer;
+			Move & move = entry.move;
+			TileMove & tileMove = move.tileMove;
+			tileMove = player->getTileMove(playerIndex, tile, entry, placements, this);
+			moveTile(tile, tileMove);
+
+			if (playerMeeples[playerIndex] > 0)
+			{
+				MeepleMovesType && possibleMeeples = getPossibleMeeplePlacements(tile);
+				if (possibleMeeples.size() > 1)
+				{
+					MeepleMove & meepleMove = move.meepleMove;
+					meepleMove = player->getMeepleMove(playerIndex, tile, entry, possibleMeeples, this);
+					moveMeeple(tile, playerIndex, meepleMove);
+				}
+			}
+			setNextPlayer();
+		}
+		tiles.removeAt(entry.tile);
+		moveHistory.push_back(std::move(entry));
+	}
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+	returnMeeplesToPlayers();
+	auto && unscoredMeeples = board->countUnscoredMeeples();
+	for (uint i = 0; i < getPlayerCount(); ++i)
+		Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT);
+#endif
+#if WATCH_SCORES
+	for (uint i = 0; i < getPlayerCount(); ++i)
+		Q_ASSERT(playerScores[i] >= oldScores[i]);
+#endif
+
+	return simCheckEndGame();
+}
+
+bool Game::simStep(int tileIndex, const TileMove & tileMove, int playerIndex, Player * player)
+{
+	Q_ASSERT(!tileMove.isNull());
+#if WATCH_SCORES
+	std::vector<int> oldScores;
+	for (uint i = 0; i < getPlayerCount(); ++i)
+		oldScores.push_back(playerScores[i]);
+#endif
+	{
+		MoveHistoryEntry entry;
+		entry.tile = tileIndex;
+		Tile * tile = tiles[entry.tile];
+
+		Move & move = entry.move;
+		move.tileMove = tileMove;
+		moveTile(tile, tileMove);
+
+		if (playerMeeples[playerIndex] > 0)
+		{
+			MeepleMovesType && possibleMeeples = getPossibleMeeplePlacements(tile);
+			if (possibleMeeples.size() > 1)
+			{
+				MeepleMove & meepleMove = move.meepleMove;
+				meepleMove = player->getMeepleMove(playerIndex, tile, entry, possibleMeeples, this);
+				moveMeeple(tile, playerIndex, meepleMove);
+			}
+		}
+		setNextPlayer();
+
+		tiles.removeAt(entry.tile);
+		moveHistory.push_back(std::move(entry));
+	}
+	
+
+#if WATCH_SCORES
+		for (uint i = 0; i < getPlayerCount(); ++i)
+			Q_ASSERT(playerScores[i] >= oldScores[i]);
+#endif
+
+	return simCheckEndGame();
+}
+
+bool Game::simStep(const MoveHistoryEntry & entry)
+{
+#if WATCH_SCORES
+	std::vector<int> oldScores;
+	for (uint i = 0; i < getPlayerCount(); ++i)
 		oldScores.push_back(playerScores[i]);
 #endif
 	
@@ -369,51 +365,30 @@ void Game::step(const MoveHistoryEntry & entry)
 	}
 	else
 	{
-		int const playerIndex = nextPlayer;
-		
 		Move const & move = entry.move;
-		TileMove const & tileMove = move.tileMove;
-		board->addTile(tile, tileMove);
-		
-		auto nodes = tile->getNodes();
-		MeepleMove const & meepleMove = move.meepleMove;
-		if (!meepleMove.isNull())
-		{
-			Node * n = nodes[meepleMove.nodeIndex];
-			n->addMeeple(playerIndex, this);
-			--playerMeeples[playerIndex];
-		}
-		
-		nextPlayer = (nextPlayer + 1) % getPlayerCount();
+		moveTile(tile, move.tileMove);
+		moveMeeple(tile, nextPlayer, move.meepleMove);
+		setNextPlayer();
 	}
-#if WATCH_SCORES
-		for (int i = 0; i < getPlayerCount(); ++i)
-			Q_ASSERT(playerScores[i] >= oldScores[i]);
-#endif
-
 	moveHistory.push_back(entry);
 	tiles.removeAt(entry.tile);
-	if (tiles.isEmpty())
-	{
-		board->scoreEndGame();
-		active = false;
 
-		for (Player * p : allPlayers)
-			p->endGame(this);
-	}
+#if WATCH_SCORES
+	for (uint i = 0; i < getPlayerCount(); ++i)
+		Q_ASSERT(playerScores[i] >= oldScores[i]);
+#endif
+
+	return simCheckEndGame();
 }
 
 void Game::undo()
 {
 #if WATCH_SCORES
 	std::vector<int> oldScores;
-	for (int i = 0; i < getPlayerCount(); ++i)
+	for (uint i = 0; i < getPlayerCount(); ++i)
 		oldScores.push_back(playerScores[i]);
 #endif
 	Q_ASSERT(moveHistory.size() > 0);
-
-	MoveHistoryEntry const & entry = moveHistory.back();
-	moveHistory.pop_back();
 
 	if (tiles.isEmpty())
 	{
@@ -421,49 +396,48 @@ void Game::undo()
 		active = true;
 	}
 	
-	Move const & move = entry.move;
-	TileMove const & tileMove = move.tileMove;
-	
-	if (tileMove.isNull())
 	{
-		Tile * t = discardedTiles.back();
-		discardedTiles.pop_back();
-		tiles.insert(entry.tile, t);
-		
+		MoveHistoryEntry const & entry = moveHistory.back();
+		Move const & move = entry.move;
+		TileMove const & tileMove = move.tileMove;
+
+		if (tileMove.isNull())
+		{
+			Tile * t = discardedTiles.back();
+			discardedTiles.pop_back();
+			tiles.insert(entry.tile, t);
+
 #if PRINT_STEPS
-		qDebug() << (moveHistory.size() + 1) << "discarged Tile" << t->tileType << "total:" << discardedTiles.size();
+			qDebug() << (moveHistory.size() + 1) << "discarged Tile" << t->tileType << "total:" << discardedTiles.size();
 #endif
-		
-		if (moveHistory.size() > 0)
-			undo();
-		else
-			return;	// just to be able to place a debug point here
-		return;
+
+			moveHistory.pop_back();
+//			if (moveHistory.size() > 0)
+//				undo();
+//			else
+//				return;	// just to be able to place a debug point here
+			return;
+		}
+
+		Tile * tile = board->getTile(tileMove);
+
+		nextPlayer = (nextPlayer - 1 + getPlayerCount()) % getPlayerCount();
+		int const playerIndex = nextPlayer;
+		MeepleMove const & meepleMove = move.meepleMove;
+		if (!meepleMove.isNull())
+		{
+			auto nodes = tile->getNodes();
+			Node * n = nodes[meepleMove.nodeIndex];
+			++playerMeeples[playerIndex];
+			n->removeMeeple(playerIndex, this);
+			Q_ASSERT(playerMeeples[playerIndex] <= MEEPLE_COUNT);
+		}
+
+		board->removeTile(tileMove);
+
+		tiles.insert(entry.tile, tile);
 	}
-	
-	Tile * tile = board->getTile(tileMove);
-	
-	nextPlayer = (nextPlayer - 1 + getPlayerCount()) % getPlayerCount();
-	int const playerIndex = nextPlayer;
-	MeepleMove const & meepleMove = move.meepleMove;
-	if (!meepleMove.isNull())
-	{
-		auto nodes = tile->getNodes();
-		Node * n = nodes[meepleMove.nodeIndex];
-		++playerMeeples[playerIndex];
-		n->removeMeeple(playerIndex, this);
-		Q_ASSERT(playerMeeples[playerIndex] <= MEEPLE_COUNT);
-	}
-	
-	board->removeTile(tileMove);
-	
-	tiles.insert(entry.tile, tile);
-	
-//	for (int * r = returnMeeples, * end = r + getPlayerCount(), * m = playerMeeples; r < end; ++r, ++m)
-//	{
-//		*m += *r;
-//		*r = 0;
-//	}
+	moveHistory.pop_back();
 
 #if PRINT_STEPS || !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
 	auto && unscoredMeeples = board->countUnscoredMeeples();
@@ -479,7 +453,7 @@ void Game::undo()
 	qDebug() << "UNDO:";
 	qDebug() << "next player:" << nextPlayer;
 
-	for (int i = 0; i < getPlayerCount(); ++i)
+	for (uint i = 0; i < getPlayerCount(); ++i)
 		qDebug() << (moveHistory.size()) << "player" << i << "score:" << playerScores[i] << "meeples:" << playerMeeples[i] << "+" << unscoredMeeples[i] << "=" << (playerMeeples[i]+unscoredMeeples[i]);
 #endif
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
@@ -487,7 +461,7 @@ void Game::undo()
 		Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT);
 #endif
 #if WATCH_SCORES
-		for (int i = 0; i < getPlayerCount(); ++i)
+		for (uint i = 0; i < getPlayerCount(); ++i)
 			Q_ASSERT(playerScores[i] <= oldScores[i]);
 #endif
 }
@@ -584,7 +558,7 @@ void Game::scoreNode(Node * n, int const score)
 	}
 	
 //	qDebug() << "Player scores:";
-//	for (int i = 0; i < getPlayerCount(); ++i)
+//	for (uint i = 0; i < getPlayerCount(); ++i)
 	//		qDebug() << "  Player" << i << ":" << playerScores[i];
 }
 
@@ -604,6 +578,38 @@ void Game::unscoreNode(Node * n, const int score)
 		Q_ASSERT(playerMeeples[player] >= 0);
 	}
 	n->setScored(NotScored);
+}
+
+void Game::simEndGame()
+{
+	board->scoreEndGame();
+	returnMeeplesToPlayers();
+	active = false;
+
+#if PRINT_STEPS || !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+	auto && unscoredMeeples = board->countUnscoredMeeples();
+#endif
+#if PRINT_STEPS
+	qDebug("GAME OVER:");
+	for (uint i = 0; i < getPlayerCount(); ++i)
+		qDebug() << (moveHistory.size() + 1) << "player" << i << "score:" << playerScores[i] << "meeples:" << playerMeeples[i] << "+" << unscoredMeeples[i] << "=" << (playerMeeples[i]+unscoredMeeples[i]);
+#endif
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+	for (uint i = 0; i < getPlayerCount(); ++i)
+		Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT);
+#endif
+}
+
+void Game::endGame()
+{
+	simEndGame();
+	for (Player * p : allPlayers)
+		p->endGame(this);
+}
+
+void Game::moveTile(Tile * tile, const TileMove & tileMove)
+{
+	board->addTile(tile, tileMove);
 }
 
 bool Game::equals(Game const & other) const
@@ -674,6 +680,6 @@ void Game::cleanUp()
 void Game::applyHistory(const std::vector<MoveHistoryEntry> & history)
 {
 	for (MoveHistoryEntry const & e : history)
-		step(e);
+		simStep(e);
 	returnMeeplesToPlayers();
 }

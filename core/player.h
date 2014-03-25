@@ -2,12 +2,15 @@
 #define PLAYER_H
 
 #include "static.h"
-#include "game.h"
+#include <QVarLengthArray>
 
 #include <QList>
 
 class Game;
 class Tile;
+struct TileMove;
+struct MeepleMove;
+struct MoveHistoryEntry;
 
 typedef QVarLengthArray<TileMove, TILE_ARRAY_LENGTH> TileMovesType;
 typedef QVarLengthArray<MeepleMove, NODE_ARRAY_LENGTH> MeepleMovesType;
