@@ -199,7 +199,19 @@ bool Game::step()
 	
 	Move & move = entry.move;
 	TileMove & tileMove = move.tileMove;
-	tileMove = player->getTileMove(playerIndex, tile, entry, placements, this);
+	for (int i = 0; i < 10; ++i)
+	{
+		tileMove = player->getTileMove(playerIndex, tile, entry, placements);
+		if (std::find(placements.cbegin(), placements.cend(), tileMove) != placements.cend())
+			break;
+		else
+		{
+			qWarning("Player returned invalid move!");
+			Q_ASSERT_X(false, "Game::step()", "Player returned invalid tile move!");
+			endGame();
+			return false;
+		}
+	}
 //	qDebug() << (moveHistory.size() + 1) << "player" << playerIndex << tileMove.x << tileMove.y << tileMove.orientation;
 	moveTile(tile, tileMove);
 	
@@ -209,7 +221,19 @@ bool Game::step()
 		MeepleMovesType && possibleMeeples = getPossibleMeeplePlacements(tile);
 		if (possibleMeeples.size() > 1)
 		{
-			meepleMove = player->getMeepleMove(playerIndex, tile, entry, possibleMeeples, this);
+			for (int i = 0; i < 10; ++i)
+			{
+				meepleMove = player->getMeepleMove(playerIndex, tile, entry, possibleMeeples);
+				if (std::find(possibleMeeples.cbegin(), possibleMeeples.cend(), meepleMove) != possibleMeeples.cend())
+					break;
+				else
+				{
+					qWarning("Player returned invalid meeple move!");
+					Q_ASSERT_X(false, "Game::step()", "Player returned invalid meeple move!");
+					endGame();
+					return false;
+				}
+			}
 			moveMeeple(tile, playerIndex, meepleMove);
 //			qDebug() << (moveHistory.size() + 1) << "player" << playerIndex << "placed meeple on" << n->t;
 //			qDebug() << (moveHistory.size() + 1) << "player" << playerIndex << "placed no meeple";
@@ -243,7 +267,7 @@ bool Game::step()
 
 	moveHistory.push_back(entry);
 	for (Player * p : allPlayers)
-		p->playerMoved(playerIndex, tile, entry, this);
+		p->playerMoved(playerIndex, tile, entry);
 
 	tiles.removeAt(entry.tile);
 	if (tiles.isEmpty())
@@ -276,7 +300,7 @@ bool Game::simStep(Player * player)
 			int const playerIndex = nextPlayer;
 			Move & move = entry.move;
 			TileMove & tileMove = move.tileMove;
-			tileMove = player->getTileMove(playerIndex, tile, entry, placements, this);
+			tileMove = player->getTileMove(playerIndex, tile, entry, placements);
 			moveTile(tile, tileMove);
 
 			if (playerMeeples[playerIndex] > 0)
@@ -285,7 +309,7 @@ bool Game::simStep(Player * player)
 				if (possibleMeeples.size() > 1)
 				{
 					MeepleMove & meepleMove = move.meepleMove;
-					meepleMove = player->getMeepleMove(playerIndex, tile, entry, possibleMeeples, this);
+					meepleMove = player->getMeepleMove(playerIndex, tile, entry, possibleMeeples);
 					moveMeeple(tile, playerIndex, meepleMove);
 				}
 			}
@@ -331,7 +355,7 @@ bool Game::simStep(int tileIndex, const TileMove & tileMove, int playerIndex, Pl
 			if (possibleMeeples.size() > 1)
 			{
 				MeepleMove & meepleMove = move.meepleMove;
-				meepleMove = player->getMeepleMove(playerIndex, tile, entry, possibleMeeples, this);
+				meepleMove = player->getMeepleMove(playerIndex, tile, entry, possibleMeeples);
 				moveMeeple(tile, playerIndex, meepleMove);
 			}
 		}
@@ -604,7 +628,7 @@ void Game::endGame()
 {
 	simEndGame();
 	for (Player * p : allPlayers)
-		p->endGame(this);
+		p->endGame();
 }
 
 void Game::moveTile(Tile * tile, const TileMove & tileMove)

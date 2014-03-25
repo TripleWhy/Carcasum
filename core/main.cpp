@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 #endif
 		game->newGame(Tile::BaseGame, tileFactory);
 	
-		for (int ply = 0; !game->isFinished(); ++ply)
+		for (int ply = 0; game->step(); ++ply)
 		{
 			game->step();
 //			std::cout << ply << std::endl;

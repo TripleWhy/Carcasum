@@ -12,21 +12,16 @@ MonteCarloPlayer::~MonteCarloPlayer()
 	
 }
 
-void MonteCarloPlayer::newGame(int player, const Game * const game)
+void MonteCarloPlayer::newGame(int /*player*/, const Game * const g)
 {
-	Q_UNUSED(player);
-	Q_UNUSED(game);
+	game = g;
 }
 
-void MonteCarloPlayer::playerMoved(int player, const Tile * const tile, const MoveHistoryEntry & move, const Game * const game)
+void MonteCarloPlayer::playerMoved(int /*player*/, const Tile * const /*tile*/, const MoveHistoryEntry & /*move*/)
 {
-	Q_UNUSED(player);
-	Q_UNUSED(tile);
-	Q_UNUSED(move);
-	Q_UNUSED(game);
 }
 
-TileMove MonteCarloPlayer::getTileMove(int player, const Tile * const /*tile*/, const MoveHistoryEntry & move, const TileMovesType & placements, const Game * const game)
+TileMove MonteCarloPlayer::getTileMove(int player, const Tile * const /*tile*/, const MoveHistoryEntry & move, const TileMovesType & placements)
 {
 	int const playerCount = game->getPlayerCount();
 	int const placementSize = placements.size();
@@ -91,7 +86,7 @@ TileMove MonteCarloPlayer::getTileMove(int player, const Tile * const /*tile*/, 
 	return *bestMove;
 }
 
-MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * const /*tile*/, const MoveHistoryEntry & move, const MeepleMovesType & possible, const Game * const game)
+MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * const /*tile*/, const MoveHistoryEntry & move, const MeepleMovesType & possible)
 {
 	int const playerCount = game->getPlayerCount();
 	int const possibleSize = possible.size();
@@ -158,6 +153,6 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * const /*tile
 	return *bestMove;
 }
 
-void MonteCarloPlayer::endGame(const Game * const /*game*/)
+void MonteCarloPlayer::endGame()
 {
 }

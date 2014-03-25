@@ -62,7 +62,7 @@ void BoardGraphicsScene::setTileImageFactory(TileImageFactory * factory)
 	imgFactory = factory;
 }
 
-TileMove BoardGraphicsScene::getTileMove(int /*player*/, Tile const * const tile, const MoveHistoryEntry & /*move*/, TileMovesType const & placements, Game const * const /*game*/)
+TileMove BoardGraphicsScene::getTileMove(int /*player*/, Tile const * const tile, const MoveHistoryEntry & /*move*/, TileMovesType const & placements)
 {
 	std::unique_lock<std::mutex> lck(lock);
 	if (running != 0)
@@ -152,7 +152,7 @@ void BoardGraphicsScene::displayGetTileMove(void * data, int callDepth)
 	delete d;
 }
 
-MeepleMove BoardGraphicsScene::getMeepleMove(int player, Tile const * const tile, const MoveHistoryEntry & /*move*/, MeepleMovesType const & possible, Game const * const /*game*/)
+MeepleMove BoardGraphicsScene::getMeepleMove(int player, Tile const * const tile, const MoveHistoryEntry & /*move*/, MeepleMovesType const & possible)
 {
 	std::unique_lock<std::mutex> lck(lock);
 	if (running != 0)
@@ -234,7 +234,7 @@ void BoardGraphicsScene::displayGetMeepleMove(void * data, int callDepth)
 	delete d;
 }
 
-void BoardGraphicsScene::newGame(int /*player*/, const Game * const game)
+void BoardGraphicsScene::newGame(int /*player*/, Game const * const game)
 {
 	setGame(game);
 	displayNewGame();
@@ -300,7 +300,7 @@ void BoardGraphicsScene::displayNewGame(int callDepth)
 	placeOpen();
 }
 
-void BoardGraphicsScene::playerMoved(int player, const Tile * const tile, const MoveHistoryEntry & move, const Game * const /*game*/)
+void BoardGraphicsScene::playerMoved(int player, const Tile * const tile, const MoveHistoryEntry & move)
 {
 	Q_ASSERT(tileFactory != 0);
 
@@ -308,7 +308,7 @@ void BoardGraphicsScene::playerMoved(int player, const Tile * const tile, const 
 	displayPlayerMoved(callData);
 }
 
-void BoardGraphicsScene::endGame(const Game * const /*game*/)
+void BoardGraphicsScene::endGame()
 {
 	qDeleteAll(openLayer->childItems());
 	openTiles.clear();

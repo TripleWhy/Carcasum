@@ -55,11 +55,11 @@ public:
 	void setGame(const Game * const g);
 	void setTileFactory(jcz::TileFactory * factory);
 	void setTileImageFactory(TileImageFactory * factory);
-	virtual TileMove getTileMove(int player, Tile const * const tile, MoveHistoryEntry const & move, TileMovesType const & placements, Game const * const game);
-	virtual MeepleMove getMeepleMove(int player, Tile const * const tile, MoveHistoryEntry const & move, MeepleMovesType const & possible, Game const * const game);
+	virtual TileMove getTileMove(int player, Tile const * const tile, MoveHistoryEntry const & move, TileMovesType const & placements);
+	virtual MeepleMove getMeepleMove(int player, Tile const * const tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	virtual void newGame(int player, Game const * const game);
-	virtual void playerMoved(int player, Tile const * const tile, MoveHistoryEntry const & move, Game const * const game);
-	virtual void endGame(Game const * const game);
+	virtual void playerMoved(int player, Tile const * const tile, MoveHistoryEntry const & move);
+	virtual void endGame();
 
 protected:
 	virtual void mousePressEvent (QGraphicsSceneMouseEvent * mouseEvent);

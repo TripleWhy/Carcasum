@@ -74,26 +74,26 @@ void MainWindow::newGame(int player, const Game * const game)
 	boardUi->newGame(player, game);
 }
 
-void MainWindow::playerMoved(int player, const Tile * const tile, const MoveHistoryEntry & move, const Game * const game)
+void MainWindow::playerMoved(int player, const Tile * const tile, const MoveHistoryEntry & move)
 {
 	emit updateNeeded();
-	boardUi->playerMoved(player, tile, move, game);
+	boardUi->playerMoved(player, tile, move);
 }
 
-TileMove MainWindow::getTileMove(int player, const Tile * const tile, const MoveHistoryEntry & move, const TileMovesType & placements, const Game * const game)
+TileMove MainWindow::getTileMove(int player, const Tile * const tile, const MoveHistoryEntry & move, const TileMovesType & placements)
 {
-	return boardUi->getTileMove(player, tile, move, placements, game);
+	return boardUi->getTileMove(player, tile, move, placements);
 }
 
-MeepleMove MainWindow::getMeepleMove(int player, const Tile * const tile, const MoveHistoryEntry & move, const MeepleMovesType & possible, const Game * const game)
+MeepleMove MainWindow::getMeepleMove(int player, const Tile * const tile, const MoveHistoryEntry & move, const MeepleMovesType & possible)
 {
-	return boardUi->getMeepleMove(player, tile, move, possible, game);
+	return boardUi->getMeepleMove(player, tile, move, possible);
 }
 
-void MainWindow::endGame(const Game * const game)
+void MainWindow::endGame()
 {
-	emit updateNeeded();;
-	return boardUi->endGame(game);
+	emit updateNeeded();
+	return boardUi->endGame();
 }
 
 void MainWindow::timeout()
