@@ -5,13 +5,17 @@
 
 #include <QVarLengthArray>
 
-Game::Game()
+Game::Game(Random * r)
+    : r(r)
 {
+	if (r == 0)
+		this->r = new RandomTable();
 }
 
 Game::~Game()
 {
 	cleanUp();
+	delete r;
 }
 
 void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)

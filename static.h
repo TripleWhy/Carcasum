@@ -11,9 +11,11 @@
 
 // Options
 // Tile
-#define NODE_VARIANT      0
+#define NODE_VARIANT               0
 // Game/MonteCarloPlayer
-#define USE_RESET         0
+#define USE_RESET                  0
+// RandomTable
+#define RANDOM_TABLE_SHARED_OFFSET 0
 
 
 // Debug options
@@ -24,11 +26,11 @@
 #define PRINT_CONNECTIONS       0
 #define DEBUG_IDS               0
 // Ranodm
-//#define RANDOM_SEED             17
+#define RANDOM_SEED             17
 // BoardGraphicsScene
 #define DRAW_TILE_POSITION_TEXT 1
 // MonteCarloPlayer
-#define COUNT_PLAYOUTS          0
+#define COUNT_PLAYOUTS          1
 
 
 #endif // STATIC_H

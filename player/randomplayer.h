@@ -2,7 +2,7 @@
 #define RANDOMPLAYER_H
 
 #include "core/player.h"
-#include "core/util.h"
+#include "core/random.h"
 #include "core/game.h"
 
 class RandomPlayer : public Player
@@ -11,7 +11,7 @@ public:
 	static RandomPlayer instance;
 	
 private:
-	Random r;
+	RandomTable r;
 
 public:
 	inline virtual void newGame(int /*player*/, Game const * const /*game*/) {}

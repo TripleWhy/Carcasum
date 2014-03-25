@@ -6,6 +6,7 @@
 #include "util.h"
 #include "player.h"
 #include "util.h"
+#include "random.h"
 
 class Player;
 class Tile;
@@ -60,7 +61,7 @@ private:
 	QList<Tile *> tiles;
 	QList<Tile *> originalTiles;
 	std::vector<Tile *> discardedTiles;
-	Random r;
+	Random * r;
 	int * playerMeeples = 0;
 	int * returnMeeples = 0;
 	int * playerScores = 0;
@@ -73,7 +74,7 @@ private:
 #endif
 
 public:
-	Game();
+	Game(Random * r = 0);
 	~Game();
 
 	void newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory);
@@ -121,7 +122,7 @@ public:
 
 private:
 	inline void setNextPlayer() { nextPlayer = (nextPlayer + 1) % getPlayerCount(); }
-	inline int nextTile() { return r.nextInt(tiles.size()); }
+	inline int nextTile() { return r->nextInt(tiles.size()); }
 
 	inline void returnMeeplesToPlayers()
 	{
