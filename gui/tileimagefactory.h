@@ -20,7 +20,8 @@ public:
 	TileImageFactory(jcz::TileFactory * tileFactory);
 	~TileImageFactory();
 	const QPixmap getImage(const Tile * tile);
-	const QPixmap getImage(Tile::TileSet tileSet, int tileType);
+	const QPixmap getImage(TileTypeType tileType);
+	const QPixmap getImage(Tile::TileSet set, TileTypeType localType);
 	QString getMeepleFillSvg(Node const * node) const;
 	QString getMeepleOutlineSvg(Node const * node) const;
 	QString getMeepleFillSvgStanding() const;
@@ -29,9 +30,10 @@ public:
 	QPixmap generateMeepleStanding(int size, QColor color);
 
 	QMap<uchar, QPoint> getPoints(Tile const * tile);
+	QString getName(TileTypeType type) { Q_UNUSED(type); return QString(); }	//TODO?
 
 private:
-	QPixmap loadImage(Tile::TileSet tileSet, int tileType);
+	QPixmap loadImage(Tile::TileSet tileSet, TileTypeType localType);
 };
 
 #endif // TILEIMAGEFACTORY_H

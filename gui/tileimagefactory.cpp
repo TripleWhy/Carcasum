@@ -16,16 +16,23 @@ TileImageFactory::~TileImageFactory()
 
 const QPixmap TileImageFactory::getImage(Tile const * tile)
 {
-	return getImage(tile->tileSet, tile->tileType);
+	return getImage(tile->tileType);
 }
 
-const QPixmap TileImageFactory::getImage(Tile::TileSet tileSet, int tileType)
+const QPixmap TileImageFactory::getImage(TileTypeType tileType)
 {
-	QList<QPixmap> & imgList = images[tileSet];
-	while (imgList.size() - 1 < tileType)
-		imgList.append(loadImage(tileSet, imgList.size()));
+	Tile::TileSet set = Util::getSet(tileType);
+	TileTypeType localType = Util::toLocalType(tileType);
+	return getImage(set, localType);
+}
 
-	return imgList[tileType];
+const QPixmap TileImageFactory::getImage(Tile::TileSet set, TileTypeType localType)
+{
+	QList<QPixmap> & imgList = images[set];
+	while (imgList.size() - 1 < localType)
+		imgList.append(loadImage(set, imgList.size()));
+
+	return imgList[localType];
 }
 
 QString TileImageFactory::getMeepleFillSvg(const Node * node) const
@@ -111,7 +118,7 @@ QPixmap TileImageFactory::generateMeepleStanding(int size, QColor color)
 
 QMap<uchar, QPoint> TileImageFactory::getPoints(Tile const * tile)
 {
-	jcz::Expansion expansion = jcz::Expansions::fromTileSet(tile->tileSet);
+	jcz::Expansion expansion = jcz::Expansions::fromTileSet(Util::getSet(tile->tileType));
 	if (!xmlTiles.contains(expansion))
 	{
 		auto && tiles = jcz::XmlParser::readTileDefinitions(expansion);
@@ -122,13 +129,13 @@ QMap<uchar, QPoint> TileImageFactory::getPoints(Tile const * tile)
 
 	// :-/  All this relies on the fact that both TileFactory and XMLParser read the same file in the same order.
 
-	jcz::XmlParser::XMLTile const & xTile = xmlTiles.value(expansion).at(tile->tileType);
+	jcz::XmlParser::XMLTile const & xTile = xmlTiles.value(expansion).at(Util::toLocalType(tile->tileType));
 
 	QMap<uchar, QPoint> points;
 	for (uchar i = 0; i < tile->getNodeCount(); ++i)
 	{
 		QPoint point = xTile.features[i].point;
-		point *= (BoardGraphicsScene::TILE_SIZE / 1000.0);
+		point *= (BOARD_TILE_SIZE / 1000.0);
 		points.insert(i, point);
 	}
 
@@ -136,7 +143,7 @@ QMap<uchar, QPoint> TileImageFactory::getPoints(Tile const * tile)
 }
 
 
-QPixmap TileImageFactory::loadImage(Tile::TileSet tileSet, int tileType)
+QPixmap TileImageFactory::loadImage(Tile::TileSet tileSet, TileTypeType localType)
 {
 	QString prefix;
 	switch (tileSet)
@@ -146,7 +153,7 @@ QPixmap TileImageFactory::loadImage(Tile::TileSet tileSet, int tileType)
 			break;
 	}
 
-	QPixmap img(QString(":/tile/%1/%2").arg(prefix).arg(tileFactory->getTileIdentifier(tileSet, tileType)));
+	QPixmap img(QString(":/tile/%1/%2").arg(prefix).arg(tileFactory->getTileIdentifier(tileSet, localType)));
 	Q_ASSERT(!img.isNull());
-	return img.scaled(BoardGraphicsScene::TILE_SIZE, BoardGraphicsScene::TILE_SIZE, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+	return img.scaled(BOARD_TILE_SIZE, BOARD_TILE_SIZE, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 }

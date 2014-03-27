@@ -1,4 +1,5 @@
 #include "tilefactory.h"
+#include "core/util.h"
 
 #include <QFile>
 
@@ -158,8 +159,9 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 
 	QString id = xml.attributes().value("id").toString();
 	int type = tileTemplates[set].size();
+	type = Util::toGlobalType(set, type);
 
-	Tile * tile = new Tile(set, type);
+	Tile * tile = new Tile(type);
 	TerrainType (&edges)[4] = tile->edges;
 	QList<Node *> nodes;
 	Node * edgeConnectors[4][3] = { {0} };
@@ -357,7 +359,7 @@ QStringList jcz::TileFactory::getTileIdentifiers(Tile::TileSet set) const
 	return tileIdentifiers[set];
 }
 
-QString jcz::TileFactory::getTileIdentifier(Tile::TileSet set, int type) const
+QString jcz::TileFactory::getTileIdentifier(Tile::TileSet set, TileTypeType localType) const
 {
-	return tileIdentifiers[set][type];
+	return tileIdentifiers[set][localType];
 }

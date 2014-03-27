@@ -10,7 +10,7 @@ BoardGraphicsView::BoardGraphicsView(QWidget *parent) :
 {
 	setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform | QPainter::HighQualityAntialiasing);
 
-	qreal const s = INITIAL_TILE_SIZE / qreal(BoardGraphicsScene::TILE_SIZE);
+	qreal const s = BOARDVIEW_INITIAL_TILE_SIZE / qreal(BOARD_TILE_SIZE);
 	scale(s, s);
 }
 

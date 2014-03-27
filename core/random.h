@@ -81,7 +81,8 @@ public:
 #else
 		int const seed = RANDOM_SEED;
 #endif
-		offset = (seed + (table[++add] * ADD_MULTIPLIER));
+		add = (add + 1) % TABLE_SIZE;
+		offset = (seed + (table[add] * ADD_MULTIPLIER));
 		offset = (offset % TABLE_SIZE + TABLE_SIZE) % TABLE_SIZE;
 	}
 

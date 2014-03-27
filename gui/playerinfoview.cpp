@@ -33,8 +33,8 @@ void PlayerInfoView::setPlayer(int player, Game const * g, TileImageFactory * ti
 	game = g;
 	imgFactory = tif;
 
-	QPixmap icon = imgFactory->generateMeepleStanding(ICON_SIZE, imgFactory->getPlayerColor(player));
-	QPixmap meeple = imgFactory->generateMeepleStanding(MEEPLE_SIZE, imgFactory->getPlayerColor(player));
+	QPixmap icon = imgFactory->generateMeepleStanding(PINFO_ICON_SIZE, imgFactory->getPlayerColor(player));
+	QPixmap meeple = imgFactory->generateMeepleStanding(PINFO_MEEPLE_SIZE, imgFactory->getPlayerColor(player));
 	
 	ui->iconLabel->setPixmap(icon);
 	ui->iconLabel->setMinimumSize(icon.size());

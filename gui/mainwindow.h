@@ -30,10 +30,10 @@ public:
 	explicit MainWindow(QWidget *parent = 0);
 	~MainWindow();
 	
-	virtual void newGame(int player, Game const * const game);
-	virtual void playerMoved(int player, Tile const * const tile, MoveHistoryEntry const & move);
-	virtual TileMove getTileMove(int player, Tile const * const tile, MoveHistoryEntry const & move, TileMovesType const & placements);
-	virtual MeepleMove getMeepleMove(int player, Tile const * const tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
+	virtual void newGame(int player, const Game * game);
+	virtual void playerMoved(int player, Tile const * tile, MoveHistoryEntry const & move);
+	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
+	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	virtual void endGame();
 
 signals:

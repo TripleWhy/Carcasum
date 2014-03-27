@@ -15,6 +15,7 @@ class Game;
 
 enum TerrainType { None = 0, Field, City, Road, Cloister };
 enum Scored { NotScored, ScoredMidGame, ScoredEndGame };
+typedef quint8 TileTypeType;
 
 struct Node
 {
@@ -310,7 +311,8 @@ class Tile
 
 public:
 	enum Side { left = 0, up = 1, right = 2, down = 3 };
-	enum TileSet { BaseGame = 0 };
+	enum TileSet { BaseGame = 1 << 0 };
+//	struct TileType { TileSet set; int type; };
 	Q_DECLARE_FLAGS(TileSets, TileSet)
 #if NODE_VARIANT
 	typedef Node ** EdgeType;
@@ -333,14 +335,13 @@ public:
 	Side orientation = left;
 
 	//Not neccessarily the best place (because this will need to be copied also):
-	TileSet const tileSet;
-	uchar const tileType;
+	TileTypeType tileType;
 
 private:
-	Tile(TileSet tileSet, uchar tileType);
+	Tile(TileTypeType tileType);
 
 public:
-	Tile(TileSet tileSet, uchar tileType, TerrainType const edges[4]);
+	Tile(TileTypeType tileType, TerrainType const edges[4]);
 	Tile(const Tile & t) = delete; // I don't want implicit copies. Use clone() instead.
 	Tile (Tile&& t) = delete; // I don't actually want this to happen.
 	~Tile();

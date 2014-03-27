@@ -8,6 +8,8 @@
 #include "util.h"
 #include "random.h"
 
+#include <QVarLengthArray>
+
 class Player;
 class Tile;
 class Node;
@@ -50,6 +52,7 @@ struct MoveHistoryEntry
 class Game
 {
 public:
+	typedef QVarLengthArray<int, TILE_COUNT_ARRAY_LENGTH> TileCountType;
 
 private:
 //	int ply = -1;
@@ -59,7 +62,10 @@ private:
 	std::vector<Player *> allPlayers;
 	Board * board = 0;
 	QList<Tile *> tiles;
+	TileCountType tileCount;
+#if USE_RESET
 	QList<Tile *> originalTiles;
+#endif
 	std::vector<Tile *> discardedTiles;
 	Random * r;
 	int * playerMeeples = 0;
@@ -119,6 +125,8 @@ public:
 	inline int const * getScores() const { return playerScores; }
 	inline int getPlayerMeeples(int player) const { return playerMeeples[player]; }
 	inline int getPlayerScore(int player) const { return playerScores[player]; }
+	inline TileCountType const & getTileCounts() const { return tileCount; }
+	inline std::vector<Tile *> const & getDiscargedTiles() const { return discardedTiles; }
 
 private:
 	inline void setNextPlayer() { nextPlayer = (nextPlayer + 1) % getPlayerCount(); }
@@ -165,6 +173,15 @@ private:
 			returnMeeplesToPlayers();
 			return true;
 		}
+	}
+	inline void assertTileCount()
+	{
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+		int sum = 0;
+		for (int c : tileCount)
+			sum += c;
+		Q_ASSERT(sum == tiles.size());
+#endif
 	}
 
 private:

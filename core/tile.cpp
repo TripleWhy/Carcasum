@@ -385,16 +385,14 @@ void CloisterNode::reset(const Tile * parent, const Game * g)
 
 
 
-Tile::Tile(TileSet tileSet, uchar tileType)
-	: edges {None, None, None, None},
-	  tileSet(tileSet),
+Tile::Tile(TileTypeType tileType)
+    : edges {None, None, None, None},
 	  tileType(tileType)
 {
 }
 
-Tile::Tile(TileSet tileSet, uchar tileType, TerrainType const edges[4])
-	: edges { edges[0], edges[1], edges[2], edges[3] },
-	  tileSet(tileSet),
+Tile::Tile(TileTypeType tileType, TerrainType const edges[4])
+    : edges { edges[0], edges[1], edges[2], edges[3] },
 	  tileType(tileType)
 {
 	createEdgeList(left);
@@ -508,7 +506,7 @@ void Tile::disconnectDiagonal(Tile * other, Game * game)
 
 Tile * Tile::clone(const Game * g)	//TODO? This process only works on unconnected tiles.
 {
-	Tile * copy = new Tile(tileSet, tileType, edges);
+	Tile * copy = new Tile(tileType, edges);
 	copy->orientation = orientation;
 
 	copy->nodeCount = nodeCount;
@@ -606,7 +604,7 @@ void Tile::printSides(Node * n)
 
 bool Tile::equals(const Tile & other, Game const * g) const
 {
-	if (!(tileType == other.tileType) && (tileSet == other.tileSet) && (orientation == other.orientation))
+	if (!(tileType == other.tileType) && (orientation == other.orientation))
 		return false;
 	if (nodeCount != other.nodeCount)
 		return false;

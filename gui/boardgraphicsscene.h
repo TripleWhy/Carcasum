@@ -18,9 +18,6 @@
 class BoardGraphicsScene : public QGraphicsScene, public Player
 {
 Q_OBJECT
-public:
-	static int const TILE_SIZE = 300;
-	static int const MEEPLE_SIZE = 75;
 
 private:
 	Game const * game;
@@ -52,12 +49,12 @@ public:
 	explicit BoardGraphicsScene(jcz::TileFactory * tileFactory = 0, TileImageFactory * imgFactory = 0, QObject * parent = 0);
 	~BoardGraphicsScene();
 
-	void setGame(const Game * const g);
+	void setGame(const Game * g);
 	void setTileFactory(jcz::TileFactory * factory);
 	void setTileImageFactory(TileImageFactory * factory);
-	virtual TileMove getTileMove(int player, Tile const * const tile, MoveHistoryEntry const & move, TileMovesType const & placements);
-	virtual MeepleMove getMeepleMove(int player, Tile const * const tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
-	virtual void newGame(int player, Game const * const game);
+	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
+	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
+	virtual void newGame(int player, Game const * game);
 	virtual void playerMoved(int player, Tile const * const tile, MoveHistoryEntry const & move);
 	virtual void endGame();
 
@@ -85,8 +82,7 @@ private:
 	};
 	struct DGTMData
 	{
-		Tile::TileSet tileSet;
-		int tileType;
+		TileTypeType tileType;
 		TileMovesType placements;
 	};
 	struct DGMMData

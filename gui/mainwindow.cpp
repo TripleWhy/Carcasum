@@ -32,13 +32,13 @@ MainWindow::MainWindow(QWidget *parent) :
 //	game->addPlayer(p1);
 //	game->addPlayer(p1);
 	game->addPlayer(p2);
-	game->addPlayer(this);
+//	game->addPlayer(this);
 	game->newGame(Tile::BaseGame, &tileFactory);
 
 	new std::thread( [this]() {
 		while (!game->isFinished())
 		{
-			Util::sleep(500);
+//			Util::sleep(500);
 			game->step();
 		}
 	} );
@@ -55,7 +55,7 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
-void MainWindow::newGame(int player, const Game * const game)
+void MainWindow::newGame(int player, const Game * game)
 {
 	if (playerInfos.size() != game->getPlayerCount())
 	{
@@ -72,20 +72,23 @@ void MainWindow::newGame(int player, const Game * const game)
 	}
 	
 	boardUi->newGame(player, game);
+
+	ui->remainingTiles->setUp(game, &imgFactory);
+	connect(this, SIGNAL(updateNeeded()), ui->remainingTiles, SLOT(updateView()));
 }
 
-void MainWindow::playerMoved(int player, const Tile * const tile, const MoveHistoryEntry & move)
+void MainWindow::playerMoved(int player, const Tile * tile, const MoveHistoryEntry & move)
 {
 	emit updateNeeded();
 	boardUi->playerMoved(player, tile, move);
 }
 
-TileMove MainWindow::getTileMove(int player, const Tile * const tile, const MoveHistoryEntry & move, const TileMovesType & placements)
+TileMove MainWindow::getTileMove(int player, const Tile * tile, const MoveHistoryEntry & move, const TileMovesType & placements)
 {
 	return boardUi->getTileMove(player, tile, move, placements);
 }
 
-MeepleMove MainWindow::getMeepleMove(int player, const Tile * const tile, const MoveHistoryEntry & move, const MeepleMovesType & possible)
+MeepleMove MainWindow::getMeepleMove(int player, const Tile * tile, const MoveHistoryEntry & move, const MeepleMovesType & possible)
 {
 	return boardUi->getMeepleMove(player, tile, move, possible);
 }

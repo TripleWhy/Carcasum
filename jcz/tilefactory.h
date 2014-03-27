@@ -38,7 +38,7 @@ private:
 
 public:
 	QStringList getTileIdentifiers(Tile::TileSet set) const;
-	QString getTileIdentifier(Tile::TileSet set, int type) const;
+	QString getTileIdentifier(Tile::TileSet set, TileTypeType localType) const;
 };
 
 }

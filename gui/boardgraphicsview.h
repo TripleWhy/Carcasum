@@ -5,9 +5,6 @@
 
 class BoardGraphicsView : public QGraphicsView
 {
-public:
-	static int const INITIAL_TILE_SIZE = 50;
-
 private:
 	QPoint lastPos;
 

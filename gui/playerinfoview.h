@@ -13,10 +13,7 @@ class PlayerInfoView;
 
 class PlayerInfoView : public QWidget
 {
-	Q_OBJECT
-	
-	static int const ICON_SIZE = 50;
-	static int const MEEPLE_SIZE = 10;
+Q_OBJECT
 
 private:
 	int playerIndex = -1;

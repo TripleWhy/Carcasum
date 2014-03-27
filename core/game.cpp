@@ -35,9 +35,19 @@ void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)
 	active = true;
 	nextPlayer = 0;
 	this->tileSets = tileSets;
-	tiles = originalTiles = tileFactory->createPack(tileSets, this);
+	tiles = tileFactory->createPack(tileSets, this);
+#if USE_RESET
+	originalTiles = tiles;
+#endif
 	board = new Board(this, tiles.size());
 	board->setStartTile(tiles.takeFirst());
+	for (Tile * t : tiles)
+	{
+		while (tileCount.size() <= t->tileType)
+			tileCount.append(0);
+		++tileCount[t->tileType];
+	}
+	assertTileCount();
 
 	for (uint i = 0; i < allPlayers.size(); ++i)
 		allPlayers[i]->newGame(-1, this);
@@ -95,6 +105,11 @@ void Game::restartGame()
 	board->clear();
 	board->setStartTile(tiles.takeFirst());
 #endif
+	for (int & c : tileCount)
+		c = 0;
+	for (Tile * t : tiles)
+		++tileCount[t->tileType];
+	assertTileCount();
 }
 
 
@@ -184,6 +199,8 @@ bool Game::step()
 #endif
 		moveHistory.push_back(entry);
 		tiles.removeAt(entry.tile);
+		--tileCount[tile->tileType];
+		assertTileCount();
 		
 		if (tiles.isEmpty())
 		{
@@ -274,6 +291,8 @@ bool Game::step()
 		p->playerMoved(playerIndex, tile, entry);
 
 	tiles.removeAt(entry.tile);
+	--tileCount[tile->tileType];
+	assertTileCount();
 	if (tiles.isEmpty())
 	{
 		endGame();
@@ -320,6 +339,8 @@ bool Game::simStep(Player * player)
 			setNextPlayer();
 		}
 		tiles.removeAt(entry.tile);
+		--tileCount[tile->tileType];
+		assertTileCount();
 		moveHistory.push_back(std::move(entry));
 	}
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
@@ -366,6 +387,8 @@ bool Game::simStep(int tileIndex, const TileMove & tileMove, int playerIndex, Pl
 		setNextPlayer();
 
 		tiles.removeAt(entry.tile);
+		--tileCount[tile->tileType];
+		assertTileCount();
 		moveHistory.push_back(std::move(entry));
 	}
 	
@@ -400,6 +423,8 @@ bool Game::simStep(const MoveHistoryEntry & entry)
 	}
 	moveHistory.push_back(entry);
 	tiles.removeAt(entry.tile);
+	--tileCount[tile->tileType];
+	assertTileCount();
 
 #if WATCH_SCORES
 	for (uint i = 0; i < getPlayerCount(); ++i)
@@ -434,6 +459,8 @@ void Game::undo()
 			Tile * t = discardedTiles.back();
 			discardedTiles.pop_back();
 			tiles.insert(entry.tile, t);
+			++tileCount[t->tileType];
+			assertTileCount();
 
 #if PRINT_STEPS
 			qDebug() << (moveHistory.size() + 1) << "discarged Tile" << t->tileType << "total:" << discardedTiles.size();
@@ -464,6 +491,8 @@ void Game::undo()
 		board->removeTile(tileMove);
 
 		tiles.insert(entry.tile, tile);
+		++tileCount[tile->tileType];
+		assertTileCount();
 	}
 	moveHistory.pop_back();
 
@@ -652,6 +681,8 @@ bool Game::equals(Game const & other) const
 		return false;
 	if (tiles.size() != other.tiles.size())
 		return false;
+	if (tileCount != other.tileCount)
+		return false;
 	if (discardedTiles.size() != other.discardedTiles.size())
 		return false;
 	if ((playerMeeples == 0) != (other.playerMeeples == 0))
@@ -698,8 +729,12 @@ void Game::cleanUp()
 	delete board;
 	qDeleteAll(tiles);
 	tiles.clear();
+#if USE_RESET
+	originalTiles.clear();
+#endif
 	qDeleteAll(discardedTiles);
 	discardedTiles.clear();
+	tileCount.clear();
 	delete[] playerScores;
 	delete[] playerMeeples;
 	delete[] returnMeeples;

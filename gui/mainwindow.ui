@@ -14,27 +14,37 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
+   <layout class="QGridLayout" name="gridLayout" rowstretch="0,1,0,0" columnstretch="1,0,0,0">
+    <item row="0" column="0" rowspan="3">
      <widget class="BoardGraphicsView" name="boardView"/>
     </item>
-    <item row="0" column="1">
+    <item row="0" column="2">
      <widget class="QWidget" name="playerInfos" native="true">
       <layout class="QVBoxLayout" name="playerInfoLayout">
-       <item>
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>203</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
       </layout>
+     </widget>
+    </item>
+    <item row="1" column="2" rowspan="2">
+     <widget class="QScrollArea" name="scrollArea">
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <property name="widgetResizable">
+       <bool>true</bool>
+      </property>
+      <widget class="RemainingTilesView" name="remainingTiles"/>
      </widget>
     </item>
    </layout>
@@ -65,6 +75,12 @@
    <class>BoardGraphicsView</class>
    <extends>QGraphicsView</extends>
    <header>gui/boardgraphicsview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>RemainingTilesView</class>
+   <extends>QWidget</extends>
+   <header>gui/remainingtilesview.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>
