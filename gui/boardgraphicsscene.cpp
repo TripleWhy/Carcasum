@@ -234,6 +234,21 @@ void BoardGraphicsScene::displayGetMeepleMove(void * data, int callDepth)
 	delete d;
 }
 
+void BoardGraphicsScene::displayEndGame(int callDepth)
+{
+	if (!Util::isGUIThread())
+	{
+		if (callDepth < 2)
+		{
+			QMetaObject::invokeMethod(this, "displayEndGame", Qt::QueuedConnection,
+			                          Q_ARG(int, callDepth+1));
+		}
+		return;
+	}
+	qDeleteAll(openLayer->childItems());
+	openTiles.clear();
+}
+
 void BoardGraphicsScene::newGame(int /*player*/, const Game * game)
 {
 	setGame(game);
@@ -310,8 +325,7 @@ void BoardGraphicsScene::playerMoved(int player, const Tile * const tile, const 
 
 void BoardGraphicsScene::endGame()
 {
-	qDeleteAll(openLayer->childItems());
-	openTiles.clear();
+	displayEndGame();
 }
 
 void BoardGraphicsScene::displayPlayerMoved(void * data, int callDepth)

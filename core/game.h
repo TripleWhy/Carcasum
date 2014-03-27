@@ -7,6 +7,7 @@
 #include "player.h"
 #include "util.h"
 #include "random.h"
+#include "nexttileprovider.h"
 
 #include <QVarLengthArray>
 
@@ -67,7 +68,8 @@ private:
 	QList<Tile *> originalTiles;
 #endif
 	std::vector<Tile *> discardedTiles;
-	Random * r;
+	DefaultRandom r;
+	NextTileProvider * ntp;
 	int * playerMeeples = 0;
 	int * returnMeeples = 0;
 	int * playerScores = 0;
@@ -80,7 +82,7 @@ private:
 #endif
 
 public:
-	Game(Random * r = 0);
+	Game(NextTileProvider * ntp);
 	~Game();
 
 	void newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory);
@@ -125,12 +127,16 @@ public:
 	inline int const * getScores() const { return playerScores; }
 	inline int getPlayerMeeples(int player) const { return playerMeeples[player]; }
 	inline int getPlayerScore(int player) const { return playerScores[player]; }
+	inline int getTileCount() const { return tiles.size(); }
 	inline TileCountType const & getTileCounts() const { return tileCount; }
+	inline QList<Tile *> const & getTiles() const { return tiles; }
 	inline std::vector<Tile *> const & getDiscargedTiles() const { return discardedTiles; }
+	inline void setNextTileProvider(NextTileProvider * n) { ntp = n; }
 
 private:
 	inline void setNextPlayer() { nextPlayer = (nextPlayer + 1) % getPlayerCount(); }
-	inline int nextTile() { return r->nextInt(tiles.size()); }
+	inline int simNextTile() { return r.nextInt(tiles.size()); }
+	inline int nextTile() { return ntp->nextTile(this); }
 
 	inline void returnMeeplesToPlayers()
 	{

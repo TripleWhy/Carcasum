@@ -25,6 +25,7 @@ private:
 	
 	jcz::TileFactory tileFactory;
 	TileImageFactory imgFactory = TileImageFactory(&tileFactory);
+	RandomNextTileProvider rntp;
 
 public:
 	explicit MainWindow(QWidget *parent = 0);
@@ -42,6 +43,9 @@ signals:
 private slots:
 	void timeout();
 	void recenter(QRectF rect);
+
+	void on_actionRandom_Tiles_toggled(bool checked);
+	void on_actionChoose_Tiles_toggled(bool arg1);
 
 private:
 	Ui::MainWindow *ui;

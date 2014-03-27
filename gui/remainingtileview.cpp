@@ -1,16 +1,28 @@
 #include "remainingtileview.h"
 #include "ui_remainingtileview.h"
+#include <QPainter>
+#include <QGraphicsColorizeEffect>
 
 RemainingTileView::RemainingTileView(TileTypeType type, int count, TileImageFactory * imgFactory, QWidget *parent) :
     QWidget(parent),
+    type(type),
+    count(count),
     ui(new Ui::RemainingTileView)
 {
 	ui->setupUi(this);
+	effect.setColor(Qt::black);
 
 	QPixmap const & p = imgFactory->getImage(type);
-	ui->tileLabel->setPixmap(p.scaled(RTILE_TILE_SIZE, RTILE_TILE_SIZE, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+	pxNormal = p.scaled(RTILE_TILE_SIZE, RTILE_TILE_SIZE, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+	ui->tileLabel->setPixmap(pxNormal);
 	ui->nameLabel->setText(imgFactory->getName(type));
 	setCount(count);
+
+	pxHl = pxNormal;
+	QPainter painter(&pxHl);
+	painter.setCompositionMode(QPainter::CompositionMode_Overlay);
+	painter.setOpacity(0.3);
+	painter.fillRect(pxHl.rect(), Qt::white);
 }
 
 RemainingTileView::~RemainingTileView()
@@ -18,30 +30,17 @@ RemainingTileView::~RemainingTileView()
 	delete ui;
 }
 
-
-// From http://qt-project.org/faq/answer/how_can_i_convert_a_colored_qpixmap_into_a_grayscaled_qpixmap
-inline QPixmap gray(QPixmap const * pixmap)
-{
-	QImage image = pixmap->toImage();
-	QRgb col;
-	int gray;
-	int width = pixmap->width();
-	int height = pixmap->height();
-	for (int i = 0; i < width; ++i)
-	{
-		for (int j = 0; j < height; ++j)
-		{
-			col = image.pixel(i, j);
-			gray = qGray(col);
-			image.setPixel(i, j, qRgb(gray, gray, gray));
-		}
-	}
-	return QPixmap::fromImage(image);
-}
-
 void RemainingTileView::setCount(int count)
 {
 	if (count == 0)
-		ui->tileLabel->setPixmap( gray(ui->tileLabel->pixmap()) );
+		ui->tileLabel->setGraphicsEffect(&effect);
+	else
+		ui->tileLabel->setGraphicsEffect(0);
 	ui->countLabel->setText(QString("%1x").arg(count));
+	this->count = count;
+}
+
+void RemainingTileView::setHighlight(bool hl)
+{
+	ui->tileLabel->setPixmap(hl ? pxHl : pxNormal);
 }

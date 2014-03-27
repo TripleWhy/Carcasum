@@ -12,7 +12,8 @@ int main(int argc, char *argv[])
 {
 	QCoreApplication a(argc, argv);
 	jcz::TileFactory * tileFactory = new jcz::TileFactory();
-	Game * game = new Game();
+	RandomNextTileProvider rntp;
+	Game * game = new Game(&rntp);
 	
 	if (false)
 	{
@@ -20,7 +21,7 @@ int main(int argc, char *argv[])
 		for (int i = 0; i < 1000; ++i)
 		{
 			qDebug() << "================================\nRUN" << i;
-			Game g1, g2, g3, g4;
+			Game g1(&rntp), g2(&rntp), g3(&rntp), g4(&rntp);
 			Q_ASSERT(g1.equals(g2));
 			Q_ASSERT(g2.equals(g1));
 			for (int i = 0; i < 3; ++i)
@@ -91,7 +92,6 @@ int main(int argc, char *argv[])
 	
 		for (int ply = 0; game->step(); ++ply)
 		{
-			game->step();
 //			std::cout << ply << std::endl;
 		}
 		int e = t.elapsed();

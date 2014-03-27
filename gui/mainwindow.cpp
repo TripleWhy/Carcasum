@@ -4,6 +4,8 @@
 #include "playerinfoview.h"
 #include "jcz/tilefactory.h"
 
+#include <QActionGroup>
+
 #include "player/randomplayer.h"
 #include "player/montecarloplayer.h"
 MainWindow::MainWindow(QWidget *parent) :
@@ -11,9 +13,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
+	auto actionGroup = new QActionGroup(this);
+	actionGroup->addAction(ui->actionRandom_Tiles);
+	actionGroup->addAction(ui->actionChoose_Tiles);
 
 	boardUi = new BoardGraphicsScene(&tileFactory, &imgFactory, ui->boardView);
-	game = new Game();
+	game = new Game(&rntp);
 
 	boardUi->setGame(game);
 	ui->boardView->setScene(boardUi);
@@ -109,4 +114,16 @@ void MainWindow::timeout()
 void MainWindow::recenter(QRectF rect)
 {
 	ui->boardView->centerOn(rect.center());
+}
+
+void MainWindow::on_actionRandom_Tiles_toggled(bool checked)
+{
+	if (checked)
+		game->setNextTileProvider(&rntp);
+}
+
+void MainWindow::on_actionChoose_Tiles_toggled(bool checked)
+{
+	if (checked)
+		game->setNextTileProvider(ui->remainingTiles);
 }

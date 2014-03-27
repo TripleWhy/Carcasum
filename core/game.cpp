@@ -5,17 +5,14 @@
 
 #include <QVarLengthArray>
 
-Game::Game(Random * r)
-    : r(r)
+Game::Game(NextTileProvider * ntp)
+    : ntp(ntp)
 {
-	if (r == 0)
-		this->r = new RandomTable();
 }
 
 Game::~Game()
 {
 	cleanUp();
-	delete r;
 }
 
 void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)
@@ -311,7 +308,7 @@ bool Game::simStep(Player * player)
 #endif
 	{
 		MoveHistoryEntry entry;
-		entry.tile = nextTile();
+		entry.tile = simNextTile();
 		Tile * tile = tiles[entry.tile];
 		TileMovesType && placements = board->getPossibleTilePlacements(tile);
 		if (placements.isEmpty())

@@ -74,7 +74,8 @@ SOURCES += core/tile.cpp \
     jcz/location.cpp \
     jcz/expansion.cpp \
     player/montecarloplayer.cpp \
-    core/random.cpp
+    core/random.cpp \
+    core/nexttileprovider.cpp
 
 HEADERS += \
 	core/tile.h \
@@ -89,7 +90,8 @@ HEADERS += \
     jcz/expansion.h \
     player/montecarloplayer.h \
     static.h \
-    core/random.h
+    core/random.h \
+    core/nexttileprovider.h
 
 RESOURCES += \
 	jcz/jcz.qrc

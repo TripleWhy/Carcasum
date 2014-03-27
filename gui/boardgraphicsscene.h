@@ -73,6 +73,7 @@ private slots:
 	void displayPlayerMoved(void * data, int callDepth = 0);
 	void displayGetTileMove(void * data, int callDepth = 0);
 	void displayGetMeepleMove(void * data, int callDepth = 0);
+	void displayEndGame(int callDepth = 0);
 private:
 	struct DPMData
 	{

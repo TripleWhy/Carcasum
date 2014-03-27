@@ -29,7 +29,7 @@ TileMove MonteCarloPlayer::getTileMove(int player, const Tile * /*tile*/, const 
 	for (int i = 0; i < placementSize; ++i)
 		utilities[i] = 0;
 
-	Game g;
+	Game g(0);	//TODO Making this a member could speed things up
 	for (int i = 0; i < playerCount; ++i)
 		g.addPlayer(&RandomPlayer::instance);
 	auto const & history = game->getMoveHistory();
@@ -94,7 +94,7 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * /*tile*/, co
 	for (int i = 0; i < possibleSize; ++i)
 		utilities[i] = 0;
 	
-	Game g;
+	Game g(0);
 	for (int i = 0; i < playerCount; ++i)
 		g.addPlayer(&RandomPlayer::instance);
 	auto const & history = game->getMoveHistory();

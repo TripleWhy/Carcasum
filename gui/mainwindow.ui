@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QGridLayout" name="gridLayout" rowstretch="0,1,0,0" columnstretch="1,0,0,0">
+   <layout class="QGridLayout" name="gridLayout" rowstretch="0,1,0" columnstretch="1,0,0">
     <item row="0" column="0" rowspan="3">
      <widget class="BoardGraphicsView" name="boardView"/>
     </item>
@@ -44,7 +44,16 @@
       <property name="widgetResizable">
        <bool>true</bool>
       </property>
-      <widget class="RemainingTilesView" name="remainingTiles"/>
+      <widget class="RemainingTilesView" name="remainingTiles">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>68</width>
+         <height>218</height>
+        </rect>
+       </property>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -58,6 +67,21 @@
      <height>19</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuGame">
+    <property name="title">
+     <string>Game</string>
+    </property>
+    <addaction name="actionRandom_Tiles"/>
+    <addaction name="actionChoose_Tiles"/>
+    <addaction name="separator"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuGame"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -68,6 +92,25 @@
    </attribute>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionRandom_Tiles">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Random Tiles</string>
+   </property>
+  </action>
+  <action name="actionChoose_Tiles">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Choose Tiles</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>

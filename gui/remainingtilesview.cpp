@@ -61,8 +61,100 @@ void RemainingTilesView::setUp(const Game * g, TileImageFactory * imgFactory)
 		QGridLayout * layout = map[set];
 		layout->addWidget(rtv, localType / REMAINING_TILES_COLUMNS, localType % REMAINING_TILES_COLUMNS);
 		views[i] = rtv;
+		rtv->setAttribute(Qt::WA_TransparentForMouseEvents);
 	}
 	ui->discargedWidget->setVisible(false);
+}
+
+int RemainingTilesView::nextTile(const Game * game)
+{
+	if (running)
+		return 0;
+	running = true;
+	ready = false;
+	setMouseTracking(true);
+
+	int t;
+	forever
+	{
+		if (ready)
+		{
+			t = type;
+			break;
+		}
+		else
+		{
+			if (Util::isGUIThread())
+			{
+				QCoreApplication::processEvents();
+				Util::sleep(20);
+			}
+			else
+				Util::sleep(200);
+		}
+	}
+	setMouseTracking(false);
+
+	int index = 0;
+	auto const & counts = game->getTileCounts();
+	for (int i = 0; i < counts.size(); ++i)
+	{
+		if (i >= t)
+			break;
+		index += counts[i];
+	}
+	Q_ASSERT(game->getTiles()[index]->tileType == t);
+
+	running = false;
+	return index;
+}
+
+void RemainingTilesView::leaveEvent(QEvent *)
+{
+	for (RemainingTileView * r : views)
+		r->setHighlight(false);
+}
+
+void RemainingTilesView::mouseMoveEvent(QMouseEvent * event)
+{
+	if (!running || ready)
+		return;
+
+	RemainingTileView * rtv = getViewAt(event->pos());
+	if (rtv == 0)
+		return;
+
+	for (RemainingTileView * r : views)
+		r->setHighlight(false);
+
+	if (rtv->getCount() <= 0)
+		return;
+	rtv->setHighlight(true);
+
+	event->accept();
+}
+
+void RemainingTilesView::mousePressEvent(QMouseEvent * event)
+{
+	if (!running || ready)
+	{
+		QWidget::mousePressEvent(event);
+		return;
+	}
+
+	RemainingTileView * rtv = getViewAt(event->pos());
+	if (rtv == 0 || rtv->getCount() == 0)
+	{
+		QWidget::mousePressEvent(event);
+		return;
+	}
+
+	for (RemainingTileView * r : views)
+		r->setHighlight(false);
+
+	event->accept();
+	type = rtv->getType();
+	ready = true;
 }
 
 void RemainingTilesView::updateView()
@@ -79,4 +171,22 @@ void RemainingTilesView::updateView()
 		//TODO
 		ui->discargedWidget->setVisible(true);
 	}
+}
+
+RemainingTileView * RemainingTilesView::getViewAt(const QPoint & pos)
+{
+//	QWidget * c = childAt(pos);
+//	while(c != 0 && c->parent() != this)
+//		c = c->parentWidget();
+//	if (c == 0)
+//		return 0;
+//	return static_cast<RemainingTileView *>(c);
+
+	// Oh man, sometimes I hate Qt... The solution above would work, if I hadn't set Qt::WA_TransparentForMouseEvents. Now the widgets become also invisible for mouse events, but also for childAt().
+	// Other solutions using event filters etc. Also don't work, without digging deep in the chilrens widgets properties (e.g. to enable mouse tracking fall all children)
+
+	for (RemainingTileView * rtv : views)
+		if (rtv->geometry().contains(pos))
+			return rtv;
+	return 0;
 }
