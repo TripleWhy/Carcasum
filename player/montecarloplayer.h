@@ -2,6 +2,7 @@
 #define MONTECARLOPLAYER_H
 
 #include "static.h"
+#include "core/game.h"
 #include "core/player.h"
 #include "jcz/tilefactory.h"
 
@@ -15,12 +16,13 @@ public:
 	
 private:
 	Game const * game;
+	Game simGame = Game(0);
 	jcz::TileFactory * tileFactory;
 	
 public:
 	MonteCarloPlayer(jcz::TileFactory * tileFactory);
 	~MonteCarloPlayer();
-	virtual void newGame(int player, Game const * game);
+	virtual void newGame(int player, Game const * g);
 	virtual void playerMoved(int player, Tile const * tile, MoveHistoryEntry const & move);
 	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);

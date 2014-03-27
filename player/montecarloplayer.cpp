@@ -1,6 +1,5 @@
 #include "montecarloplayer.h"
 #include "randomplayer.h"
-#include "core/game.h"
 
 MonteCarloPlayer::MonteCarloPlayer(jcz::TileFactory * tileFactory)
     : tileFactory(tileFactory)
@@ -15,10 +14,17 @@ MonteCarloPlayer::~MonteCarloPlayer()
 void MonteCarloPlayer::newGame(int /*player*/, const Game * g)
 {
 	game = g;
+	simGame.clearPlayers();
+	for (uint i = 0; i < g->getPlayerCount(); ++i)
+		simGame.addPlayer(&RandomPlayer::instance);
+	simGame.newGame(game->getTileSets(), tileFactory, g->getMoveHistory());
 }
 
 void MonteCarloPlayer::playerMoved(int /*player*/, const Tile * /*tile*/, const MoveHistoryEntry & /*move*/)
 {
+	auto const & history = game->getMoveHistory();
+	for (uint i = simGame.getMoveHistory().size(); i < history.size(); ++i)
+		simGame.simStep(history[i]);
 }
 
 TileMove MonteCarloPlayer::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & placements)
@@ -29,12 +35,7 @@ TileMove MonteCarloPlayer::getTileMove(int player, const Tile * /*tile*/, const 
 	for (int i = 0; i < placementSize; ++i)
 		utilities[i] = 0;
 
-	Game g(0);	//TODO Making this a member could speed things up
-	for (int i = 0; i < playerCount; ++i)
-		g.addPlayer(&RandomPlayer::instance);
-	auto const & history = game->getMoveHistory();
-	g.newGame(game->getTileSets(), tileFactory, history);
-	Q_ASSERT(game->equals(g));
+	Q_ASSERT(game->equals(simGame));
 	
 	int moveIndex = 0;
 	for (TileMove const & tileMove : placements)
@@ -51,17 +52,17 @@ TileMove MonteCarloPlayer::getTileMove(int player, const Tile * /*tile*/, const 
 
 			utilities[moveIndex] += utility(g.getScores(), playerCount, player);
 #else
-			g.simStep(move.tile, tileMove, player, &RandomPlayer::instance);
+			simGame.simStep(move.tile, tileMove, player, &RandomPlayer::instance);
 
 			int steps = 1;
-			for ( ; !g.isFinished(); ++steps)
-				g.simStep(&RandomPlayer::instance);
+			for ( ; !simGame.isFinished(); ++steps)
+				simGame.simStep(&RandomPlayer::instance);
 			
-			utilities[moveIndex] += utility(g.getScores(), playerCount, player);
+			utilities[moveIndex] += utility(simGame.getScores(), playerCount, player);
 			
 			for (int i = 0; i < steps; ++i)
-				g.undo();
-			Q_ASSERT(game->equals(g));
+				simGame.undo();
+			Q_ASSERT(game->equals(simGame));
 #endif
 		}
 #if COUNT_PLAYOUTS
@@ -94,11 +95,6 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * /*tile*/, co
 	for (int i = 0; i < possibleSize; ++i)
 		utilities[i] = 0;
 	
-	Game g(0);
-	for (int i = 0; i < playerCount; ++i)
-		g.addPlayer(&RandomPlayer::instance);
-	auto const & history = game->getMoveHistory();
-	g.newGame(game->getTileSets(), tileFactory, history);
 //	Q_ASSERT(game->equals(g));	//Does not equal, since game as the tile already placed, while g doesn't
 	
 	int moveIndex = 0;
@@ -117,17 +113,17 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * /*tile*/, co
 			utilities[moveIndex] += utility(g.getScores(), playerCount, player);
 #else
 			int steps = 1;
-			if (g.simStep(m))
+			if (simGame.simStep(m))
 			{
 				do
 					++steps;
-				while (g.simStep(&RandomPlayer::instance));
+				while (simGame.simStep(&RandomPlayer::instance));
 			}
 			
-			utilities[moveIndex] += utility(g.getScores(), playerCount, player);
+			utilities[moveIndex] += utility(simGame.getScores(), playerCount, player);
 			
 			for (int i = 0; i < steps; ++i)
-				g.undo();
+				simGame.undo();
 //			Q_ASSERT(game->equals(g));
 #endif
 		}
