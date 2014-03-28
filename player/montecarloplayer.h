@@ -27,6 +27,7 @@ public:
 	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	virtual void endGame();
+	virtual char const * getTypeName() { return "MonteCarloPlayer"; }
 	
 private:
 	inline int utility(int const * scores, int const playerCount, int const myIndex)

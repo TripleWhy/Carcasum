@@ -57,6 +57,7 @@ public:
 	virtual void newGame(int player, Game const * game);
 	virtual void playerMoved(int player, Tile const * const tile, MoveHistoryEntry const & move);
 	virtual void endGame();
+	virtual char const * getTypeName() { return "BoardGraphicsScene"; }
 
 protected:
 	virtual void mousePressEvent (QGraphicsSceneMouseEvent * mouseEvent);

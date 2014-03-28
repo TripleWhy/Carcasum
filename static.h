@@ -1,6 +1,13 @@
 #ifndef STATIC_H
 #define STATIC_H
 
+#define _STR(X) #X
+#define STR(X) _STR(X)
+#define APP_REVISION_STR STR(APP_REVISION)
+
+#define APP_NAME "Carcasum"
+#define APP_ORGANIZATION "YMSolutions"
+
 // Some numbers
 // Game
 #define MAX_PLAYERS                   6
@@ -36,7 +43,7 @@
 #define PRINT_CONNECTIONS       0
 #define DEBUG_IDS               0
 // Ranodm
-#define RANDOM_SEED             17
+//#define RANDOM_SEED             17
 // BoardGraphicsScene
 #define DRAW_TILE_POSITION_TEXT 1
 // MonteCarloPlayer

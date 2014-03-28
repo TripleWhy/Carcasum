@@ -22,6 +22,7 @@ private:
 	QTimer * timer;
 	BoardGraphicsScene * boardUi;
 	std::vector<PlayerInfoView *> playerInfos;
+	bool isSetUp = false;
 	
 	jcz::TileFactory tileFactory;
 	TileImageFactory imgFactory = TileImageFactory(&tileFactory);
@@ -36,6 +37,13 @@ public:
 	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	virtual void endGame();
+	virtual char const * getTypeName() { return "MainWindow"; }
+
+protected:
+	virtual void closeEvent(QCloseEvent *event);
+
+private:
+	void readSettings();
 
 signals:
 	void updateNeeded();

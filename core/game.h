@@ -132,6 +132,7 @@ public:
 	inline QList<Tile *> const & getTiles() const { return tiles; }
 	inline std::vector<Tile *> const & getDiscargedTiles() const { return discardedTiles; }
 	inline void setNextTileProvider(NextTileProvider * n) { ntp = n; }
+	inline std::vector<Player *> const & getPlayers() const { return players; }
 
 private:
 	inline void setNextPlayer() { nextPlayer = (nextPlayer + 1) % getPlayerCount(); }

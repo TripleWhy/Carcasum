@@ -96,6 +96,9 @@ HEADERS += \
 RESOURCES += \
 	jcz/jcz.qrc
 
+REVISION = $$system(git rev-parse HEAD)
+DEFINES += APP_REVISION=$$REVISION
+
 QMAKE_CXXFLAGS += -std=c++11
 QMAKE_CXXFLAGS_WARN_ON += -Wextra -Werror=switch -Werror=return-type -Werror=delete-non-virtual-dtor
 
