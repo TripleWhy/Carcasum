@@ -2,9 +2,106 @@
 #include "randomplayer.h"
 #include <QElapsedTimer>
 
+MCTSPlayer::MCTSNode::MCTSNode(uchar player, Type type, int size, int playerCount, MCTSNode * parent)
+    : player(player),
+      type(type),
+      notExpanded(size),
+      rewards(playerCount),
+      parent(parent)
+{
+	children.resize(size);
+	children.shrink_to_fit();
+}
+
+MCTSPlayer::MCTSTileNode::MCTSTileNode(uchar player, TileMovesType && possible, int playerCount, MCTSNode * parent, int parentAction)
+    : MCTSNode(player, TypeTile, possible.size(), playerCount, parent),
+      possible(possible),
+      parentAction(parentAction)
+{
+}
+
+MCTSPlayer::MCTSMeepleNode::MCTSMeepleNode(uchar player, MeepleMovesType && possible, int playerCount, MCTSNode * parent, TileMove * parentAction)
+    : MCTSNode(player, TypeMeeple, possible.size(), playerCount, parent),
+      possible(possible),
+      parentAction(parentAction)
+{
+}
+
+MCTSPlayer::MCTSChanceNode::MCTSChanceNode(uchar player, TileCountType const & tileCounts, int playerCount, MCTSNode * parent, MeepleMove * parentAction)
+    : MCTSNode(player, TypeChance, tileCounts.size(), playerCount, parent),
+      tileCounts(tileCounts),
+      parentAction(parentAction)
+{
+}
+
+
 MCTSPlayer::MCTSPlayer(jcz::TileFactory * tileFactory)
     : tileFactory(tileFactory)
 {
+}
+
+template<>
+void MCTSPlayer::apply<MCTSPlayer::MCTSTileNode>(MCTSPlayer::MCTSTileNode * node, Game & g)
+{
+	g.simPartStepChance(g.getTileIndexByType(node->parentAction));
+}
+
+template<>
+void MCTSPlayer::apply<MCTSPlayer::MCTSMeepleNode>(MCTSPlayer::MCTSMeepleNode * node, Game & g)
+{
+	g.simPartStepTile(*node->parentAction);
+}
+
+template<>
+void MCTSPlayer::apply<MCTSPlayer::MCTSChanceNode>(MCTSPlayer::MCTSChanceNode * node, Game & g)
+{
+	g.simPartStepMeeple(*node->parentAction);
+}
+
+template<>
+void MCTSPlayer::apply<MCTSPlayer::MCTSNode>(MCTSPlayer::MCTSNode * node, Game & g)
+{
+	switch (node->type)
+	{
+		case MCTSNode::TypeTile:
+			return apply(static_cast<MCTSTileNode *>(node), g);
+		case MCTSNode::TypeMeeple:
+			return apply(static_cast<MCTSMeepleNode *>(node), g);
+		case MCTSNode::TypeChance:
+			return apply(static_cast<MCTSChanceNode *>(node), g);
+	}
+}
+
+template<>
+void MCTSPlayer::unapply<MCTSPlayer::MCTSTileNode>(MCTSPlayer::MCTSTileNode * /*node*/, Game & g)
+{
+	g.simPartUndoChance();
+}
+
+template<>
+void MCTSPlayer::unapply<MCTSPlayer::MCTSMeepleNode>(MCTSPlayer::MCTSMeepleNode * /*node*/, Game & g)
+{
+	g.simPartUndoTile();
+}
+
+template<>
+void MCTSPlayer::unapply<MCTSPlayer::MCTSChanceNode>(MCTSPlayer::MCTSChanceNode * /*node*/, Game & g)
+{
+	g.simPartUndoMeeple();
+}
+
+template<>
+void MCTSPlayer::unapply<MCTSPlayer::MCTSNode>(MCTSPlayer::MCTSNode * node, Game & g)
+{
+	switch (node->type)
+	{
+		case MCTSNode::TypeTile:
+			return unapply(static_cast<MCTSTileNode *>(node), g);
+		case MCTSNode::TypeMeeple:
+			return unapply(static_cast<MCTSMeepleNode *>(node), g);
+		case MCTSNode::TypeChance:
+			return unapply(static_cast<MCTSChanceNode *>(node), g);
+	}
 }
 
 void MCTSPlayer::newGame(int /*player*/, const Game * g)
@@ -32,11 +129,16 @@ TileMove MCTSPlayer::getTileMove(int player, const Tile * tile, const MoveHistor
 
 	QElapsedTimer t;
 	t.start();
-	while (t.elapsed() < 30*1000)
+	for (int i = 0; t.elapsed() < 10*1000; ++i)
 	{
+		Q_ASSERT(game->equals(simGame));
+
+		apply(v0, simGame);
+
 		auto vl = treePolicy(v0);
-		auto delta = defaultPolicy();
+		auto delta = defaultPolicy(vl);
 		backup(vl, delta);
+		Q_ASSERT(game->equals(simGame));
 	}
 	int b = bestChild0(v0);
 	auto a = v0->possible[b];
@@ -63,44 +165,16 @@ const char *MCTSPlayer::getTypeName()
 	return "MCTSPlayer";
 }
 
-template<>
-void MCTSPlayer::apply<MCTSPlayer::MCTSTileNode>(MCTSPlayer::MCTSTileNode * node, Game & g)
-{
-	g.simChanceStep(g.getTileIndexByType(node->parentAction));
-}
-
-template<>
-void MCTSPlayer::apply<MCTSPlayer::MCTSMeepleNode>(MCTSPlayer::MCTSMeepleNode * node, Game & g)
-{
-	g.simTileStep(*node->parentAction);
-}
-
-template<>
-void MCTSPlayer::apply<MCTSPlayer::MCTSChanceNode>(MCTSPlayer::MCTSChanceNode * node, Game & g)
-{
-	g.simMeepleStep(*node->parentAction);
-}
-
-template<>
-void MCTSPlayer::apply<MCTSPlayer::MCTSNode>(MCTSPlayer::MCTSNode * node, Game & g)
-{
-	switch (node->type)
-	{
-		case MCTSNode::TypeTile:
-			return apply(static_cast<MCTSTileNode *>(node), g);
-		case MCTSNode::TypeMeeple:
-			return apply(static_cast<MCTSMeepleNode *>(node), g);
-		case MCTSNode::TypeChance:
-			return apply(static_cast<MCTSChanceNode *>(node), g);
-	}
-}
-
 MCTSPlayer::MCTSNode * MCTSPlayer::treePolicy(MCTSNode * v)
 {
 	while (!simGame.isFinished())
 	{
 		if (v->notExpanded)
-			return expand(v);
+		{
+			auto r = expand(v);
+			apply(r, simGame);
+			return r;
+		}
 		else
 		{
 			v = bestChild(v);
@@ -166,7 +240,6 @@ MCTSPlayer::MCTSNode * MCTSPlayer::expand(MCTSPlayer::MCTSNode * v)
 				Q_UNREACHABLE();
 				break;
 		}
-		v->children[a] = vPrime;
 	}
 
 #if MCTS_COUNT_EXPAND_HITS
@@ -174,6 +247,7 @@ MCTSPlayer::MCTSNode * MCTSPlayer::expand(MCTSPlayer::MCTSNode * v)
 		++hit;
 #endif
 
+	v->children[a] = vPrime;
 	--v->notExpanded;
 	return vPrime;
 }
@@ -201,6 +275,8 @@ int MCTSPlayer::bestChild0(MCTSPlayer::MCTSNode * v)
 	for (int i = 0, s = v->children.size(); i < s; ++i)
 	{
 		auto * vPrime = v->children[i];
+		if (vPrime == 0)
+			continue;
 		qreal val = Q(vPrime) / qreal(N(vPrime));
 		if (val > max)
 		{
@@ -211,81 +287,93 @@ int MCTSPlayer::bestChild0(MCTSPlayer::MCTSNode * v)
 	return a;
 }
 
-int const * MCTSPlayer::defaultPolicy()
+MCTSPlayer::RewardType MCTSPlayer::defaultPolicy(MCTSNode * v)
 {
-	while (simGame.simStep(&RandomPlayer::instance))
-		;
-	return simGame.getScores();
+	switch (v->type)
+	{
+		case MCTSNode::TypeTile:
+		{
+			Tile const * tile = simGame.getTiles()[simGame.simEntry.tile];
+			simGame.simPartStepTile(RandomPlayer::instance.getTileMove(v->player, tile, simGame.simEntry, simGame.getPossibleTilePlacements(tile)));
+			// no break
+		}
+		case MCTSNode::TypeMeeple:
+		{
+			Tile const * tile = simGame.getTiles()[simGame.simEntry.tile];
+			simGame.simPartStepMeeple(RandomPlayer::instance.getMeepleMove(v->player, tile, simGame.simEntry, simGame.getPossibleMeeplePlacements(tile)));
+		}
+		case MCTSNode::TypeChance:
+			break;
+	}
+
+	int steps = 0;
+	do
+		++steps;
+	while (simGame.simStep(&RandomPlayer::instance));
+
+	// Not sure about this:
+	RewardType reward(simGame.getPlayerCount());
+	for (int i = 0; i < reward.size(); ++i)
+		reward[i] = simGame.getPlayerScore(i);
+
+	for (int i = 0; i < steps; ++i)
+		simGame.undo();
+
+	switch (v->type)
+	{
+		case MCTSNode::TypeTile:
+			simGame.simPartUndoMeeple();
+			simGame.simPartUndoTile();
+			break;
+		case MCTSNode::TypeMeeple:
+			simGame.simPartUndoMeeple();
+			break;
+		case MCTSNode::TypeChance:
+			break;
+	}
+
+	return reward;
 }
 
-void MCTSPlayer::backup(MCTSPlayer::MCTSNode * v, const int * delta)
+void MCTSPlayer::backup(MCTSPlayer::MCTSNode * v, RewardType const & delta)
 {
-	// delta changes with undo.
-	QVarLengthArray<int, MAX_PLAYERS> d(game->getPlayerCount());
-	for (int i = 0; i < d.size(); ++i)
-		d[i] = delta[i];
-
 	while (v != 0)
 	{
+		unapply(v, simGame);
+
 		++N(v);
 
 		// Not sure about this:
-		for (int i = 0; i < d.size(); ++i)
-			v->rewards[i] += d[i];
+		for (int i = 0; i < delta.size(); ++i)
+			v->rewards[i] += delta[i];
 
 		v = v->parent;
-		simGame.undo();
 	}
 }
 
 MCTSPlayer::MCTSTileNode * MCTSPlayer::generateTileNode(MCTSNode * parent, uchar player, int parentAction, Game const & g)
 {
-	MCTSTileNode * node = new MCTSTileNode();
-	Tile const * t = game->getTileByType(parentAction);
-	node->possible = g.getPossibleTilePlacements(t);
-	int const size = node->possible.size();
-	node->castChildren().resize(size);
-	node->notExpanded = size;
-	node->player = player;
-	node->parent = parent;
-	node->parentAction = parentAction;
-
-	for (int i = 0; i < size; ++i)
-	{
-		Q_ASSERT(node->children[i] == 0);
-		node->children[i] = 0;
-	}
-
+	Tile const * t = g.getTileByType(parentAction);
+	MCTSTileNode * node = new MCTSTileNode(player, g.getPossibleTilePlacements(t), g.getPlayerCount(), parent, parentAction);
 	return node;
 }
 
 MCTSPlayer::MCTSMeepleNode * MCTSPlayer::generateMeepleNode(MCTSNode * parent, uchar player, TileMove * parentAction, const Tile * t, const Game & g)
 {
-	MCTSMeepleNode * node = new MCTSMeepleNode();
-	if (game->getPlayerMeeples(player) > 0)
-		node->possible = g.getPossibleMeeplePlacements(t);
-	else
-		node->possible.push_back(MeepleMove());
-	int const size = node->possible.size();
-	node->castChildren().resize(size);
-	node->notExpanded = size;
-	node->player = player;
-	node->parent = parent;
-	node->parentAction = parentAction;
-
+	MCTSMeepleNode * node;
+	{
+		MeepleMovesType possible;
+		if (g.getPlayerMeeples(player) > 0)
+			possible = g.getPossibleMeeplePlacements(t);
+		else
+			possible.push_back(MeepleMove());
+		node = new MCTSMeepleNode(player, std::move(possible), g.getPlayerCount(), parent, parentAction);
+	}
 	return node;
 }
 
 MCTSPlayer::MCTSChanceNode *MCTSPlayer::generateChanceNode(MCTSNode * parent, uchar player, MeepleMove * parentAction, const Game & g)
 {
-	MCTSChanceNode * node = new MCTSChanceNode();
-	node->tileCounts = g.getTileCounts();
-	int const size = node->tileCounts.size();
-	node->castChildren().resize(size);
-	node->notExpanded = size;
-	node->player = player;
-	node->parent = parent;
-	node->parentAction = parentAction;
-
+	MCTSChanceNode * node = new MCTSChanceNode(player, g.getTileCounts(), g.getPlayerCount(), parent, parentAction);
 	return node;
 }

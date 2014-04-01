@@ -75,11 +75,13 @@ private:
 	uint playerCount = 0;
 	
 	std::vector<MoveHistoryEntry> moveHistory;
-	MoveHistoryEntry simEntry;
 	Tile::TileSets tileSets;
 #if !USE_RESET
 	jcz::TileFactory * tileFactory;
 #endif
+
+public:
+	MoveHistoryEntry simEntry;
 
 public:
 	Game(NextTileProvider * ntp);
@@ -100,10 +102,13 @@ public:
 	bool simStep(Player * player);
 	bool simStep(int tileIndex, TileMove const & tileMove, int playerIndex, Player * player);
 	bool simStep(MoveHistoryEntry const & entry);
-	void simChanceStep(int index);
-	void simTileStep(const TileMove & tileMove);
-	void simMeepleStep(const MeepleMove & meepleMove);
+	void simPartStepChance(int index);
+	void simPartStepTile(const TileMove & tileMove);
+	void simPartStepMeeple(const MeepleMove & meepleMove);
 	void undo();
+	void simPartUndoChance();
+	void simPartUndoTile();
+	void simPartUndoMeeple();
 
 
 	void cityClosed(CityNode * n);

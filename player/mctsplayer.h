@@ -13,18 +13,22 @@ public:
 	static int const Cp = 1;
 
 private:
+	typedef QVarLengthArray<int, MAX_PLAYERS> RewardType;
 	struct MCTSNode
 	{
 		enum Type { TypeTile, TypeMeeple, TypeChance };
 
 		uchar player;	// Does not really have to be stored
 		Type type;
-		uint visitCount = 0;
 		uint notExpanded;
-		QVarLengthArray<int, MAX_PLAYERS> rewards;
+		uint visitCount = 0;
+		RewardType rewards;
 
 		std::vector<MCTSNode *> children;
 		MCTSNode * parent;
+
+	protected:
+		MCTSNode(uchar player, Type type, int size, int playerCount, MCTSNode * parent);
 	};
 
 	struct MCTSTileNode;
@@ -38,7 +42,7 @@ private:
 //		Tile const * tile; // Well, this is what I tried to avoid...
 		int parentAction;
 
-		MCTSTileNode() { type = TypeTile; }
+		MCTSTileNode(uchar player, TileMovesType && possible, int playerCount, MCTSNode * parent, int parentAction);
 		~MCTSTileNode()
 		{
 			for (MCTSMeepleNode * c : castChildren())
@@ -55,7 +59,7 @@ private:
 //		QVarLengthArray<MCTSChanceNode *, NODE_ARRAY_LENGTH> children;
 		TileMove * parentAction;
 
-		MCTSMeepleNode() { type = TypeMeeple; }
+		MCTSMeepleNode(uchar player, MeepleMovesType && possible, int playerCount, MCTSNode * parent, TileMove * parentAction);
 		~MCTSMeepleNode()
 		{
 			for (MCTSChanceNode * c : castChildren())
@@ -72,7 +76,7 @@ private:
 //		QVarLengthArray<MCTSTileNode *, TILE_COUNT_ARRAY_LENGTH> children;
 		MeepleMove * parentAction;
 
-		MCTSChanceNode() { type = TypeChance; }
+		MCTSChanceNode(uchar player, const TileCountType & tileCounts, int playerCount, MCTSNode * parent, MeepleMove * parentAction);
 		~MCTSChanceNode()
 		{
 			for (MCTSTileNode * c : castChildren())
@@ -91,12 +95,18 @@ private:
 	MeepleMove meepleMove;
 
 #if MCTS_COUNT_EXPAND_HITS
+public:
 	uint hit = 0;
 	uint miss = 0;
 #endif
 
 public:
 	MCTSPlayer(jcz::TileFactory * tileFactory);
+
+	template<typename NodeType>
+	void apply(NodeType * node, Game & g);
+	template<typename NodeType>
+	void unapply(NodeType * node, Game & g);
 
 	virtual void newGame(int player, Game const * game);
 	virtual void playerMoved(int player, Tile const * tile, MoveHistoryEntry const & move);
@@ -105,15 +115,12 @@ public:
 	virtual void endGame();
 	virtual char const * getTypeName();
 
-	template<typename NodeType>
-	void apply(NodeType * node, Game & g);
-
 	MCTSNode * treePolicy(MCTSNode * node);
 	MCTSNode * expand(MCTSNode * v);
 	MCTSNode * bestChild(MCTSNode * v);
 	int bestChild0(MCTSNode * v);
-	const int * defaultPolicy();
-	void backup(MCTSNode * v, const int * delta);
+	RewardType defaultPolicy(MCTSNode * v);
+	void backup(MCTSNode * v, const RewardType & delta);
 
 	inline int & Q(MCTSNode * v) { return v->rewards[v->player]; }
 	inline uint & N(MCTSNode * v) { return v->visitCount; }

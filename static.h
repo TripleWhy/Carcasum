@@ -47,7 +47,7 @@
 // BoardGraphicsScene
 #define DRAW_TILE_POSITION_TEXT 1
 // MonteCarloPlayer
-#define COUNT_PLAYOUTS          1
+#define COUNT_PLAYOUTS          0
 // MCTSPlayer
 #define MCTS_COUNT_EXPAND_HITS  1
 

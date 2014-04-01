@@ -436,12 +436,12 @@ bool Game::simStep(const MoveHistoryEntry & entry)
 	return simCheckEndGame();
 }
 
-void Game::simChanceStep(int index)
+void Game::simPartStepChance(int index)
 {
 	simEntry.tile = index;
 }
 
-void Game::simTileStep(TileMove const & tileMove)
+void Game::simPartStepTile(TileMove const & tileMove)
 {
 	simEntry.move.tileMove = tileMove;
 	Tile * tile = tiles[simEntry.tile];
@@ -455,17 +455,24 @@ void Game::simTileStep(TileMove const & tileMove)
 	}
 }
 
-void Game::simMeepleStep(const MeepleMove & meepleMove)
+void Game::simPartStepMeeple(const MeepleMove & meepleMove)
 {
 	simEntry.move.meepleMove = meepleMove;
 	Tile * tile = tiles[simEntry.tile];
-	moveMeeple(tile, nextPlayer, meepleMove);
-	setNextPlayer();
+	if (!simEntry.move.tileMove.isNull())
+	{
+		moveMeeple(tile, nextPlayer, meepleMove);
+		returnMeeplesToPlayers();
+		setNextPlayer();
+	}
 
 	tiles.removeAt(simEntry.tile);
 	--tileCount[tile->tileType];
 	moveHistory.push_back(std::move(simEntry));
 	simEntry = MoveHistoryEntry();
+
+	if (tiles.isEmpty())
+		endGame();
 }
 
 void Game::undo()
@@ -555,6 +562,67 @@ void Game::undo()
 		for (uint i = 0; i < getPlayerCount(); ++i)
 			Q_ASSERT(playerScores[i] <= oldScores[i]);
 #endif
+}
+
+void Game::simPartUndoChance()
+{
+	simEntry.tile = -1;
+}
+
+void Game::simPartUndoTile()
+{
+	TileMove & tileMove = simEntry.move.tileMove;
+	if (tileMove.isNull())
+	{
+		discardedTiles.pop_back();
+	}
+	else
+	{
+		board->removeTile(tileMove);
+	}
+	tileMove = TileMove();
+}
+
+void Game::simPartUndoMeeple()
+{
+	if (tiles.isEmpty())
+	{
+		board->unscoreEndGame();
+		active = true;
+	}
+
+	simEntry = moveHistory.back();
+	moveHistory.pop_back();
+	Move & move = simEntry.move;
+	TileMove const & tileMove = move.tileMove;
+
+	Tile * tile;
+	if (tileMove.isNull())
+	{
+		tile = discardedTiles.back();
+	}
+	else
+	{
+		tile = board->getTile(tileMove);
+
+		nextPlayer = (nextPlayer - 1 + getPlayerCount()) % getPlayerCount();
+		int const playerIndex = nextPlayer;
+		MeepleMove & meepleMove = move.meepleMove;
+
+		if (!meepleMove.isNull())
+		{
+			auto nodes = tile->getNodes();
+			Node * n = nodes[meepleMove.nodeIndex];
+			++playerMeeples[playerIndex];
+			n->removeMeeple(playerIndex, this);
+
+			meepleMove = MeepleMove();
+		}
+	}
+
+	tiles.insert(simEntry.tile, tile);
+	++tileCount[tile->tileType];
+	assertTileCount();
 }
 
 void Game::cityClosed(CityNode * n)
@@ -700,6 +768,7 @@ void Game::endGame()
 
 void Game::moveTile(Tile * tile, const TileMove & tileMove)
 {
+	Q_ASSERT(!tileMove.isNull());
 	board->addTile(tile, tileMove);
 }
 
