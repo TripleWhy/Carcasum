@@ -167,6 +167,11 @@ Board const * Game::getBoard() const
 	return board;
 }
 
+TileMovesType Game::getPossibleTilePlacements(Tile const * tile) const
+{
+	return board->getPossibleTilePlacements(tile);
+}
+
 bool Game::step()
 {
 	if (isFinished())
@@ -429,6 +434,38 @@ bool Game::simStep(const MoveHistoryEntry & entry)
 #endif
 
 	return simCheckEndGame();
+}
+
+void Game::simChanceStep(int index)
+{
+	simEntry.tile = index;
+}
+
+void Game::simTileStep(TileMove const & tileMove)
+{
+	simEntry.move.tileMove = tileMove;
+	Tile * tile = tiles[simEntry.tile];
+	if (tileMove.isNull())
+	{
+		discardedTiles.push_back(tile);
+	}
+	else
+	{
+		moveTile(tile, tileMove);
+	}
+}
+
+void Game::simMeepleStep(const MeepleMove & meepleMove)
+{
+	simEntry.move.meepleMove = meepleMove;
+	Tile * tile = tiles[simEntry.tile];
+	moveMeeple(tile, nextPlayer, meepleMove);
+	setNextPlayer();
+
+	tiles.removeAt(simEntry.tile);
+	--tileCount[tile->tileType];
+	moveHistory.push_back(std::move(simEntry));
+	simEntry = MoveHistoryEntry();
 }
 
 void Game::undo()

@@ -35,7 +35,7 @@ void RemainingTilesView::setUp(const Game * g, TileImageFactory * imgFactory)
 	Tile::TileSets const & sets = g->getTileSets();
 	Tile::TileSets handled;
 	std::map<Tile::TileSet, QGridLayout *> map;
-	Game::TileCountType const & tileCounts = g->getTileCounts();
+	TileCountType const & tileCounts = g->getTileCounts();
 	for (int i = 0; i < tileCounts.size(); ++i)
 	{
 		Tile::TileSet set = Util::getSet(i);
@@ -159,7 +159,7 @@ void RemainingTilesView::mousePressEvent(QMouseEvent * event)
 
 void RemainingTilesView::updateView()
 {
-	Game::TileCountType const & tileCounts = game->getTileCounts();
+	TileCountType const & tileCounts = game->getTileCounts();
 	for (int i = 0; i < tileCounts.size(); ++i)
 	{
 		if (views[i] != 0)

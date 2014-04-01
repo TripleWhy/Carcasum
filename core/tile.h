@@ -383,6 +383,7 @@ public:
 	inline uchar getNodeCount() const { return nodeCount; }
 	inline Node const * const * getCNodes() const { return nodes; }
 	inline Node * const * getNodes() { return nodes; }
+	inline Node const * const * getNodes() const { return nodes; }
 	inline Node * getNode(int idx) { return nodes[idx]; }
 	inline Node const * getNode(int idx) const { return nodes[idx]; }
 

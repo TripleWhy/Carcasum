@@ -48,6 +48,8 @@
 #define DRAW_TILE_POSITION_TEXT 1
 // MonteCarloPlayer
 #define COUNT_PLAYOUTS          1
+// MCTSPlayer
+#define MCTS_COUNT_EXPAND_HITS  1
 
 
 #endif // STATIC_H

@@ -50,11 +50,10 @@ struct MoveHistoryEntry
 	Move move;
 };
 
+typedef QVarLengthArray<int, TILE_COUNT_ARRAY_LENGTH> TileCountType;
+
 class Game
 {
-public:
-	typedef QVarLengthArray<int, TILE_COUNT_ARRAY_LENGTH> TileCountType;
-
 private:
 //	int ply = -1;
 	int active = false;
@@ -76,6 +75,7 @@ private:
 	uint playerCount = 0;
 	
 	std::vector<MoveHistoryEntry> moveHistory;
+	MoveHistoryEntry simEntry;
 	Tile::TileSets tileSets;
 #if !USE_RESET
 	jcz::TileFactory * tileFactory;
@@ -95,11 +95,16 @@ public:
 //	void setPlayers(QList<Player *> players);
 	void clearPlayers();
 	Board const * getBoard() const;
+	TileMovesType getPossibleTilePlacements(const Tile * tile) const;
 	bool step();
 	bool simStep(Player * player);
 	bool simStep(int tileIndex, TileMove const & tileMove, int playerIndex, Player * player);
 	bool simStep(MoveHistoryEntry const & entry);
+	void simChanceStep(int index);
+	void simTileStep(const TileMove & tileMove);
+	void simMeepleStep(const MeepleMove & meepleMove);
 	void undo();
+
 
 	void cityClosed(CityNode * n);
 	void cityUnclosed(CityNode * n);
@@ -134,6 +139,33 @@ public:
 	inline void setNextTileProvider(NextTileProvider * n) { ntp = n; }
 	inline std::vector<Player *> const & getPlayers() const { return players; }
 
+	inline MeepleMovesType getPossibleMeeplePlacements(Tile const * tile) const
+	{
+		MeepleMovesType possibleMeeples(1);
+//		possibleMeeples[0] = MeepleMove();	// Not neccessary for non-primitive types
+
+		auto nodes = tile->getNodes();
+		for (uchar i = 0, end = tile->getNodeCount(); i < end; ++i)
+			if (Util::isNodeFree(nodes[i]))
+				possibleMeeples.append(MeepleMove(i));
+		Q_ASSERT_X(possibleMeeples.size() <= NODE_ARRAY_LENGTH, "Game::step()", "possibleMeeples initial size too low");
+		return possibleMeeples;
+	}
+
+	inline int getTileIndexByType(int tileType) const
+	{
+		int index = 0;
+		for (int i = 0; i < tileType; ++i)
+			index += tileCount[i];
+		Q_ASSERT(tiles[index]->tileType == tileType && (index == 0 || tiles[index-1]->tileType != tileType));
+		return index;
+	}
+
+	inline Tile const * getTileByType(int tileType) const
+	{
+		return tiles[getTileIndexByType(tileType)];
+	}
+
 private:
 	inline void setNextPlayer() { nextPlayer = (nextPlayer + 1) % getPlayerCount(); }
 	inline int simNextTile() { return r.nextInt(tiles.size()); }
@@ -146,18 +178,6 @@ private:
 			*m += *r;
 			*r = 0;
 		}
-	}
-	inline MeepleMovesType getPossibleMeeplePlacements(Tile * tile)
-	{
-		MeepleMovesType possibleMeeples(1);
-//		possibleMeeples[0] = MeepleMove();	// Not neccessary for non-primitive types
-
-		auto nodes = tile->getNodes();
-		for (uchar i = 0, end = tile->getNodeCount(); i < end; ++i)
-			if (Util::isNodeFree(nodes[i]))
-				possibleMeeples.append(MeepleMove(i));
-		Q_ASSERT_X(possibleMeeples.size() <= NODE_ARRAY_LENGTH, "Game::step()", "possibleMeeples initial size too low");
-		return possibleMeeples;
 	}
 	inline void moveMeeple(Tile * tile, int playerIndex, MeepleMove const & meepleMove)
 	{
