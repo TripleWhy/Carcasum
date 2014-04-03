@@ -10,7 +10,7 @@
 class MCTSPlayer : public Player
 {
 #ifndef TIMEOUT
-	static int const M = 1000;
+	static int const M = 4000;
 #endif
 
 public:
@@ -31,13 +31,13 @@ private:
 		Type type;
 		uint notExpanded;
 		uint visitCount = 0;
-		RewardType rewards;
+		int reward = 0;
 
 		std::vector<MCTSNode *> children;
 		MCTSNode * parent;
 
 	protected:
-		MCTSNode(uchar player, Type type, int size, int playerCount, MCTSNode * parent);
+		MCTSNode(uchar player, Type type, int size, MCTSNode * parent);
 	};
 
 	struct MCTSTileNode;
@@ -51,7 +51,7 @@ private:
 //		Tile const * tile; // Well, this is what I tried to avoid...
 		int parentAction;
 
-		MCTSTileNode(uchar player, TileMovesType && possible, int playerCount, MCTSNode * parent, int parentAction);
+		MCTSTileNode(uchar player, TileMovesType && possible, MCTSNode * parent, int parentAction);
 		~MCTSTileNode()
 		{
 			for (MCTSMeepleNode * c : *castChildren())
@@ -68,7 +68,7 @@ private:
 //		QVarLengthArray<MCTSChanceNode *, NODE_ARRAY_LENGTH> children;
 		TileMove * parentAction;
 
-		MCTSMeepleNode(uchar player, MeepleMovesType && possible, int playerCount, MCTSNode * parent, TileMove * parentAction);
+		MCTSMeepleNode(uchar player, MeepleMovesType && possible, MCTSNode * parent, TileMove * parentAction);
 		~MCTSMeepleNode()
 		{
 			for (MCTSChanceNode * c : *castChildren())
@@ -85,7 +85,7 @@ private:
 //		QVarLengthArray<MCTSTileNode *, TILE_COUNT_ARRAY_LENGTH> children;
 		MeepleMove * parentAction;
 
-		MCTSChanceNode(uchar player, const TileCountType & tileCounts, int playerCount, MCTSNode * parent, MeepleMove * parentAction);
+		MCTSChanceNode(uchar player, const TileCountType & tileCounts, MCTSNode * parent, MeepleMove * parentAction);
 		~MCTSChanceNode()
 		{
 			for (MCTSTileNode * c : *castChildren())
@@ -133,19 +133,15 @@ public:
 
 	void syncGame();
 
-	inline int & Q(MCTSNode * v) { return v->rewards[v->player]; }
+	inline int & Q(MCTSNode * v) { return v->reward; }
 	inline uint & N(MCTSNode * v) { return v->visitCount; }
 	inline qreal mySqrt(qreal r) { return sqrt(r); }
 	inline qreal myLn(quint64 r) { return log(r); }
 
-	inline uchar nextPlayer(uchar player) { return (player + 1) % game->getPlayerCount(); }
-
 private:
-	MCTSTileNode * generateTileNode(MCTSNode * parent, uchar player, int parentAction, Game & g);
-	MCTSMeepleNode * generateMeepleNode(MCTSNode * parent, uchar player, TileMove * parentAction, const Tile * t, Game & g);
-	MCTSChanceNode * generateChanceNode(MCTSNode * parent, uchar player, MeepleMove * parentAction, Game & g);
-
-	void assertRewards(MCTSNode * n);
+	MCTSTileNode * generateTileNode(MCTSNode * parent, int parentAction, Game & g);
+	MCTSMeepleNode * generateMeepleNode(MCTSNode * parent, TileMove * parentAction, const Tile * t, Game & g);
+	MCTSChanceNode * generateChanceNode(MCTSNode * parent, MeepleMove * parentAction, Game & g);
 
 	inline RewardType utilities(int const * scores, int const playerCount)
 	{

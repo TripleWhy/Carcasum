@@ -2,36 +2,33 @@
 #include "randomplayer.h"
 #include <QElapsedTimer>
 
-MCTSPlayer::MCTSNode::MCTSNode(uchar player, Type type, int size, int playerCount, MCTSNode * parent)
+MCTSPlayer::MCTSNode::MCTSNode(uchar player, Type type, int size, MCTSNode * parent)
     : player(player),
       type(type),
       notExpanded(size),
-      rewards(playerCount),
       parent(parent)
 {
 	Q_ASSERT(size != 0);
-	for (int i = 0; i < playerCount; ++i)
-		rewards[i] = 0;
 	children.resize(size);
 	children.shrink_to_fit();
 }
 
-MCTSPlayer::MCTSTileNode::MCTSTileNode(uchar player, TileMovesType && possible, int playerCount, MCTSNode * parent, int parentAction)
-    : MCTSNode(player, TypeTile, possible.size(), playerCount, parent),
+MCTSPlayer::MCTSTileNode::MCTSTileNode(uchar player, TileMovesType && possible, MCTSNode * parent, int parentAction)
+    : MCTSNode(player, TypeTile, possible.size(), parent),
       possible(possible),
       parentAction(parentAction)
 {
 }
 
-MCTSPlayer::MCTSMeepleNode::MCTSMeepleNode(uchar player, MeepleMovesType && possible, int playerCount, MCTSNode * parent, TileMove * parentAction)
-    : MCTSNode(player, TypeMeeple, possible.size(), playerCount, parent),
+MCTSPlayer::MCTSMeepleNode::MCTSMeepleNode(uchar player, MeepleMovesType && possible, MCTSNode * parent, TileMove * parentAction)
+    : MCTSNode(player, TypeMeeple, possible.size(), parent),
       possible(possible),
       parentAction(parentAction)
 {
 }
 
-MCTSPlayer::MCTSChanceNode::MCTSChanceNode(uchar player, TileCountType const & tileCounts, int playerCount, MCTSNode * parent, MeepleMove * parentAction)
-    : MCTSNode(player, TypeChance, tileCounts.size(), playerCount, parent),
+MCTSPlayer::MCTSChanceNode::MCTSChanceNode(uchar player, TileCountType const & tileCounts, MCTSNode * parent, MeepleMove * parentAction)
+    : MCTSNode(player, TypeChance, tileCounts.size(), parent),
       tileCounts(tileCounts),
       parentAction(parentAction)
 {
@@ -137,7 +134,9 @@ TileMove MCTSPlayer::getTileMove(int player, const Tile * tile, const MoveHistor
 	//TODO use provided placements
 
 	Q_ASSERT(game->equals(simGame));
-	MCTSTileNode * v0 = generateTileNode(0, player, tile->tileType, simGame);
+	Q_ASSERT(simGame.getNextPlayer() == player);
+	Q_UNUSED(player);
+	MCTSTileNode * v0 = generateTileNode(0, tile->tileType, simGame);
 
 	QElapsedTimer t;
 	t.start();
@@ -223,7 +222,7 @@ MCTSPlayer::MCTSNode * MCTSPlayer::expand(MCTSPlayer::MCTSNode * v)
 #endif
 		} while (vPrime != 0);
 
-		vPrime = generateTileNode(v, v->player, a, simGame);
+		vPrime = generateTileNode(v, a, simGame);
 	}
 	else
 	{
@@ -240,13 +239,13 @@ MCTSPlayer::MCTSNode * MCTSPlayer::expand(MCTSPlayer::MCTSNode * v)
 			case MCTSNode::TypeTile:
 			{
 				MCTSTileNode * tn = static_cast<MCTSTileNode *>(v);
-				vPrime = generateMeepleNode(v, v->player, &tn->possible[a], simGame.getTileByType(tn->parentAction), simGame);
+				vPrime = generateMeepleNode(v, &tn->possible[a], simGame.getTileByType(tn->parentAction), simGame);
 				break;
 			}
 			case MCTSNode::TypeMeeple:
 			{
 				MCTSMeepleNode * mn = static_cast<MCTSMeepleNode *>(v);
-				vPrime = generateChanceNode(v, nextPlayer(v->player), &mn->possible[a], simGame);
+				vPrime = generateChanceNode(v, &mn->possible[a], simGame);
 				break;
 			}
 			case MCTSNode::TypeChance:
@@ -375,10 +374,7 @@ void MCTSPlayer::backup(MCTSPlayer::MCTSNode * v, RewardType const & delta)
 	while (true)
 	{
 		++N(v);
-
-		// Not sure about this:
-		for (int i = 0; i < delta.size(); ++i)
-			v->rewards[i] += delta[i];
+		Q(v) += delta[v->player];
 
 		if (v->parent == 0)
 			break;
@@ -394,45 +390,37 @@ void MCTSPlayer::syncGame()
 		simGame.simStep(history[i]);
 }
 
-MCTSPlayer::MCTSTileNode * MCTSPlayer::generateTileNode(MCTSNode * parent, uchar player, int parentAction, Game & g)
+MCTSPlayer::MCTSTileNode * MCTSPlayer::generateTileNode(MCTSNode * parent, int parentAction, Game & g)
 {
+	int player = g.getNextPlayer();
 	Tile const * t = g.getTileByType(parentAction);
 	apply(parentAction, g);
 	TileMovesType && possible = g.getPossibleTilePlacements(t);
 	if (possible.size() == 0)
 		possible.append(TileMove()); // I could probably add a null MeepleMove child here, too.
-	MCTSTileNode * node = new MCTSTileNode(player, std::move(possible), g.getPlayerCount(), parent, parentAction);
-	assertRewards(node);
+	MCTSTileNode * node = new MCTSTileNode(player, std::move(possible), parent, parentAction);
 	return node;
 }
 
-MCTSPlayer::MCTSMeepleNode * MCTSPlayer::generateMeepleNode(MCTSNode * parent, uchar player, TileMove * parentAction, const Tile * t, Game & g)
+MCTSPlayer::MCTSMeepleNode * MCTSPlayer::generateMeepleNode(MCTSNode * parent, TileMove * parentAction, const Tile * t, Game & g)
 {
+	int player = g.getNextPlayer();
 	apply(parentAction, g);
 	MCTSMeepleNode * node;
 	{
 		MeepleMovesType && possible = getPossibleMeeples(player, parentAction, t, g);
-		node = new MCTSMeepleNode(player, std::move(possible), g.getPlayerCount(), parent, parentAction);
+		node = new MCTSMeepleNode(player, std::move(possible), parent, parentAction);
 	}
-	assertRewards(node);
 	return node;
 }
 
-MCTSPlayer::MCTSChanceNode *MCTSPlayer::generateChanceNode(MCTSNode * parent, uchar player, MeepleMove * parentAction, Game & g)
+MCTSPlayer::MCTSChanceNode *MCTSPlayer::generateChanceNode(MCTSNode * parent, MeepleMove * parentAction, Game & g)
 {
+	int player = g.getNextPlayer();
 	apply(parentAction, g);
 	TileCountType const & tileCounts = g.getTileCounts();
-	MCTSChanceNode * node = new MCTSChanceNode(player, tileCounts, g.getPlayerCount(), parent, parentAction);
-	assertRewards(node);
+	MCTSChanceNode * node = new MCTSChanceNode(player, tileCounts, parent, parentAction);
 
 	return node;
 }
 
-void MCTSPlayer::assertRewards(MCTSPlayer::MCTSNode * n)
-{
-	Q_UNUSED(n);
-	Q_ASSERT(n != 0);
-	Q_ASSERT((uint)n->rewards.size() == game->getPlayerCount());
-	for (uint i = 0; i < game->getPlayerCount(); ++i)
-		Q_ASSERT(n->rewards[i] == 0);
-}

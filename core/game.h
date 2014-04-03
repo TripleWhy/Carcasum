@@ -146,6 +146,7 @@ public:
 	inline std::vector<Tile *> const & getDiscargedTiles() const { return discardedTiles; }
 	inline void setNextTileProvider(NextTileProvider * n) { ntp = n; }
 	inline std::vector<Player *> const & getPlayers() const { return players; }
+	inline int getNextPlayer() const { return nextPlayer; }
 
 	inline MeepleMovesType getPossibleMeeplePlacements(Tile const * tile) const
 	{
