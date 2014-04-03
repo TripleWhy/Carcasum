@@ -9,6 +9,7 @@ MCTSPlayer::MCTSNode::MCTSNode(uchar player, Type type, int size, int playerCoun
       rewards(playerCount),
       parent(parent)
 {
+	Q_ASSERT(size != 0);
 	for (int i = 0; i < playerCount; ++i)
 		rewards[i] = 0;
 	children.resize(size);
@@ -302,17 +303,25 @@ MCTSPlayer::MCTSNode * MCTSPlayer::expand(MCTSPlayer::MCTSNode * v)
 
 MCTSPlayer::MCTSNode * MCTSPlayer::bestChild(MCTSNode * v)
 {
-	qreal max = -std::numeric_limits<qreal>::infinity();
 	MCTSNode * best = 0;
-	for (auto * vPrime : v->children)
+	if (v->type == MCTSNode::TypeChance)
 	{
-		if (vPrime == 0)
-			continue;
-		qreal val = (Q(vPrime) / qreal(N(vPrime))) + Cp * mySqrt( myLn( N(v) ) / N(vPrime) );
-		if (val > max)
+		QList<Tile *> const & tiles = simGame.getTiles();
+		best = v->children[tiles[r.nextInt(tiles.size())]->tileType];
+	}
+	else
+	{
+		qreal max = -std::numeric_limits<qreal>::infinity();
+		for (auto * vPrime : v->children)
 		{
-			max = val;
-			best = vPrime;
+			if (vPrime == 0)
+				continue;
+			qreal val = (Q(vPrime) / qreal(N(vPrime))) + Cp * mySqrt( myLn( N(v) ) / N(vPrime) );
+			if (val > max)
+			{
+				max = val;
+				best = vPrime;
+			}
 		}
 	}
 	Q_ASSERT(best != 0);
@@ -368,10 +377,7 @@ MCTSPlayer::RewardType MCTSPlayer::defaultPolicy(MCTSNode * v)
 		++steps;
 	while (simGame.simStep(&RandomPlayer::instance));
 
-	// Not sure about this:
-	RewardType reward(simGame.getPlayerCount());
-	for (int i = 0; i < reward.size(); ++i)
-		reward[i] = simGame.getPlayerScore(i);
+	RewardType && reward = utilities(simGame.getScores(), simGame.getPlayerCount());
 
 	for (int i = 0; i < steps; ++i)
 		simGame.undo();
@@ -418,7 +424,10 @@ MCTSPlayer::MCTSTileNode * MCTSPlayer::generateTileNode(MCTSNode * parent, uchar
 {
 	Tile const * t = g.getTileByType(parentAction);
 	apply(parentAction, g);
-	MCTSTileNode * node = new MCTSTileNode(player, g.getPossibleTilePlacements(t), g.getPlayerCount(), parent, parentAction);
+	TileMovesType && possible = g.getPossibleTilePlacements(t);
+	if (possible.size() == 0)
+		possible.append(TileMove()); // I could probably add a null MeepleMove child here, too.
+	MCTSTileNode * node = new MCTSTileNode(player, std::move(possible), g.getPlayerCount(), parent, parentAction);
 	assertRewards(node);
 	return node;
 }
@@ -429,10 +438,10 @@ MCTSPlayer::MCTSMeepleNode * MCTSPlayer::generateMeepleNode(MCTSNode * parent, u
 	MCTSMeepleNode * node;
 	{
 		MeepleMovesType possible;
-		if (g.getPlayerMeeples(player) > 0)
-			possible = g.getPossibleMeeplePlacements(t);
-		else
+		if (g.getPlayerMeeples(player) == 0 || parentAction->isNull())
 			possible.push_back(MeepleMove());
+		else
+			possible = g.getPossibleMeeplePlacements(t);
 		node = new MCTSMeepleNode(player, std::move(possible), g.getPlayerCount(), parent, parentAction);
 	}
 	assertRewards(node);

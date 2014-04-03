@@ -136,6 +136,37 @@ private:
 	MCTSChanceNode * generateChanceNode(MCTSNode * parent, uchar player, MeepleMove * parentAction, Game & g);
 
 	void assertRewards(MCTSNode * n);
+
+	inline RewardType utilities(int const * scores, int const playerCount)
+	{
+		RewardType reward(playerCount);
+		int max = std::numeric_limits<int>::min();
+		int winner = -1;
+		for (int i = 0; i < playerCount; ++i)
+		{
+			int s = scores [i];
+			if (s > max)
+			{
+				max = s;
+				winner = i;
+			}
+			else if (s == max)
+			{
+				winner = -1;
+			}
+		}
+
+		for (int i = 0; i < playerCount; ++i)
+		{
+			if (i == winner)
+				reward[i] = 1;
+			else if (winner == -1 && scores[i] == max)
+				reward[i] = 0;
+			else
+				reward[i] = -1;
+		}
+		return reward;
+	}
 };
 
 #endif // MCTSPLAYER_H
