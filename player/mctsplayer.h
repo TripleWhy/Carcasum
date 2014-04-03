@@ -9,8 +9,17 @@
 
 class MCTSPlayer : public Player
 {
+#ifndef TIMEOUT
+	static int const M = 1000;
+#endif
+
 public:
 	static int const Cp = 1;
+
+#if COUNT_PLAYOUTS
+public:
+	int playouts = 0;
+#endif
 
 private:
 	typedef QVarLengthArray<int, MAX_PLAYERS> RewardType;
@@ -94,7 +103,6 @@ private:
 	RandomTable r;
 	MeepleMove meepleMove;
 
-	bool print = false;
 #if MCTS_COUNT_EXPAND_HITS
 public:
 	uint hit = 0;
@@ -122,6 +130,8 @@ public:
 	int bestChild0(MCTSNode * v);
 	RewardType defaultPolicy(MCTSNode * v);
 	void backup(MCTSNode * v, const RewardType & delta);
+
+	void syncGame();
 
 	inline int & Q(MCTSNode * v) { return v->rewards[v->player]; }
 	inline uint & N(MCTSNode * v) { return v->visitCount; }
@@ -166,6 +176,16 @@ private:
 				reward[i] = -1;
 		}
 		return reward;
+	}
+
+	inline MeepleMovesType getPossibleMeeples(int player, TileMove * parentAction, Tile const * t, Game & g)
+	{
+		MeepleMovesType possible;
+		if (g.getPlayerMeeples(player) == 0 || parentAction->isNull())
+			possible.push_back(MeepleMove());
+		else
+			possible = g.getPossibleMeeplePlacements(t);
+		return possible;
 	}
 };
 

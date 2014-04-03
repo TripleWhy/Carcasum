@@ -146,16 +146,16 @@ int main(int argc, char *argv[])
 
 			for (int ply = 0; game->step(); ++ply)
 			{
-//				std::cout << ply << std::endl;
+//				std::cout << "ply " << ply << std::endl;
 			}
 			int e = t.elapsed();
-//#if COUNT_PLAYOUTS
-//			std::cout << i << "   " << p2->playouts << "p / " << e << "ms = " << (p2->playouts) / (e / 1000.0) << " pps" << std::endl;
-//#else
+#if COUNT_PLAYOUTS
+			std::cout << i << "   " << p2->playouts << "p / " << e << "ms = " << (p2->playouts) / (e / 1000.0) << " pps" << std::endl;
+#else
 			std::cout << i << "   " << e << std::endl;
-//#endif
+#endif
 #if MCTS_COUNT_EXPAND_HITS
-			std::cout << i << "   " << p2->hit << "hits / " << p2->miss << "misses = " << (p2->hit / p2->miss) << std::endl;
+			std::cout << i << "   " << p2->hit << "hits / " << p2->miss << "misses = " << (p2->hit / qreal(p2->miss)) << std::endl;
 #endif
 		}
 		std::cout << (t.elapsed() / n) << std::endl;

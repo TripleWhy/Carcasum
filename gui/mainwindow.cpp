@@ -9,6 +9,7 @@
 
 #include "player/randomplayer.h"
 #include "player/montecarloplayer.h"
+#include "player/mctsplayer.h"
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -27,8 +28,10 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(boardUi, SIGNAL(sceneRectChanged(QRectF)), this, SLOT(recenter(QRectF)));
 
 	readSettings();
+
 	Player * p1 = &RandomPlayer::instance;
 	Player * p2 = new MonteCarloPlayer(&tileFactory);
+	Player * p3 = new MCTSPlayer(&tileFactory);
 
 	game->addWatchingPlayer(this);
 	
@@ -39,6 +42,7 @@ MainWindow::MainWindow(QWidget *parent) :
 //	game->addPlayer(p1);
 //	game->addPlayer(p1);
 	game->addPlayer(p2);
+	game->addPlayer(p3);
 //	game->addPlayer(this);
 	game->newGame(Tile::BaseGame, &tileFactory);
 
