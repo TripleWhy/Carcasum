@@ -79,6 +79,9 @@ private:
 #if !USE_RESET
 	jcz::TileFactory * tileFactory;
 #endif
+#if CHECK_SIM_STATE
+	int simState = 0;
+#endif
 
 public:
 	MoveHistoryEntry simEntry;

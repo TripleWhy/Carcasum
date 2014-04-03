@@ -149,11 +149,11 @@ int main(int argc, char *argv[])
 //				std::cout << ply << std::endl;
 			}
 			int e = t.elapsed();
-#if COUNT_PLAYOUTS
-			std::cout << i << "   " << p2->playouts << "p / " << e << "ms = " << (p2->playouts) / (e / 1000.0) << " pps" << std::endl;
-#else
+//#if COUNT_PLAYOUTS
+//			std::cout << i << "   " << p2->playouts << "p / " << e << "ms = " << (p2->playouts) / (e / 1000.0) << " pps" << std::endl;
+//#else
 			std::cout << i << "   " << e << std::endl;
-#endif
+//#endif
 #if MCTS_COUNT_EXPAND_HITS
 			std::cout << i << "   " << p2->hit << "hits / " << p2->miss << "misses = " << (p2->hit / p2->miss) << std::endl;
 #endif

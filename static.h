@@ -39,6 +39,7 @@
 // Game
 #define PRINT_STEPS             0
 #define WATCH_SCORES            !defined(QT_NO_DEBUG)
+#define CHECK_SIM_STATE         1
 // Tile
 #define PRINT_CONNECTIONS       0
 #define DEBUG_IDS               0

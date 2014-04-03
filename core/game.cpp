@@ -174,6 +174,9 @@ TileMovesType Game::getPossibleTilePlacements(Tile const * tile) const
 
 bool Game::step()
 {
+#if CHECK_SIM_STATE
+	Q_ASSERT(simState == 0);
+#endif
 	if (isFinished())
 		return false;
 #if PRINT_STEPS
@@ -306,6 +309,10 @@ bool Game::step()
 
 bool Game::simStep(Player * player)
 {
+	Q_ASSERT(!isFinished());
+#if CHECK_SIM_STATE
+	Q_ASSERT(simState == 0);
+#endif
 #if WATCH_SCORES
 	std::vector<int> oldScores;
 	for (uint i = 0; i < getPlayerCount(); ++i)
@@ -362,6 +369,9 @@ bool Game::simStep(Player * player)
 bool Game::simStep(int tileIndex, const TileMove & tileMove, int playerIndex, Player * player)
 {
 	Q_ASSERT(!tileMove.isNull());
+#if CHECK_SIM_STATE
+	Q_ASSERT(simState == 0);
+#endif
 #if WATCH_SCORES
 	std::vector<int> oldScores;
 	for (uint i = 0; i < getPlayerCount(); ++i)
@@ -405,6 +415,9 @@ bool Game::simStep(int tileIndex, const TileMove & tileMove, int playerIndex, Pl
 
 bool Game::simStep(const MoveHistoryEntry & entry)
 {
+#if CHECK_SIM_STATE
+	Q_ASSERT(simState == 0);
+#endif
 #if WATCH_SCORES
 	std::vector<int> oldScores;
 	for (uint i = 0; i < getPlayerCount(); ++i)
@@ -438,11 +451,19 @@ bool Game::simStep(const MoveHistoryEntry & entry)
 
 void Game::simPartStepChance(int index)
 {
+#if CHECK_SIM_STATE
+	Q_ASSERT(simState++ == 0);
+#endif
+
 	simEntry.tile = index;
 }
 
 void Game::simPartStepTile(TileMove const & tileMove)
 {
+#if CHECK_SIM_STATE
+	Q_ASSERT(simState++ == 1);
+#endif
+
 	simEntry.move.tileMove = tileMove;
 	Tile * tile = tiles[simEntry.tile];
 	if (tileMove.isNull())
@@ -457,6 +478,11 @@ void Game::simPartStepTile(TileMove const & tileMove)
 
 void Game::simPartStepMeeple(const MeepleMove & meepleMove)
 {
+#if CHECK_SIM_STATE
+	Q_ASSERT(simState == 2);
+	simState = 0;
+#endif
+
 	simEntry.move.meepleMove = meepleMove;
 	Tile * tile = tiles[simEntry.tile];
 	if (!simEntry.move.tileMove.isNull())
@@ -477,6 +503,9 @@ void Game::simPartStepMeeple(const MeepleMove & meepleMove)
 
 void Game::undo()
 {
+#if CHECK_SIM_STATE
+	Q_ASSERT(simState == 0);
+#endif
 #if WATCH_SCORES
 	std::vector<int> oldScores;
 	for (uint i = 0; i < getPlayerCount(); ++i)
@@ -566,11 +595,19 @@ void Game::undo()
 
 void Game::simPartUndoChance()
 {
+#if CHECK_SIM_STATE
+	Q_ASSERT(simState-- == 1);
+#endif
+
 	simEntry.tile = -1;
 }
 
 void Game::simPartUndoTile()
 {
+#if CHECK_SIM_STATE
+	Q_ASSERT(simState-- == 2);
+#endif
+
 	TileMove & tileMove = simEntry.move.tileMove;
 	if (tileMove.isNull())
 	{
@@ -585,6 +622,11 @@ void Game::simPartUndoTile()
 
 void Game::simPartUndoMeeple()
 {
+#if CHECK_SIM_STATE
+	Q_ASSERT(simState == 0);
+	simState = 2;
+#endif
+
 	if (tiles.isEmpty())
 	{
 		board->unscoreEndGame();

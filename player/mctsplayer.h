@@ -94,6 +94,7 @@ private:
 	RandomTable r;
 	MeepleMove meepleMove;
 
+	bool print = false;
 #if MCTS_COUNT_EXPAND_HITS
 public:
 	uint hit = 0;
@@ -130,9 +131,11 @@ public:
 	inline uchar nextPlayer(uchar player) { return (player + 1) % game->getPlayerCount(); }
 
 private:
-	MCTSTileNode * generateTileNode(MCTSNode * parent, uchar player, int parentAction, const Game & g);
-	MCTSMeepleNode * generateMeepleNode(MCTSNode * parent, uchar player, TileMove * parentAction, const Tile * t, const Game & g);
-	MCTSChanceNode * generateChanceNode(MCTSNode * parent, uchar player, MeepleMove * parentAction, const Game & g);
+	MCTSTileNode * generateTileNode(MCTSNode * parent, uchar player, int parentAction, Game & g);
+	MCTSMeepleNode * generateMeepleNode(MCTSNode * parent, uchar player, TileMove * parentAction, const Tile * t, Game & g);
+	MCTSChanceNode * generateChanceNode(MCTSNode * parent, uchar player, MeepleMove * parentAction, Game & g);
+
+	void assertRewards(MCTSNode * n);
 };
 
 #endif // MCTSPLAYER_H
