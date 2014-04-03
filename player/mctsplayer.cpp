@@ -34,6 +34,9 @@ MCTSPlayer::MCTSChanceNode::MCTSChanceNode(uchar player, TileCountType const & t
       tileCounts(tileCounts),
       parentAction(parentAction)
 {
+	for (int c : tileCounts)
+		if (c == 0)
+			--notExpanded;
 }
 
 
@@ -43,31 +46,49 @@ MCTSPlayer::MCTSPlayer(jcz::TileFactory * tileFactory)
 }
 
 template<>
-void MCTSPlayer::apply<MCTSPlayer::MCTSTileNode>(MCTSPlayer::MCTSTileNode * node, Game & g)
+void MCTSPlayer::apply<int>(int action, Game & g)
+{
+	g.simPartStepChance(g.getTileIndexByType(action));
+}
+
+template<>
+void MCTSPlayer::apply<TileMove *>(TileMove * action, Game & g)
+{
+	g.simPartStepTile(*action);
+}
+
+template<>
+void MCTSPlayer::apply<MeepleMove *>(MeepleMove * action, Game & g)
+{
+	g.simPartStepMeeple(*action);
+}
+
+template<>
+void MCTSPlayer::apply<MCTSPlayer::MCTSTileNode *>(MCTSPlayer::MCTSTileNode * node, Game & g)
 {
 	if (print)
 		qDebug() << "     apply TileNode  " << node->parentAction;
-	g.simPartStepChance(g.getTileIndexByType(node->parentAction));
+	apply(node->parentAction, g);
 }
 
 template<>
-void MCTSPlayer::apply<MCTSPlayer::MCTSMeepleNode>(MCTSPlayer::MCTSMeepleNode * node, Game & g)
+void MCTSPlayer::apply<MCTSPlayer::MCTSMeepleNode *>(MCTSPlayer::MCTSMeepleNode * node, Game & g)
 {
 	if (print)
 		qDebug() << "     apply MeepleNode" << node->parentAction;
-	g.simPartStepTile(*node->parentAction);
+	apply(node->parentAction, g);
 }
 
 template<>
-void MCTSPlayer::apply<MCTSPlayer::MCTSChanceNode>(MCTSPlayer::MCTSChanceNode * node, Game & g)
+void MCTSPlayer::apply<MCTSPlayer::MCTSChanceNode *>(MCTSPlayer::MCTSChanceNode * node, Game & g)
 {
 	if (print)
 		qDebug() << "     apply ChanceNode" << node->parentAction;
-	g.simPartStepMeeple(*node->parentAction);
+	apply(node->parentAction, g);
 }
 
 template<>
-void MCTSPlayer::apply<MCTSPlayer::MCTSNode>(MCTSPlayer::MCTSNode * node, Game & g)
+void MCTSPlayer::apply<MCTSPlayer::MCTSNode *>(MCTSPlayer::MCTSNode * node, Game & g)
 {
 	switch (node->type)
 	{
@@ -164,7 +185,7 @@ TileMove MCTSPlayer::getTileMove(int player, const Tile * tile, const MoveHistor
 	int b = bestChild0(v0);
 	auto a = v0->possible[b];
 
-	MCTSMeepleNode * meepleNode = v0->castChildren()[b];
+	MCTSMeepleNode * meepleNode = (*v0->castChildren())[b];
 	b = bestChild0(meepleNode);
 	meepleMove = meepleNode->possible[b];
 
@@ -285,7 +306,8 @@ MCTSPlayer::MCTSNode * MCTSPlayer::bestChild(MCTSNode * v)
 	MCTSNode * best = 0;
 	for (auto * vPrime : v->children)
 	{
-		Q_ASSERT(vPrime != 0);
+		if (vPrime == 0)
+			continue;
 		qreal val = (Q(vPrime) / qreal(N(vPrime))) + Cp * mySqrt( myLn( N(v) ) / N(vPrime) );
 		if (val > max)
 		{
@@ -395,14 +417,15 @@ void MCTSPlayer::backup(MCTSPlayer::MCTSNode * v, RewardType const & delta)
 MCTSPlayer::MCTSTileNode * MCTSPlayer::generateTileNode(MCTSNode * parent, uchar player, int parentAction, Game & g)
 {
 	Tile const * t = g.getTileByType(parentAction);
+	apply(parentAction, g);
 	MCTSTileNode * node = new MCTSTileNode(player, g.getPossibleTilePlacements(t), g.getPlayerCount(), parent, parentAction);
 	assertRewards(node);
-	apply(node, g);
 	return node;
 }
 
 MCTSPlayer::MCTSMeepleNode * MCTSPlayer::generateMeepleNode(MCTSNode * parent, uchar player, TileMove * parentAction, const Tile * t, Game & g)
 {
+	apply(parentAction, g);
 	MCTSMeepleNode * node;
 	{
 		MeepleMovesType possible;
@@ -413,30 +436,24 @@ MCTSPlayer::MCTSMeepleNode * MCTSPlayer::generateMeepleNode(MCTSNode * parent, u
 		node = new MCTSMeepleNode(player, std::move(possible), g.getPlayerCount(), parent, parentAction);
 	}
 	assertRewards(node);
-	apply(node, g);
 	return node;
 }
 
 MCTSPlayer::MCTSChanceNode *MCTSPlayer::generateChanceNode(MCTSNode * parent, uchar player, MeepleMove * parentAction, Game & g)
 {
+	apply(parentAction, g);
 	TileCountType const & tileCounts = g.getTileCounts();
 	MCTSChanceNode * node = new MCTSChanceNode(player, tileCounts, g.getPlayerCount(), parent, parentAction);
 	assertRewards(node);
-
-	apply(node, g);
-	for (int c : tileCounts)
-	{
-		if (c == 0)
-			--node->notExpanded;
-	}
 
 	return node;
 }
 
 void MCTSPlayer::assertRewards(MCTSPlayer::MCTSNode * n)
 {
+	Q_UNUSED(n);
 	Q_ASSERT(n != 0);
-	Q_ASSERT(n->rewards.size() == game->getPlayerCount());
+	Q_ASSERT((uint)n->rewards.size() == game->getPlayerCount());
 	for (uint i = 0; i < game->getPlayerCount(); ++i)
 		Q_ASSERT(n->rewards[i] == 0);
 }

@@ -45,11 +45,11 @@ private:
 		MCTSTileNode(uchar player, TileMovesType && possible, int playerCount, MCTSNode * parent, int parentAction);
 		~MCTSTileNode()
 		{
-			for (MCTSMeepleNode * c : castChildren())
+			for (MCTSMeepleNode * c : *castChildren())
 				delete c;
 		}
 
-		inline std::vector<MCTSMeepleNode *> & castChildren() { return *reinterpret_cast<std::vector<MCTSMeepleNode *> *>(&children); }
+		inline std::vector<MCTSMeepleNode *> * castChildren() { return reinterpret_cast<std::vector<MCTSMeepleNode *> *>(&children); }
 		inline MCTSChanceNode * castParent() { return static_cast<MCTSChanceNode *>(parent); }
 	};
 
@@ -62,11 +62,11 @@ private:
 		MCTSMeepleNode(uchar player, MeepleMovesType && possible, int playerCount, MCTSNode * parent, TileMove * parentAction);
 		~MCTSMeepleNode()
 		{
-			for (MCTSChanceNode * c : castChildren())
+			for (MCTSChanceNode * c : *castChildren())
 				delete c;
 		}
 
-		inline std::vector<MCTSChanceNode *> & castChildren() { return *reinterpret_cast<std::vector<MCTSChanceNode *> *>(&children); }
+		inline std::vector<MCTSChanceNode *> * castChildren() { return reinterpret_cast<std::vector<MCTSChanceNode *> *>(&children); }
 		inline MCTSTileNode * castParent() { return static_cast<MCTSTileNode *>(parent); }
 	};
 
@@ -79,11 +79,11 @@ private:
 		MCTSChanceNode(uchar player, const TileCountType & tileCounts, int playerCount, MCTSNode * parent, MeepleMove * parentAction);
 		~MCTSChanceNode()
 		{
-			for (MCTSTileNode * c : castChildren())
+			for (MCTSTileNode * c : *castChildren())
 				delete c;
 		}
 
-		inline std::vector<MCTSTileNode *> & castChildren() { return *reinterpret_cast<std::vector<MCTSTileNode *> *>(&children); }
+		inline std::vector<MCTSTileNode *> * castChildren() { return reinterpret_cast<std::vector<MCTSTileNode *> *>(&children); }
 		inline MCTSMeepleNode * castParent() { return static_cast<MCTSMeepleNode *>(parent); }
 	};
 
@@ -104,8 +104,8 @@ public:
 public:
 	MCTSPlayer(jcz::TileFactory * tileFactory);
 
-	template<typename NodeType>
-	void apply(NodeType * node, Game & g);
+	template<typename T>
+	void apply(T t, Game & g);
 	template<typename NodeType>
 	void unapply(NodeType * node, Game & g);
 
