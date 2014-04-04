@@ -223,6 +223,12 @@ private:
 private:
 	void cleanUp();
 	void applyHistory(std::vector<MoveHistoryEntry> const & history);
+
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+	void assertMeepleCount();
+#else
+ #define assertMeepleCount();
+#endif
 };
 
 inline bool operator==(TileMove const& lhs, TileMove const& rhs) { return (lhs.x == rhs.x) && (lhs.y == rhs.y) && (lhs.orientation == rhs.orientation); }

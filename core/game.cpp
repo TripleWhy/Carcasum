@@ -356,7 +356,11 @@ bool Game::simStep(Player * player)
 	returnMeeplesToPlayers();
 	auto && unscoredMeeples = board->countUnscoredMeeples();
 	for (uint i = 0; i < getPlayerCount(); ++i)
-		Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT);
+	{
+//		qDebug() << i << ":" << playerMeeples[i] << "+" << unscoredMeeples[i] << "+" << returnMeeples[i] << "=" << (playerMeeples[i]+unscoredMeeples[i]+returnMeeples[i]);
+		Q_ASSERT_X((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT, "Game::simStep(Player * player)", QString("Player meeples incorrect: player %1: meeples %2, unscored: %3, return: %4)").arg(i).arg(playerMeeples[i]).arg(unscoredMeeples[i]).arg(returnMeeples[i]).toStdString().c_str());
+		Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]+returnMeeples[i]) == MEEPLE_COUNT);
+	}
 #endif
 #if WATCH_SCORES
 	for (uint i = 0; i < getPlayerCount(); ++i)
@@ -474,6 +478,8 @@ void Game::simPartStepTile(TileMove const & tileMove)
 	{
 		moveTile(tile, tileMove);
 	}
+
+	assertMeepleCount();
 }
 
 void Game::simPartStepMeeple(const MeepleMove & meepleMove)
@@ -483,8 +489,14 @@ void Game::simPartStepMeeple(const MeepleMove & meepleMove)
 	simState = 0;
 #endif
 
-	simEntry.move.meepleMove = meepleMove;
 	Tile * tile = tiles[simEntry.tile];
+
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+	auto && possible = getPossibleMeeplePlacements(tile);
+	Q_ASSERT(std::find(possible.begin(), possible.end(), meepleMove));
+#endif
+
+	simEntry.move.meepleMove = meepleMove;
 	if (!simEntry.move.tileMove.isNull())
 	{
 		moveMeeple(tile, nextPlayer, meepleMove);
@@ -496,6 +508,8 @@ void Game::simPartStepMeeple(const MeepleMove & meepleMove)
 	--tileCount[tile->tileType];
 	moveHistory.push_back(std::move(simEntry));
 	simEntry = MoveHistoryEntry();
+
+	assertMeepleCount();
 
 	if (tiles.isEmpty())
 		endGame();
@@ -618,6 +632,8 @@ void Game::simPartUndoTile()
 		board->removeTile(tileMove);
 	}
 	tileMove = TileMove();
+
+	assertMeepleCount();
 }
 
 void Game::simPartUndoMeeple()
@@ -665,6 +681,7 @@ void Game::simPartUndoMeeple()
 	tiles.insert(simEntry.tile, tile);
 	++tileCount[tile->tileType];
 	assertTileCount();
+	assertMeepleCount();
 }
 
 void Game::cityClosed(CityNode * n)
@@ -749,6 +766,7 @@ void Game::unscoreNodeEndGame(Node * n)
 void Game::scoreNode(Node * n, int const score)
 {
 	Q_ASSERT(score >= 0);
+	Q_ASSERT(n->getScored() == NotScored);
 	uchar meepleCount = n->getMaxMeeples();
 	int player = 0;
 	for (uchar const * m = n->getMeeples(), * end = m + getPlayerCount(); m < end; ++m, ++player)
@@ -891,3 +909,13 @@ void Game::applyHistory(const std::vector<MoveHistoryEntry> & history)
 		simStep(e);
 	returnMeeplesToPlayers();
 }
+
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+void Game::assertMeepleCount()
+{
+	auto && unscoredMeeples = board->countUnscoredMeeples();
+	for (uint i = 0; i < getPlayerCount(); ++i)
+//		Q_ASSERT_X((playerMeeples[i]+unscoredMeeples[i]+returnMeeples[i]) == MEEPLE_COUNT, "Game::assertMeepleCount()", QString("Player meeples incorrect: player %1: meeples %2, unscored: %3, return: %4)").arg(i).arg(playerMeeples[i]).arg(unscoredMeeples[i]).arg(returnMeeples[i]).toStdString().c_str());
+		Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]+returnMeeples[i]) == MEEPLE_COUNT);
+}
+#endif
