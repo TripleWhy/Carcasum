@@ -9,7 +9,8 @@
 #define APP_ORGANIZATION "YMSolutions"
 
 // Some numbers
-//#define TIMEOUT                   10000
+#define TIMEOUT                     400
+//#define TIMEOUT                    1000
 // Game
 #define MAX_PLAYERS                   6
 #define MEEPLE_COUNT                  7
@@ -49,9 +50,28 @@
 // BoardGraphicsScene
 #define DRAW_TILE_POSITION_TEXT 1
 // MonteCarloPlayer
-#define COUNT_PLAYOUTS          1
+#define COUNT_PLAYOUTS          0
 // MCTSPlayer
-#define MCTS_COUNT_EXPAND_HITS  1
+#define MCTS_COUNT_EXPAND_HITS  0
 
+#define REPLACE_VARLENGTH_ARRAY 0
+
+
+
+#if REPLACE_VARLENGTH_ARRAY
+ #include <vector>
+ template <typename T, int U>
+ struct VarLengthArrayWrapper
+ {
+  typedef std::vector<T> type;
+ };
+#else
+ #include <QVarLengthArray>
+template <typename T, int U>
+struct VarLengthArrayWrapper
+{
+ typedef QVarLengthArray<T, U> type;
+};
+#endif
 
 #endif // STATIC_H

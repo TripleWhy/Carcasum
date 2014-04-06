@@ -3,8 +3,6 @@
 #include "player.h"
 #include "jcz/tilefactory.h"
 
-#include <QVarLengthArray>
-
 Game::Game(NextTileProvider * ntp)
     : ntp(ntp)
 {
@@ -192,7 +190,7 @@ bool Game::step()
 	entry.tile = nextTile();
 	Tile * tile = tiles[entry.tile];
 	TileMovesType && placements = board->getPossibleTilePlacements(tile);
-	if (placements.isEmpty())
+	if (placements.size() == 0)
 	{
 		discardedTiles.push_back(tile);
 #if PRINT_STEPS
@@ -323,7 +321,7 @@ bool Game::simStep(Player * player)
 		entry.tile = simNextTile();
 		Tile * tile = tiles[entry.tile];
 		TileMovesType && placements = board->getPossibleTilePlacements(tile);
-		if (placements.isEmpty())
+		if (placements.size() == 0)
 		{
 			discardedTiles.push_back(tile);
 		}
@@ -493,7 +491,7 @@ void Game::simPartStepMeeple(const MeepleMove & meepleMove)
 
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
 	auto && possible = getPossibleMeeplePlacements(tile);
-	Q_ASSERT(std::find(possible.begin(), possible.end(), meepleMove));
+	Q_ASSERT(std::find(possible.begin(), possible.end(), meepleMove) != possible.end());
 #endif
 
 	simEntry.move.meepleMove = meepleMove;

@@ -1,46 +1,50 @@
 #include "montecarloplayer.h"
 #include "randomplayer.h"
-
-MonteCarloPlayer::MonteCarloPlayer(jcz::TileFactory * tileFactory)
-    : tileFactory(tileFactory)
-{
-}
-
-MonteCarloPlayer::~MonteCarloPlayer()
-{
-	
-}
+#include <QElapsedTimer>
 
 void MonteCarloPlayer::newGame(int /*player*/, const Game * g)
 {
+	if (simGame == 0)
+		simGame = new Game(0);
 	game = g;
-	simGame.clearPlayers();
+	simGame->clearPlayers();
 	for (uint i = 0; i < g->getPlayerCount(); ++i)
-		simGame.addPlayer(&RandomPlayer::instance);
-	simGame.newGame(game->getTileSets(), tileFactory, g->getMoveHistory());
+		simGame->addPlayer(&RandomPlayer::instance);
+	simGame->newGame(game->getTileSets(), tileFactory, g->getMoveHistory());
 }
 
 void MonteCarloPlayer::playerMoved(int /*player*/, const Tile * /*tile*/, const MoveHistoryEntry & /*move*/)
 {
 	auto const & history = game->getMoveHistory();
-	for (uint i = simGame.getMoveHistory().size(); i < history.size(); ++i)
-		simGame.simStep(history[i]);
+	for (uint i = simGame->getMoveHistory().size(); i < history.size(); ++i)
+		simGame->simStep(history[i]);
 }
 
-TileMove MonteCarloPlayer::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & placements)
+TileMove MonteCarloPlayer::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & possible)
 {
+#ifdef TIMEOUT
+	QElapsedTimer timer;
+	timer.start();
+#endif
+
+	Util::syncGamesFast(*game, *simGame);
+
 	int const playerCount = game->getPlayerCount();
-	int const placementSize = placements.size();
-	auto utilities = QVarLengthArray<long long int, 128>(placementSize);
-	for (int i = 0; i < placementSize; ++i)
+	int const possibleSize = possible.size();
+	auto utilities = QVarLengthArray<long long int, 128>(possibleSize);
+	for (int i = 0; i < possibleSize; ++i)
 		utilities[i] = 0;
 
-	Q_ASSERT(game->equals(simGame));
+	Q_ASSERT(game->equals(*simGame));
 	
-	int moveIndex = 0;
-	for (TileMove const & tileMove : placements)
+#ifdef TIMEOUT
+	while (!timer.hasExpired((2*TIMEOUT)/3))
+#else
+	for (int j = 0; j < N; ++j)
+#endif
 	{
-		for (int j = 0; j < N; ++j)
+		int moveIndex = 0;
+		for (TileMove const & tileMove : possible)
 		{
 #if USE_RESET
 			g.restartGame(history);
@@ -52,34 +56,37 @@ TileMove MonteCarloPlayer::getTileMove(int player, const Tile * /*tile*/, const 
 
 			utilities[moveIndex] += utility(g.getScores(), playerCount, player);
 #else
-			simGame.simStep(move.tile, tileMove, player, &RandomPlayer::instance);
+			simGame->simStep(move.tile, tileMove, player, &RandomPlayer::instance);
 
 			int steps = 1;
-			for ( ; !simGame.isFinished(); ++steps)
-				simGame.simStep(&RandomPlayer::instance);
+			for ( ; !simGame->isFinished(); ++steps)
+				simGame->simStep(&RandomPlayer::instance);
 			
-			utilities[moveIndex] += utility(simGame.getScores(), playerCount, player);
+			utilities[moveIndex] += utility(simGame->getScores(), playerCount, player);
 			
 			for (int i = 0; i < steps; ++i)
-				simGame.undo();
-			Q_ASSERT(game->equals(simGame));
+				simGame->undo();
+			Q_ASSERT(game->equals(*simGame));
 #endif
+			++moveIndex;
 		}
-#if COUNT_PLAYOUTS
-			playouts += N;
+#if defined(TIMEOUT) && COUNT_PLAYOUTS
+		playouts += possibleSize;
 #endif
-		++moveIndex;
 	}
+#if !defined(TIMEOUT) && COUNT_PLAYOUTS
+	playouts += N * possibleSize;
+#endif
 	
-	long long int bestUtility = std::numeric_limits<long long int>::min();
 	TileMove const * bestMove = 0;
-	for (int i = 0; i < placementSize; ++i)
+	long long int bestUtility = std::numeric_limits<long long int>::min();
+	for (int i = 0; i < possibleSize; ++i)
 	{
 		auto u = utilities[i];
 		if (u > bestUtility)
 		{
 			bestUtility = u;
-			bestMove = &placements[i];
+			bestMove = &possible[i];
 		}
 	}
 	
@@ -89,6 +96,11 @@ TileMove MonteCarloPlayer::getTileMove(int player, const Tile * /*tile*/, const 
 
 MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const MeepleMovesType & possible)
 {
+#ifdef TIMEOUT
+	QElapsedTimer timer;
+	timer.start();
+#endif
+
 	int const playerCount = game->getPlayerCount();
 	int const possibleSize = possible.size();
 	auto utilities = QVarLengthArray<long long int, 128>(possibleSize);
@@ -97,13 +109,17 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * /*tile*/, co
 	
 //	Q_ASSERT(game->equals(g));	//Does not equal, since game as the tile already placed, while g doesn't
 	
-	int moveIndex = 0;
-	for (MeepleMove const & meepleMove : possible)
+	MoveHistoryEntry m = move;
+#ifdef TIMEOUT
+	while (!timer.hasExpired((1*TIMEOUT)/3))
+#else
+	for (int j = 0; j < N; ++j)
+#endif
 	{
-		MoveHistoryEntry m = move;
-		m.move.meepleMove = meepleMove;
-		for (int j = 0; j < N; ++j)
+		int moveIndex = 0;
+		for (MeepleMove const & meepleMove : possible)
 		{
+			m.move.meepleMove = meepleMove;
 #if USE_RESET
 			g.restartGame(history);
 			if (g.step(m))
@@ -113,25 +129,28 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * /*tile*/, co
 			utilities[moveIndex] += utility(g.getScores(), playerCount, player);
 #else
 			int steps = 1;
-			if (simGame.simStep(m))
+			if (simGame->simStep(m))
 			{
 				do
 					++steps;
-				while (simGame.simStep(&RandomPlayer::instance));
+				while (simGame->simStep(&RandomPlayer::instance));
 			}
 			
-			utilities[moveIndex] += utility(simGame.getScores(), playerCount, player);
+			utilities[moveIndex] += utility(simGame->getScores(), playerCount, player);
 			
 			for (int i = 0; i < steps; ++i)
-				simGame.undo();
+				simGame->undo();
 //			Q_ASSERT(game->equals(g));
 #endif
+			++moveIndex;
 		}
-#if COUNT_PLAYOUTS
-			playouts += N;
+#if defined(TIMEOUT) && COUNT_PLAYOUTS
+		playouts += possibleSize;
 #endif
-		++moveIndex;
 	}
+#if !defined(TIMEOUT) && COUNT_PLAYOUTS
+	playouts += N * possibleSize;
+#endif
 	
 	long long int bestUtility = std::numeric_limits<long long int>::min();
 	MeepleMove const * bestMove = 0;
@@ -151,4 +170,6 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * /*tile*/, co
 
 void MonteCarloPlayer::endGame()
 {
+	delete simGame;
+	simGame = 0;
 }

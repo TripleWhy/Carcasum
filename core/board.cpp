@@ -220,7 +220,7 @@ TileMovesType Board::getPossibleTilePlacements(const Tile * tile) const
 				if (openTypes[i] != None && openTypes[i] != edges[i])
 					goto hell;
 			}
-			possible.append(TileMove{uint(it.key().x()), uint(it.key().y()), (Tile::Side)orientation});
+			possible.push_back(TileMove{uint(it.key().x()), uint(it.key().y()), (Tile::Side)orientation});
 			hell:;
 		}
 		hell2:;

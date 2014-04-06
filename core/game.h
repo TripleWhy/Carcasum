@@ -9,8 +9,6 @@
 #include "random.h"
 #include "nexttileprovider.h"
 
-#include <QVarLengthArray>
-
 class Player;
 class Tile;
 class Node;
@@ -34,7 +32,7 @@ struct MeepleMove
 {
 	uchar nodeIndex;
 	
-	MeepleMove(uchar index = -1) : nodeIndex(index) {}
+	constexpr MeepleMove(uchar index = -1) : nodeIndex(index) {}
 	inline bool isNull() const { return nodeIndex == (uchar)-1; }
 };
 
@@ -156,7 +154,7 @@ public:
 		auto nodes = tile->getNodes();
 		for (uchar i = 0, end = tile->getNodeCount(); i < end; ++i)
 			if (Util::isNodeFree(nodes[i]))
-				possibleMeeples.append(MeepleMove(i));
+				possibleMeeples.push_back(MeepleMove(i));
 		Q_ASSERT_X(possibleMeeples.size() <= NODE_ARRAY_LENGTH, "Game::step()", "possibleMeeples initial size too low");
 		return possibleMeeples;
 	}

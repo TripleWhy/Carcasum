@@ -8,7 +8,6 @@
 #include <QWidget>
 #include <QGridLayout>
 #include <QMouseEvent>
-#include <QVarLengthArray>
 #include <map>
 
 namespace Ui {

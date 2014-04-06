@@ -4,6 +4,7 @@
 #include "game.h"
 #include "player/randomplayer.h"
 #include "player/montecarloplayer.h"
+#include "player/montecarloplayer2.h"
 #include "player/mctsplayer.h"
 #include "util.h"
 
@@ -90,12 +91,41 @@ int main(int argc, char *argv[])
 		
 		return 0;
 	}
-	
 
 	if (false)
 	{
+		static int const playouts = 100000;
+		Game g(&rntp);
+		g.addPlayer(&RandomPlayer::instance);
+		g.addPlayer(&RandomPlayer::instance);
+		g.newGame(Tile::BaseGame, tileFactory);
+
+		QTime t;
+		t.start();
+		for (int i = 0; i < playouts; ++i)
+		{
+			int steps = 0;
+			do
+			{
+				++steps;
+			} while (g.step());
+
+			for (; steps > 0; --steps)
+			{
+				g.undo();
+			}
+		}
+		int e = t.elapsed();
+		std::cout << playouts << "p / " << e << "ms = " << playouts / (e / 1000.0) << " pps" << std::endl;
+		return 0;
+	}
+	
+
+	if (true)
+	{
 		Player * p1 = &RandomPlayer::instance;
-		MonteCarloPlayer * p2 = new MonteCarloPlayer(tileFactory);
+//		auto * p2 = new MonteCarloPlayer(tileFactory, false);
+		auto * p2 = new MonteCarloPlayer2(tileFactory, true);
 
 		game->addPlayer(p1);
 		game->addPlayer(p2);

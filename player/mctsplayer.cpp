@@ -310,7 +310,7 @@ int MCTSPlayer::bestChild0(MCTSPlayer::MCTSNode * v)
 	return a;
 }
 
-MCTSPlayer::RewardType MCTSPlayer::defaultPolicy(MCTSNode * v)
+RewardType MCTSPlayer::defaultPolicy(MCTSNode * v)
 {
 	switch (v->type)
 	{
@@ -319,7 +319,7 @@ MCTSPlayer::RewardType MCTSPlayer::defaultPolicy(MCTSNode * v)
 			Tile const * tile = simGame.getTiles()[simGame.simEntry.tile];
 			TileMove tileMove;
 			TileMovesType && possibleTiles = simGame.getPossibleTilePlacements(tile);
-			if (!possibleTiles.isEmpty())
+			if (possibleTiles.size())
 				tileMove = RandomPlayer::instance.getTileMove(v->player, tile, simGame.simEntry, possibleTiles);
 			simGame.simPartStepTile(tileMove);
 
@@ -385,9 +385,7 @@ void MCTSPlayer::backup(MCTSPlayer::MCTSNode * v, RewardType const & delta)
 
 void MCTSPlayer::syncGame()
 {
-	auto const & history = game->getMoveHistory();
-	for (uint i = simGame.getMoveHistory().size(); i < history.size(); ++i)
-		simGame.simStep(history[i]);
+	Util::syncGamesFast(*game, simGame);
 }
 
 MCTSPlayer::MCTSTileNode * MCTSPlayer::generateTileNode(MCTSNode * parent, int parentAction, Game & g)
@@ -397,7 +395,7 @@ MCTSPlayer::MCTSTileNode * MCTSPlayer::generateTileNode(MCTSNode * parent, int p
 	apply(parentAction, g);
 	TileMovesType && possible = g.getPossibleTilePlacements(t);
 	if (possible.size() == 0)
-		possible.append(TileMove()); // I could probably add a null MeepleMove child here, too.
+		possible.push_back(TileMove()); // I could probably add a null MeepleMove child here, too.
 	MCTSTileNode * node = new MCTSTileNode(player, std::move(possible), parent, parentAction);
 	return node;
 }

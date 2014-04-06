@@ -6,15 +6,15 @@
 
 QT       += core
 
+TEMPLATE = app
+
 core {
 #	QT       -= gui  #QTransform needs this
 
-	TARGET = carcassonne_core
+	TARGET = carcasum_core
 
 	CONFIG   += console
 	CONFIG   -= app_bundle
-
-	TEMPLATE = app
 
 	SOURCES += \
 		core/main.cpp
@@ -22,14 +22,21 @@ core {
 #	DEFINES += QT_NO_DEBUG_OUTPUT
 #	DEFINES += QT_NO_WARNING_OUTPUT
 
+} else:tournament {
+	TARGET = carcasum_turnement
+
+	CONFIG   += console
+	CONFIG   -= app_bundle
+
+	SOURCES += \
+		tournament/main.cpp
+
 } else {
 	QT       += gui svg
 
 	greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-	TARGET = carcassonne_gui
-	TEMPLATE = app
-
+	TARGET = carcasum_gui
 
 	SOURCES += gui/main.cpp\
 		gui/mainwindow.cpp \
@@ -61,7 +68,6 @@ core {
 
 	RESOURCES += \
 		gui/graphics.qrc
-
 }
 
 SOURCES += core/tile.cpp \
@@ -76,7 +82,8 @@ SOURCES += core/tile.cpp \
     player/montecarloplayer.cpp \
     core/random.cpp \
     core/nexttileprovider.cpp \
-    player/mctsplayer.cpp
+    player/mctsplayer.cpp \
+    player/montecarloplayer2.cpp
 
 HEADERS += \
 	core/tile.h \
@@ -93,7 +100,8 @@ HEADERS += \
     static.h \
     core/random.h \
     core/nexttileprovider.h \
-    player/mctsplayer.h
+    player/mctsplayer.h \
+    player/montecarloplayer2.h
 
 RESOURCES += \
 	jcz/jcz.qrc

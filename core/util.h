@@ -11,6 +11,8 @@
 #include <thread>
 #include <chrono>
 
+typedef QVarLengthArray<int, MAX_PLAYERS> RewardType;
+
 class Util
 {
 public:
@@ -66,6 +68,89 @@ public:
 		}
 		return "";
 	}
+
+	inline static int utilitySimple(int const * scores, int const playerCount, int const myIndex)
+	{
+		int best = std::numeric_limits<int>::min();
+		int winner = -1;
+		for (int i = 0; i < playerCount; ++i)
+		{
+			const int score = scores[i];
+			if (score > best)
+			{
+				best = score;
+				winner = i;
+			}
+			else if (score == best)
+			{
+				winner = -1;
+			}
+		}
+		if (winner == myIndex)
+			return 1;
+		else if (winner == -1 && best == scores[myIndex])
+			return 0;
+		else
+			return -1;
+	}
+
+	inline static int utilityComplex(int const * scores, int const playerCount, int const myIndex)
+	{
+		std::map<int, int> map;
+		for (int i = 0; i < playerCount; ++i)
+			map[scores[i]] = i;
+
+		int u = 0;
+		int m = 0;
+		int lastScore = -1;
+		// last player first
+		for (auto const & e : map)
+		{
+			if (e.first != lastScore)
+				++m;
+			if (e.second == myIndex)
+				u += m * e.first;
+			else
+				u -= m * e.first;
+			lastScore = e.first;
+		}
+
+		return u;
+	}
+
+	inline static RewardType utilitySimpleMulti(int const * scores, int const playerCount)
+	{
+		RewardType reward(playerCount);
+		int max = std::numeric_limits<int>::min();
+		int winner = -1;
+		for (int i = 0; i < playerCount; ++i)
+		{
+			int s = scores [i];
+			if (s > max)
+			{
+				max = s;
+				winner = i;
+			}
+			else if (s == max)
+			{
+				winner = -1;
+			}
+		}
+
+		for (int i = 0; i < playerCount; ++i)
+		{
+			if (i == winner)
+				reward[i] = 1;
+			else if (winner == -1 && scores[i] == max)
+				reward[i] = 0;
+			else
+				reward[i] = -1;
+		}
+		return reward;
+	}
+
+	static void syncGamesFast(Game const & from, Game & to);
+	static void syncGames(Game const & from, Game & to);
 };
 
 // From http://qt-project.org/forums/viewthread/23849/#110462
