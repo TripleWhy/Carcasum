@@ -3,6 +3,7 @@
 #include "player/randomplayer.h"
 #include "player/montecarloplayer.h"
 #include "player/montecarloplayer2.h"
+#include "player/montecarloplayeruct.h"
 #include "player/mctsplayer.h"
 #include <QCoreApplication>
 #include <QElapsedTimer>
@@ -56,17 +57,22 @@ int main(int argc, char *argv[])
 
 	int const N = 25;
 	std::vector<Player *> players;
-	players.push_back(new MonteCarloPlayer(tileFactory, false));
+//	players.push_back(new MonteCarloPlayer(tileFactory, false));
 	players.push_back(new MonteCarloPlayer(tileFactory, true));
-	players.push_back(new MonteCarloPlayer2(tileFactory, false));
-	players.push_back(new MonteCarloPlayer2(tileFactory, true));
+//	players.push_back(new MonteCarloPlayer2(tileFactory, false));
+//	players.push_back(new MonteCarloPlayer2(tileFactory, true));
+	players.push_back(new MonteCarloPlayerUCT(tileFactory, true));
 
 
+#ifdef TIMEOUT
+	qDebug() << "TIMEOUT" << TIMEOUT;
+#endif
 	std::vector<Result> results;
 	RandomNextTileProvider rntp;
 	Game game(&rntp);
 	int const playerCount = players.size();
 
+	QElapsedTimer timer;
 	QVarLengthArray<int, MAX_PLAYERS> playerAt(playerCount);
 	for (int offset = 0; offset < playerCount; ++offset)
 	{
@@ -81,9 +87,14 @@ int main(int argc, char *argv[])
 				game.addPlayer(players[p]);
 			}
 			game.newGame(Tile::BaseGame, tileFactory);
+			qreal tileCount = game.getTileCount();
+
+			timer.start();
 			while (game.step())
 			{}
+			int elapsed = timer.elapsed();
 
+			qDebug() << "playout took" << elapsed << "ms =>" << (elapsed / tileCount) << "ms per ply";
 			Result result(playerCount);
 			auto scores = game.getScores();
 			for (int i = 0; i < playerCount; ++i)

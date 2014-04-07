@@ -149,6 +149,11 @@ public:
 		return reward;
 	}
 
+	inline static qreal mysqrt(qreal r) { return sqrt(r); }
+
+	template<typename T>
+	inline static qreal ln(T r) { return log(r); }
+
 	static void syncGamesFast(Game const & from, Game & to);
 	static void syncGames(Game const & from, Game & to);
 };

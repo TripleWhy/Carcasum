@@ -134,8 +134,6 @@ public:
 
 	inline int & Q(MCTSNode * v) { return v->reward; }
 	inline uint & N(MCTSNode * v) { return v->visitCount; }
-	inline qreal mySqrt(qreal r) { return sqrt(r); }
-	inline qreal myLn(quint64 r) { return log(r); }
 
 private:
 	MCTSTileNode * generateTileNode(MCTSNode * parent, int parentAction, Game & g);

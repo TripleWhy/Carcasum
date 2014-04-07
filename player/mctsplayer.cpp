@@ -279,7 +279,7 @@ MCTSPlayer::MCTSNode * MCTSPlayer::bestChild(MCTSNode * v)
 		{
 			if (vPrime == 0)
 				continue;
-			qreal val = (Q(vPrime) / qreal(N(vPrime))) + Cp * mySqrt( myLn( N(v) ) / N(vPrime) );
+			qreal val = (Q(vPrime) / qreal(N(vPrime))) + Cp * Util::mysqrt( Util::ln( N(v) ) / N(vPrime) );
 			if (val > max)
 			{
 				max = val;
