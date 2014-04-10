@@ -9,7 +9,7 @@
 #define APP_ORGANIZATION "YMSolutions"
 
 // Some numbers
-#define TIMEOUT                     400
+#define TIMEOUT                       5000
 //#define TIMEOUT                    1000
 // Game
 #define MAX_PLAYERS                   6
@@ -50,7 +50,7 @@
 // BoardGraphicsScene
 #define DRAW_TILE_POSITION_TEXT 1
 // MonteCarloPlayer
-#define COUNT_PLAYOUTS          0
+#define COUNT_PLAYOUTS          1
 // MCTSPlayer
 #define MCTS_COUNT_EXPAND_HITS  0
 

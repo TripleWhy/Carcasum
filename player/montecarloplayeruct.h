@@ -18,11 +18,6 @@ class MonteCarloPlayerUCT : public Player
  #endif
 #endif
 
-#if COUNT_PLAYOUTS
-public:
-	int playouts = 0;
-#endif
-
 private:
 	Game const * game = 0;
 	Game * simGame = 0;

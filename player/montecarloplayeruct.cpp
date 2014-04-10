@@ -108,11 +108,10 @@ TileMove MonteCarloPlayerUCT::getTileMove(int player, const Tile * /*tile*/, con
 		++playoutCount2[tmIndex][mmIndex];
 		unplayout(steps+1);
 		Q_ASSERT(game->equals(*simGame));
-
-#if COUNT_PLAYOUTS
-		++playouts;
-#endif
 	}
+#if COUNT_PLAYOUTS
+	playouts += playoutCount0;
+#endif
 
 	// choose tile move
 	int bestMoveIndex = -1;

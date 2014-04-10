@@ -16,11 +16,6 @@ class MCTSPlayer : public Player
 public:
 	static int const Cp = 1;
 
-#if COUNT_PLAYOUTS
-public:
-	int playouts = 0;
-#endif
-
 private:
 	struct MCTSNode
 	{

@@ -93,10 +93,6 @@ TileMove MonteCarloPlayer2::getTileMove(int player, const Tile * /*tile*/, const
 		++playoutCount[tmIndex][mmIndex];
 		unplayout(steps+1);
 		Q_ASSERT(game->equals(*simGame));
-
-#if COUNT_PLAYOUTS
-		++playouts;
-#endif
 	}
 
 	TileMove const * bestMove = 0;
@@ -106,6 +102,9 @@ TileMove MonteCarloPlayer2::getTileMove(int player, const Tile * /*tile*/, const
 		VarLengthArrayWrapper<int, 16>::type const & rew = rewards[i];
 		for (int j = 0; j < rew.size(); ++j)
 		{
+#if COUNT_PLAYOUTS
+			playouts += playoutCount[i][j];
+#endif
 			auto u = rew[j] / qreal(playoutCount[i][j]);
 			if (u > bestUtility)
 			{

@@ -14,6 +14,11 @@ typedef VarLengthArrayWrapper<MeepleMove, NODE_ARRAY_LENGTH>::type MeepleMovesTy
 
 class Player
 {
+#if COUNT_PLAYOUTS
+public:
+	int playouts = 0;
+#endif
+
 public:
 	virtual void newGame(int player, Game const * game) = 0;
 	virtual void playerMoved(int player, Tile const * tile, MoveHistoryEntry const & move) = 0;

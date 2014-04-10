@@ -49,19 +49,30 @@ void printResults(std::vector<Result> const & results, int const playerCount)
 	}
 }
 
+void printTimes(QVarLengthArray<quint64, MAX_PLAYERS> const & times, QVarLengthArray<qint64, MAX_PLAYERS> const & diffs, QVarLengthArray<int, MAX_PLAYERS> const & steps, std::vector<Player *> const & players)
+{
+	for (int i = 0; i < times.size(); ++i)
+	{
+		qreal s = qreal(steps[i] * 1000000);
+		qDebug() << "player" << i << "   playouts:" << players[i]->playouts << "\tavg. thinking time:" << (times[i] / s) << "ms   avg. overrun:" << (diffs[i] / s) << "ms";
+		players[i]->playouts = 0;
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	QCoreApplication app(argc, argv);
 	jcz::TileFactory * tileFactory = new jcz::TileFactory();
 
 
-	int const N = 25;
+	int const N = 50;
 	std::vector<Player *> players;
 //	players.push_back(new MonteCarloPlayer(tileFactory, false));
-	players.push_back(new MonteCarloPlayer(tileFactory, true));
-//	players.push_back(new MonteCarloPlayer2(tileFactory, false));
+//	players.push_back(new MonteCarloPlayer(tileFactory, true));
+	players.push_back(new MonteCarloPlayer2(tileFactory, false));
 //	players.push_back(new MonteCarloPlayer2(tileFactory, true));
-	players.push_back(new MonteCarloPlayerUCT(tileFactory, true));
+	players.push_back(new MonteCarloPlayerUCT(tileFactory, false));
+//	players.push_back(new MonteCarloPlayerUCT(tileFactory, true));
 
 
 #ifdef TIMEOUT
@@ -73,6 +84,15 @@ int main(int argc, char *argv[])
 	int const playerCount = players.size();
 
 	QElapsedTimer timer;
+	QVarLengthArray<quint64, MAX_PLAYERS> times(playerCount);
+	QVarLengthArray<qint64, MAX_PLAYERS> diffs(playerCount);
+	QVarLengthArray<int, MAX_PLAYERS> steps(playerCount);
+	for (int i = 0; i < playerCount; ++i)
+	{
+		times[i] = 0;
+		diffs[i] = 0;
+		steps[i] = 0;
+	}
 	QVarLengthArray<int, MAX_PLAYERS> playerAt(playerCount);
 	for (int offset = 0; offset < playerCount; ++offset)
 	{
@@ -86,15 +106,29 @@ int main(int argc, char *argv[])
 				playerAt[i] = p;
 				game.addPlayer(players[p]);
 			}
+
 			game.newGame(Tile::BaseGame, tileFactory);
-			qreal tileCount = game.getTileCount();
+			for (bool cont = true; cont; )
+			{
+				int player = game.getNextPlayer();
 
-			timer.start();
-			while (game.step())
-			{}
-			int elapsed = timer.elapsed();
+				timer.start();
+				cont = game.step();
+				qint64 elapsed = timer.nsecsElapsed();
 
-			qDebug() << "playout took" << elapsed << "ms =>" << (elapsed / tileCount) << "ms per ply";
+				if (!game.getMoveHistory().back().move.tileMove.isNull())
+				{
+					times[playerAt[player]] += elapsed;
+					qint64 d = elapsed - qint64(1000000)*qint64(TIMEOUT);
+					diffs[playerAt[player]] += d;
+					++steps[playerAt[player]];
+				}
+				else
+				{
+					qDebug("skipped tile");
+				}
+			}
+
 			Result result(playerCount);
 			auto scores = game.getScores();
 			for (int i = 0; i < playerCount; ++i)
@@ -104,6 +138,7 @@ int main(int argc, char *argv[])
 			results.push_back(std::move(result));
 
 			printResults(results, playerCount);
+			printTimes(times, diffs, steps, players);
 			qDebug();
 		}
 	}
