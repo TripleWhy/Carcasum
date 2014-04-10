@@ -141,7 +141,7 @@ TileMove MCTSPlayer::getTileMove(int player, const Tile * tile, const MoveHistor
 	QElapsedTimer t;
 	t.start();
 #ifdef TIMEOUT
-	for (int i = 0; t.elapsed() < TIMEOUT; ++i)
+	do
 #else
 	for (int i = 0; i < M; ++i)
 #endif
@@ -154,6 +154,9 @@ TileMove MCTSPlayer::getTileMove(int player, const Tile * tile, const MoveHistor
 		backup(vl, delta);
 		Q_ASSERT(game->equals(simGame));
 	}
+#ifdef TIMEOUT
+	while (!t.hasExpired(TIMEOUT));
+#endif
 	unapply(v0, simGame);
 
 	int b = bestChild0(v0);
@@ -294,7 +297,7 @@ MCTSPlayer::MCTSNode * MCTSPlayer::bestChild(MCTSNode * v)
 int MCTSPlayer::bestChild0(MCTSPlayer::MCTSNode * v)
 {
 	qreal max = -std::numeric_limits<qreal>::infinity();
-	int a = -1;
+	int a = 0;
 	for (int i = 0, s = v->children.size(); i < s; ++i)
 	{
 		auto * vPrime = v->children[i];

@@ -53,7 +53,7 @@ void printTimes(QVarLengthArray<quint64, MAX_PLAYERS> const & times, QVarLengthA
 {
 	for (int i = 0; i < times.size(); ++i)
 	{
-		qreal s = qreal(steps[i] * 1000000);
+		qreal s = qreal(quint64(steps[i]) * quint64(1000000));
 		Player * p = players[i];
 		qDebug() << "player" << i << "   playouts:" << p->playouts << "\tavg. thinking time:" << (times[i] / s) << "ms   avg. overrun:" << (diffs[i] / s) << "ms";
 		p->playouts = 0;
