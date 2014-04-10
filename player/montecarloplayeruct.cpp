@@ -103,6 +103,7 @@ TileMove MonteCarloPlayerUCT::getTileMove(int player, const Tile * /*tile*/, con
 		int const u = utility(simGame->getScores(), playerCount, player);
 		rewards1[tmIndex] += u;
 		rewards2[tmIndex][mmIndex] += u;
+		++playoutCount0;
 		++playoutCount1[tmIndex];
 		++playoutCount2[tmIndex][mmIndex];
 		unplayout(steps+1);
