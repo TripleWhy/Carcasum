@@ -54,8 +54,9 @@ void printTimes(QVarLengthArray<quint64, MAX_PLAYERS> const & times, QVarLengthA
 	for (int i = 0; i < times.size(); ++i)
 	{
 		qreal s = qreal(steps[i] * 1000000);
-		qDebug() << "player" << i << "   playouts:" << players[i]->playouts << "\tavg. thinking time:" << (times[i] / s) << "ms   avg. overrun:" << (diffs[i] / s) << "ms";
-		players[i]->playouts = 0;
+		Player * p = players[i];
+		qDebug() << "player" << i << "   playouts:" << p->playouts << "\tavg. thinking time:" << (times[i] / s) << "ms   avg. overrun:" << (diffs[i] / s) << "ms";
+		p->playouts = 0;
 	}
 }
 
@@ -131,9 +132,12 @@ int main(int argc, char *argv[])
 
 			Result result(playerCount);
 			auto scores = game.getScores();
+			auto utilities = Util::utilitySimpleMulti(scores, playerCount);
 			for (int i = 0; i < playerCount; ++i)
+			{
 				result.scores[playerAt[i]] = scores[i];
-			result.utilities = Util::utilitySimpleMulti(scores, playerCount);
+				result.utilities[playerAt[i]] = utilities[i];
+			}
 
 			results.push_back(std::move(result));
 
