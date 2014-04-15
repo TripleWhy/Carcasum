@@ -71,6 +71,8 @@ private:
 	int * returnMeeples = 0;
 	int * playerScores = 0;
 	uint playerCount = 0;
+
+	uint upperScoreBound = 0;
 	
 	std::vector<MoveHistoryEntry> moveHistory;
 	Tile::TileSets tileSets;
@@ -127,6 +129,7 @@ private:
 	void simEndGame();
 	inline void endGame();
 	inline void moveTile(Tile * tile, TileMove const & tileMove);
+	int calcUpperScoreBound(const QList<Tile *> & tiles);
 	
 public:
 	bool equals(const Game & other) const;
@@ -145,6 +148,7 @@ public:
 	inline void setNextTileProvider(NextTileProvider * n) { ntp = n; }
 	inline std::vector<Player *> const & getPlayers() const { return players; }
 	inline int getNextPlayer() const { return nextPlayer; }
+	inline uint getUpperScoreBound() const { return upperScoreBound; }
 
 	inline MeepleMovesType getPossibleMeeplePlacements(Tile const * tile) const
 	{

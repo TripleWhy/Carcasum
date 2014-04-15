@@ -18,13 +18,18 @@ class MonteCarloPlayerUCT : public Player
  #endif
 #endif
 
+	typedef OffsetArray<qreal> UtilityMapType;
+
 private:
 	Game const * game = 0;
 	Game * simGame = 0;
 	jcz::TileFactory * tileFactory;
 	bool useComplexUtility;
 	MeepleMove meepleMove;
+	UtilityMapType utilityMap;
+	int utilityOffset = 0;
 	static RandomTable r;
+	static UtilityMapType utilityMaps[MAX_PLAYERS];
 
 public:
 	constexpr MonteCarloPlayerUCT(jcz::TileFactory * tileFactory, bool useComplexUtility = true)
@@ -44,30 +49,25 @@ private:
 	int playout();
 	void unplayout(int steps);
 
-	inline static int utilitySimple(int const * scores, int const playerCount, int const myIndex)
+	inline qreal utilitySimple(int const * scores, int const playerCount, int const myIndex)
 	{
 		return Util::utilitySimple(scores, playerCount, myIndex);
 	}
 
-	inline static int utilityComplex(int const * scores, int const playerCount, int const myIndex)
+	inline qreal utilityComplex(int const * scores, int const playerCount, int const myIndex)
 	{
-		return Util::utilityComplex(scores, playerCount, myIndex);
+		int const u = Util::utilityComplex(scores, playerCount, myIndex);
+		return utilityMap[u];
 	}
 
-	typedef int (*utilityFunctionType)(int const *, int const, int const);
-	constexpr utilityFunctionType utilityFunction()
-	{
-		return useComplexUtility ? &utilityComplex : &utilitySimple;
-	}
-
-	inline int utility(int const * scores, int const playerCount, int const myIndex)
+	inline qreal utility(int const * scores, int const playerCount, int const myIndex)
 	{
 //		return utilityComplex(scores, playerCount, myIndex);
 		return useComplexUtility ? utilityComplex(scores, playerCount, myIndex) : utilitySimple(scores, playerCount, myIndex);
 //		return utilityFunction()(scores, playerCount, myIndex);
 	}
 
-	inline int chooseTileMove(TileMovesType const & possible, int N0, VarLengthArrayWrapper<int, 128>::type const & Q1, VarLengthArrayWrapper<int, 128>::type const & N1)
+	inline int chooseTileMove(TileMovesType const & possible, uint N0, VarLengthArrayWrapper<qreal, 128>::type const & Q1, VarLengthArrayWrapper<uint, 128>::type const & N1)
 	{
 		Q_ASSERT(possible.size() > 0);
 		int const size = possible.size();
@@ -87,7 +87,7 @@ private:
 		return best;
 	}
 
-	inline int chooseMeepleMove(MeepleMovesType const & possible, int N0, VarLengthArrayWrapper<int, 16>::type const & Q1, VarLengthArrayWrapper<int, 16>::type const & N1)
+	inline int chooseMeepleMove(MeepleMovesType const & possible, uint N0, VarLengthArrayWrapper<qreal, 16>::type const & Q1, VarLengthArrayWrapper<uint, 16>::type const & N1)
 	{
 		Q_ASSERT(possible.size() > 0);
 		int const size = possible.size();

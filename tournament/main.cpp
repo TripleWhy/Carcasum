@@ -79,6 +79,8 @@ int main(int argc, char *argv[])
 #ifdef TIMEOUT
 	qDebug() << "TIMEOUT" << TIMEOUT;
 #endif
+	for (Player * p : players)
+		qDebug(p->getTypeName());
 	std::vector<Result> results;
 	RandomNextTileProvider rntp;
 	Game game(&rntp);

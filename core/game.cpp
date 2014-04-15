@@ -31,6 +31,7 @@ void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)
 	nextPlayer = 0;
 	this->tileSets = tileSets;
 	tiles = tileFactory->createPack(tileSets, this);
+	upperScoreBound = calcUpperScoreBound(tiles);
 #if USE_RESET
 	originalTiles = tiles;
 #endif
@@ -828,6 +829,42 @@ void Game::moveTile(Tile * tile, const TileMove & tileMove)
 {
 	Q_ASSERT(!tileMove.isNull());
 	board->addTile(tile, tileMove);
+}
+
+int Game::calcUpperScoreBound(QList<Tile *> const & tiles)
+{
+	int roads = 0;
+	int cities = 0;
+	int tinyCities = 0;
+	int cloisters = 0;
+	for (Tile const * t : tiles)
+	{
+		auto nodes = t->getCNodes();
+		for (int i = 0, c = t->getNodeCount(); i < c; ++i)
+		{
+			Node const * n = nodes[i];
+			switch (n->getTerrain())
+			{
+				case Field:
+					break;
+				case Road:
+					++roads;
+					break;
+				case City:
+					++cities;
+					if (static_cast<CityNode const *>(n)->getOpen() == 1)
+						++tinyCities;
+					break;
+				case Cloister:
+					++cloisters;
+					break;
+				case None:
+					break;
+			}
+		}
+	}
+
+	return ((tinyCities / 2) * 3) + (cities * 2) + (roads) + (cloisters * 9);
 }
 
 bool Game::equals(Game const & other) const

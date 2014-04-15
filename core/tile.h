@@ -143,6 +143,10 @@ public:
 	{
 		return getCityData()->open == 0;
 	}
+	inline int getOpen() const
+	{
+		return getCityData()->open;
+	}
 	
 	virtual bool equals(Node const & other, Game const * g) const
 	{

@@ -3,16 +3,32 @@
 #include <QElapsedTimer>
 
 RandomTable MonteCarloPlayerUCT::r = RandomTable();
+MonteCarloPlayerUCT::UtilityMapType MonteCarloPlayerUCT::utilityMaps[MAX_PLAYERS] = { MonteCarloPlayerUCT::UtilityMapType() };
 
 void MonteCarloPlayerUCT::newGame(int /*player*/, const Game * g)
 {
+	uint const playerCount = g->getPlayerCount();
 	if (simGame == 0)
 		simGame = new Game(0);
 	game = g;
 	simGame->clearPlayers();
-	for (uint i = 0; i < g->getPlayerCount(); ++i)
+	for (uint i = 0; i < playerCount; ++i)
 		simGame->addPlayer(&RandomPlayer::instance);
 	simGame->newGame(game->getTileSets(), tileFactory, g->getMoveHistory());
+
+	if (useComplexUtility)
+	{
+		utilityMap = utilityMaps[playerCount];
+		if (!utilityMap)
+		{
+			int const upperScoreBound = game->getUpperScoreBound();
+			int size, offset;
+//			utilityMap = Util::newUtilityComplexNormalizedTable(playerCount, upperScoreBound, size, offset);
+			auto m = Util::newUtilityComplexNormalizationTable(playerCount, upperScoreBound, size, offset);
+			utilityMap = UtilityMapType(m, size, offset);
+			utilityMaps[playerCount] = utilityMap;
+		}
+	}
 }
 
 void MonteCarloPlayerUCT::playerMoved(int /*player*/, const Tile * /*tile*/, const MoveHistoryEntry & /*move*/)
@@ -33,15 +49,15 @@ TileMove MonteCarloPlayerUCT::getTileMove(int player, const Tile * /*tile*/, con
 
 	Q_ASSERT(game->equals(*simGame));
 
-	int const playerCount = game->getPlayerCount();
+	uint const playerCount = game->getPlayerCount();
 	int const possibleSize = possible.size();
 	auto meepleMoves = VarLengthArrayWrapper<MeepleMovesType, 128>::type(possibleSize);
 //	int rewards0 = 0;
-	int playoutCount0 = 0;
-	auto rewards1 = VarLengthArrayWrapper<int, 128>::type(possibleSize);
-	auto playoutCount1 = VarLengthArrayWrapper<int, 128>::type(possibleSize);
-	auto rewards2 = VarLengthArrayWrapper<VarLengthArrayWrapper<int, 16>::type, 128>::type(possibleSize);
-	auto playoutCount2 = VarLengthArrayWrapper<VarLengthArrayWrapper<int, 16>::type, 128>::type(possibleSize);
+	uint playoutCount0 = 0;
+	auto rewards1 = VarLengthArrayWrapper<qreal, 128>::type(possibleSize);
+	auto playoutCount1 = VarLengthArrayWrapper<uint, 128>::type(possibleSize);
+	auto rewards2 = VarLengthArrayWrapper<VarLengthArrayWrapper<qreal, 16>::type, 128>::type(possibleSize);
+	auto playoutCount2 = VarLengthArrayWrapper<VarLengthArrayWrapper<uint, 16>::type, 128>::type(possibleSize);
 	{
 		Tile * simTile = simGame->getTiles()[move.tile];
 		simGame->simPartStepChance(move.tile);
@@ -59,15 +75,15 @@ TileMove MonteCarloPlayerUCT::getTileMove(int player, const Tile * /*tile*/, con
 			meepleMoves[i] = mm;
 			rewards1[i] = 0;
 			playoutCount1[i] = 0;
-			rewards2[i] = VarLengthArrayWrapper<int, 16>::type(mms);
-			playoutCount2[i] = VarLengthArrayWrapper<int, 16>::type(mms);
+			rewards2[i] = VarLengthArrayWrapper<qreal, 16>::type(mms);
+			playoutCount2[i] = VarLengthArrayWrapper<uint, 16>::type(mms);
 
 			for (int j = 0; j < mms; ++j)
 			{
 				simGame->simPartStepMeeple(mm[j]);
 
 				int steps = playout();
-				int const u = utility(simGame->getScores(), playerCount, player);
+				qreal const u = utility(simGame->getScores(), playerCount, player);
 //				rewards0 += u;
 				++playoutCount0;
 				rewards1[i] += u;
@@ -100,7 +116,7 @@ TileMove MonteCarloPlayerUCT::getTileMove(int player, const Tile * /*tile*/, con
 		simGame->simStep(simMove);
 
 		int steps = playout();
-		int const u = utility(simGame->getScores(), playerCount, player);
+		qreal const u = utility(simGame->getScores(), playerCount, player);
 		rewards1[tmIndex] += u;
 		rewards2[tmIndex][mmIndex] += u;
 		++playoutCount0;
@@ -118,7 +134,7 @@ TileMove MonteCarloPlayerUCT::getTileMove(int player, const Tile * /*tile*/, con
 	qreal bestUtility = -std::numeric_limits<qreal>::infinity();
 	for (int i = 0; i < possibleSize; ++i)
 	{
-		auto u = rewards1[i] / qreal(playoutCount1[i]);
+		qreal u = rewards1[i] / qreal(playoutCount1[i]);
 		if (u > bestUtility)
 		{
 			bestUtility = u;
@@ -128,8 +144,8 @@ TileMove MonteCarloPlayerUCT::getTileMove(int player, const Tile * /*tile*/, con
 
 	// choose meeple move
 	bestUtility = -std::numeric_limits<qreal>::infinity();
-	VarLengthArrayWrapper<int, 16>::type const & rew = rewards2[bestMoveIndex];
-	for (int j = 0; j < rew.size(); ++j)
+	VarLengthArrayWrapper<qreal, 16>::type const & rew = rewards2[bestMoveIndex];
+	for (int j = 0, s = rew.size(); j < s; ++j)
 	{
 		auto u = rew[j] / qreal(playoutCount2[bestMoveIndex][j]);
 		if (u > bestUtility)

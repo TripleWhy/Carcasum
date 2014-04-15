@@ -39,22 +39,24 @@
 
 // Debug options
 // Game
-#define PRINT_STEPS             0
-#define WATCH_SCORES            !defined(QT_NO_DEBUG)
-#define CHECK_SIM_STATE         1
+#define PRINT_STEPS                0
+#define WATCH_SCORES               !defined(QT_NO_DEBUG)
+#define CHECK_SIM_STATE            1
 // Tile
-#define PRINT_CONNECTIONS       0
-#define DEBUG_IDS               0
+#define PRINT_CONNECTIONS          0
+#define DEBUG_IDS                  0
 // Ranodm
-//#define RANDOM_SEED             17
+//#define RANDOM_SEED                17
 // BoardGraphicsScene
-#define DRAW_TILE_POSITION_TEXT 1
+#define DRAW_TILE_POSITION_TEXT    1
 // MonteCarloPlayer
-#define COUNT_PLAYOUTS          1
+#define COUNT_PLAYOUTS             1
 // MCTSPlayer
-#define MCTS_COUNT_EXPAND_HITS  0
+#define MCTS_COUNT_EXPAND_HITS     0
+// Util
+#define OFFSET_ARRAY_ENABLE_CHECKS 0
 
-#define REPLACE_VARLENGTH_ARRAY 0
+#define REPLACE_VARLENGTH_ARRAY    0
 
 
 
