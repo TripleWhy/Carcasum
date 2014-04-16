@@ -8,6 +8,7 @@
 #include <QThread>
 #include <QCoreApplication>
 
+#include <map>
 #include <thread>
 #include <chrono>
 
@@ -96,9 +97,9 @@ public:
 
 	inline static int utilityComplex(int const * scores, int const playerCount, int const myIndex)
 	{
-		std::map<int, int> map;
+		std::multimap<int, int> map;
 		for (int i = 0; i < playerCount; ++i)
-			map[scores[i]] = i;
+			map.insert(std::pair<int, int>(scores[i], i));
 
 		int u = 0;
 		int m = 0;
