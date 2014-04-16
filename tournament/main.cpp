@@ -62,6 +62,41 @@ void printTimes(QVarLengthArray<quint64, MAX_PLAYERS> const & times, QVarLengthA
 
 int main(int argc, char *argv[])
 {
+	if (false)
+	{
+		QElapsedTimer t;
+		auto const & math = Util::mathInstance;
+
+		for (int i = 0; i < 3; ++i)
+		{
+			qreal sum = 0;
+			t.start();
+			for (int k = 0; k < 1000; ++k)
+			{
+				for (uint j = 1; j < 1000000; ++j)
+					sum += ::log(j);
+			}
+			auto e = t.elapsed();
+			qDebug() << e << sum;
+		}
+		qDebug();
+
+		for (int i = 0; i < 3; ++i)
+		{
+			qreal sum = 0;
+			t.start();
+			for (int k = 0; k < 1000; ++k)
+			{
+				for (uint j = 1; j < 1000000; ++j)
+					sum += math.ln(j);
+			}
+			auto e = t.elapsed();
+			qDebug() << e << sum;
+		}
+
+		return 0;
+	}
+
 	QCoreApplication app(argc, argv);
 	jcz::TileFactory * tileFactory = new jcz::TileFactory();
 

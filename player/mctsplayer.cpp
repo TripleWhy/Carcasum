@@ -2,6 +2,8 @@
 #include "randomplayer.h"
 #include <QElapsedTimer>
 
+Util::Math const & MCTSPlayer::math = Util::mathInstance;
+
 MCTSPlayer::MCTSNode::MCTSNode(uchar player, Type type, int size, MCTSNode * parent)
     : player(player),
       type(type),
@@ -282,7 +284,7 @@ MCTSPlayer::MCTSNode * MCTSPlayer::bestChild(MCTSNode * v)
 		{
 			if (vPrime == 0)
 				continue;
-			qreal val = (Q(vPrime) / qreal(N(vPrime))) + Cp * Util::mysqrt( Util::ln( N(v) ) / N(vPrime) );
+			qreal val = (Q(vPrime) / qreal(N(vPrime))) + Cp * math.sqrt( math.ln( N(v) ) / N(vPrime) );
 			if (val > max)
 			{
 				max = val;

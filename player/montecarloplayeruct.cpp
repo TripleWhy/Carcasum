@@ -4,6 +4,7 @@
 
 RandomTable MonteCarloPlayerUCT::r = RandomTable();
 MonteCarloPlayerUCT::UtilityMapType MonteCarloPlayerUCT::utilityMaps[MAX_PLAYERS] = { MonteCarloPlayerUCT::UtilityMapType() };
+Util::Math const & MonteCarloPlayerUCT::math = Util::mathInstance;
 
 void MonteCarloPlayerUCT::newGame(int /*player*/, const Game * g)
 {

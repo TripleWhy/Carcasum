@@ -18,7 +18,7 @@ class MonteCarloPlayerUCT : public Player
  #endif
 #endif
 
-	typedef OffsetArray<qreal> UtilityMapType;
+	typedef Util::OffsetArray<qreal> UtilityMapType;
 
 private:
 	Game const * game = 0;
@@ -30,6 +30,7 @@ private:
 	int utilityOffset = 0;
 	static RandomTable r;
 	static UtilityMapType utilityMaps[MAX_PLAYERS];
+	static Util::Math const & math;
 
 public:
 	constexpr MonteCarloPlayerUCT(jcz::TileFactory * tileFactory, bool useComplexUtility = true)
@@ -75,7 +76,7 @@ private:
 		int best = -1;
 		for (int i = 0; i < size; ++i)
 		{
-			qreal val = (Q1[i] / qreal(N1[i])) + Cp * Util::mysqrt( Util::ln(N0) / N1[i] );
+			qreal val = (Q1[i] / qreal(N1[i])) + Cp * math.sqrt( math.ln(N0) / N1[i] );
 			if (val > max)
 			{
 				max = val;
@@ -95,7 +96,7 @@ private:
 		int best = -1;
 		for (int i = 0; i < size; ++i)
 		{
-			qreal val = (Q1[i] / qreal(N1[i])) + Cp * Util::mysqrt( Util::ln(N0) / N1[i] );
+			qreal val = (Q1[i] / qreal(N1[i])) + Cp * math.sqrt( math.ln(N0) / N1[i] );
 			Q_ASSERT(val > -std::numeric_limits<qreal>::infinity());
 			if (val > max)
 			{

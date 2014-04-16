@@ -1,6 +1,8 @@
 #include "util.h"
 #include "game.h"
 
+Util::OffsetArray<qreal> Util::Math::lnTable = OffsetArray<qreal>();
+
 void Util::syncGamesFast(const Game & from, Game & to)
 {
 	auto const & history = from.getMoveHistory();

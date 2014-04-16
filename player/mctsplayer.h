@@ -96,6 +96,7 @@ private:
 	jcz::TileFactory * tileFactory;
 	RandomTable r;
 	MeepleMove meepleMove;
+	static Util::Math const & math;
 
 #if MCTS_COUNT_EXPAND_HITS
 public:
