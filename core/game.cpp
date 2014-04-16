@@ -121,7 +121,7 @@ void Game::addPlayer(Player * player)
 		return;
 	players.push_back(player);
 	addWatchingPlayer(player);
-	playerCount = players.size();
+	playerCount = (uint)players.size();
 }
 
 void Game::addWatchingPlayer(Player * player)

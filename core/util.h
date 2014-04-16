@@ -4,9 +4,12 @@
 #include "static.h"
 #include "tile.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
 #include <QPoint>
 #include <QThread>
 #include <QCoreApplication>
+#pragma GCC diagnostic pop
 
 #include <map>
 #include <thread>
@@ -149,9 +152,9 @@ public:
 
 		int const uBound = utilityUpperBound(playerCount, upperScoreBound);
 		int const lBound = utilityLowerBound(playerCount, upperScoreBound);
-		qreal const range = uBound - lBound;
+		int const range = uBound - lBound;
 		qreal const A = range / 20.0;
-		qreal const B = 4 * playerCount / range;
+		qreal const B = 4 * playerCount / qreal(range);
 
 		size = range + 1;
 		offset = -lBound;

@@ -231,7 +231,7 @@ MCTSPlayer::MCTSNode * MCTSPlayer::expand(MCTSPlayer::MCTSNode * v)
 	{
 		do
 		{
-			a = r.nextInt(v->children.size());
+			a = r.nextInt((int)v->children.size());
 			vPrime = v->children[a];
 #if MCTS_COUNT_EXPAND_HITS
 			++miss;
@@ -298,7 +298,7 @@ int MCTSPlayer::bestChild0(MCTSPlayer::MCTSNode * v)
 {
 	qreal max = -std::numeric_limits<qreal>::infinity();
 	int a = 0;
-	for (int i = 0, s = v->children.size(); i < s; ++i)
+	for (int i = 0, s = (int)v->children.size(); i < s; ++i)
 	{
 		auto * vPrime = v->children[i];
 		if (vPrime == 0)
@@ -399,7 +399,7 @@ MCTSPlayer::MCTSTileNode * MCTSPlayer::generateTileNode(MCTSNode * parent, int p
 	TileMovesType && possible = g.getPossibleTilePlacements(t);
 	if (possible.size() == 0)
 		possible.push_back(TileMove()); // I could probably add a null MeepleMove child here, too.
-	MCTSTileNode * node = new MCTSTileNode(player, std::move(possible), parent, parentAction);
+	MCTSTileNode * node = new MCTSTileNode((uchar)player, std::move(possible), parent, parentAction);
 	return node;
 }
 
@@ -410,7 +410,7 @@ MCTSPlayer::MCTSMeepleNode * MCTSPlayer::generateMeepleNode(MCTSNode * parent, T
 	MCTSMeepleNode * node;
 	{
 		MeepleMovesType && possible = getPossibleMeeples(player, parentAction, t, g);
-		node = new MCTSMeepleNode(player, std::move(possible), parent, parentAction);
+		node = new MCTSMeepleNode((uchar)player, std::move(possible), parent, parentAction);
 	}
 	return node;
 }
@@ -420,7 +420,7 @@ MCTSPlayer::MCTSChanceNode *MCTSPlayer::generateChanceNode(MCTSNode * parent, Me
 	int player = g.getNextPlayer();
 	apply(parentAction, g);
 	TileCountType const & tileCounts = g.getTileCounts();
-	MCTSChanceNode * node = new MCTSChanceNode(player, tileCounts, parent, parentAction);
+	MCTSChanceNode * node = new MCTSChanceNode((uchar)player, tileCounts, parent, parentAction);
 
 	return node;
 }

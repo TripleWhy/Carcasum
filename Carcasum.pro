@@ -111,8 +111,8 @@ RESOURCES += \
 REVISION = $$system(git rev-parse HEAD)
 DEFINES += APP_REVISION=$$REVISION
 
-QMAKE_CXXFLAGS += -std=c++11
-QMAKE_CXXFLAGS_WARN_ON += -Wextra -Werror=switch -Werror=return-type -Werror=delete-non-virtual-dtor
+CONFIG += c++11
+QMAKE_CXXFLAGS_WARN_ON += -Wextra -Werror=switch -Werror=return-type -Werror=delete-non-virtual-dtor -Wconversion
 
 #QMAKE_CXXFLAGS_RELEASE += -g
 #QMAKE_CFLAGS_RELEASE += -g

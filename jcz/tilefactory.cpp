@@ -158,7 +158,7 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 	data.count = count;
 
 	QString id = xml.attributes().value("id").toString();
-	int type = tileTemplates[set].size();
+	TileTypeType type = (TileTypeType)tileTemplates[set].size();
 	type = Util::toGlobalType(set, type);
 
 	Tile * tile = new Tile(type);
@@ -229,7 +229,7 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 		{
 			xml.readNext();
 			QStringList const & split = xml.text().toString().split(' ', QString::SkipEmptyParts);
-			Node * road = newRoadNode(tile, g, split.length());
+			Node * road = newRoadNode(tile, g, (uchar)split.length());
 			for (QString const & str : split)
 			{
 				int side;
@@ -265,7 +265,7 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 			bool pennant = (xml.attributes().value("pennant") == "yes");
 			xml.readNext();
 			QStringList const & split = xml.text().toString().split(' ', QString::SkipEmptyParts);
-			Node * city = newCityNode(tile, g, split.length(), pennant);
+			Node * city = newCityNode(tile, g, (uchar)split.length(), pennant);
 			for (QString const & str : split)
 			{
 				int side;
@@ -343,7 +343,7 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 		}
 	}
 
-	tile->nodeCount = nodes.size();
+	tile->nodeCount = (uchar)nodes.size();
 	tile->nodes = new Node *[tile->nodeCount];
 	for (int i = 0; i < tile->nodeCount; ++i)
 		tile->nodes[i] = nodes.at(i);

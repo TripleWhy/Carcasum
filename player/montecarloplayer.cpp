@@ -15,9 +15,7 @@ void MonteCarloPlayer::newGame(int /*player*/, const Game * g)
 
 void MonteCarloPlayer::playerMoved(int /*player*/, const Tile * /*tile*/, const MoveHistoryEntry & /*move*/)
 {
-	auto const & history = game->getMoveHistory();
-	for (uint i = simGame->getMoveHistory().size(); i < history.size(); ++i)
-		simGame->simStep(history[i]);
+	Util::syncGamesFast(*game, *simGame);
 }
 
 TileMove MonteCarloPlayer::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & possible)

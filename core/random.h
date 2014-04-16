@@ -61,7 +61,7 @@ private:
 #if RANDOM_TABLE_SHARED_OFFSET
 	static
 #endif
-	int offset;
+	long offset;
 
 public:
 	RandomTable()
@@ -77,9 +77,9 @@ public:
 			}
 		}
 #ifndef RANDOM_SEED
-		int const seed = std::chrono::system_clock::now().time_since_epoch().count();
+		long const seed = std::chrono::system_clock::now().time_since_epoch().count();
 #else
-		int const seed = RANDOM_SEED;
+		long const seed = RANDOM_SEED;
 #endif
 		add = (add + 1) % TABLE_SIZE;
 		offset = (seed + (table[add] * ADD_MULTIPLIER));

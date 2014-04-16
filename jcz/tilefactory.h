@@ -3,9 +3,12 @@
 
 #include "core/tile.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
 #include <QXmlStreamReader>
 #include <QHash>
 #include <QPoint>
+#pragma GCC diagnostic pop
 
 class Tile;
 

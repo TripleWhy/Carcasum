@@ -55,7 +55,7 @@ void printTimes(QVarLengthArray<quint64, MAX_PLAYERS> const & times, QVarLengthA
 	{
 		qreal s = qreal(quint64(steps[i]) * quint64(1000000));
 		Player * p = players[i];
-		qDebug() << "player" << i << "   playouts:" << p->playouts << "\tavg. thinking time:" << (times[i] / s) << "ms   avg. overrun:" << (diffs[i] / s) << "ms";
+		qDebug() << "player" << i << "   playouts:" << p->playouts << "\tavg. thinking time:" << ((qreal)times[i] / s) << "ms   avg. overrun:" << ((qreal)diffs[i] / s) << "ms";
 		p->playouts = 0;
 	}
 }
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 	std::vector<Result> results;
 	RandomNextTileProvider rntp;
 	Game game(&rntp);
-	int const playerCount = players.size();
+	int const playerCount = (int)players.size();
 
 	QElapsedTimer timer;
 	QVarLengthArray<quint64, MAX_PLAYERS> times(playerCount);

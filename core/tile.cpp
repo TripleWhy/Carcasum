@@ -69,7 +69,7 @@ void Node::connect(Node * n, Game * g)
 			 tm < end;
 			 ++tm, ++nm)
 		{
-			*tm += *nm;
+			*tm = (uchar)(*tm + *nm);
 			if (*tm > d->maxMeples)
 				d->maxMeples = *tm;
 		}
@@ -143,7 +143,7 @@ void Node::disconnect(Node * n, Game * g)	//only works in reverse order of conne
 			 tm < end;
 			 ++tm, ++nm)
 		{
-			*tm -= *nm;
+			*tm = (uchar)(*tm - *nm);
 			if (*tm > d->maxMeples)
 				d->maxMeples = *tm;
 		}
@@ -274,12 +274,12 @@ void FieldNode::reset(const Tile * parent, const Game * g)
 
 void CityNode::connect(Node * n, Game * g)
 {
-	getCityData()->open -= 2;
+	getCityData()->open = (uchar)(getCityData()->open - 2);
 	if (!isSame(n))
 	{
 		CityNode * c = static_cast<CityNode *>(n);
-		getCityData()->bonus += c->getCityData()->bonus;
-		getCityData()->open += c->getCityData()->open;
+		getCityData()->bonus = (uchar)(getCityData()->bonus + c->getCityData()->bonus);
+		getCityData()->open = (uchar)(getCityData()->open + c->getCityData()->open);
 	}
 	Node::connect(n, g);
 	Q_ASSERT(uchar(getCityData()->open + 2) > getCityData()->open);
@@ -291,10 +291,10 @@ void CityNode::disconnect(Node * n, Game * g)
 	if (!isSame(n))
 	{
 		CityNode * c = static_cast<CityNode *>(n);
-		getCityData()->open -= c->getCityData()->open;
-		getCityData()->bonus -= c->getCityData()->bonus;
+		getCityData()->open = (uchar)(getCityData()->open - c->getCityData()->open);
+		getCityData()->bonus = (uchar)(getCityData()->bonus - c->getCityData()->bonus);
 	}
-	getCityData()->open += 2;
+	getCityData()->open = (uchar)(getCityData()->open + 2);
 }
 
 void CityNode::checkClose(Game * g)
@@ -322,11 +322,11 @@ void RoadNode::connect(Node * n, Game * g)
 	Q_ASSERT_X(n->getTerrain() == this->getTerrain(), "RoadNode::connect", "TerrainType does not match");
 	Q_ASSERT_X(typeid(*n) == typeid(*this), "RoadNode::connect", "other node is no RoadNode");
 	
-	getRoadData()->open -= 2;
+	getRoadData()->open = (uchar)(getRoadData()->open - 2);
 	if (!isSame(n))
 	{
 		RoadNode * r = static_cast<RoadNode *>(n);
-		getRoadData()->open += r->getRoadData()->open;
+		getRoadData()->open = (uchar)(getRoadData()->open + r->getRoadData()->open);
 	}
 	Node::connect(n, g);
 	Q_ASSERT(uchar(getRoadData()->open + 2) > getRoadData()->open);
@@ -338,9 +338,9 @@ void RoadNode::disconnect(Node * n, Game * g)
 	if (!isSame(n))
 	{
 		RoadNode * r = static_cast<RoadNode *>(n);
-		getRoadData()->open -= r->getRoadData()->open;
+		getRoadData()->open = (uchar)(getRoadData()->open - r->getRoadData()->open);
 	}
-	getRoadData()->open += 2;
+	getRoadData()->open = (uchar)(getRoadData()->open + 2);
 }
 
 void RoadNode::checkClose(Game * g)
@@ -572,7 +572,7 @@ Tile::EdgeType * Tile::getEdgeNodes(Tile::Side side)
 	return edgeNodes[(4 + side - orientation) % 4];
 }
 
-void Tile::setEdgeNode(Tile::Side side, uchar index, Node * n)
+void Tile::setEdgeNode(Tile::Side side, int index, Node * n)
 {
 #if NODE_VARIANT
 	for (int i = 0; i < nodeCount; ++i)

@@ -3,8 +3,12 @@
 
 #include "static.h"
 #include <unordered_set>
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
 #include <QList>
 #include <QDebug>
+#pragma GCC diagnostic pop
 
 namespace jcz
 {
@@ -73,13 +77,13 @@ public:
 	virtual void disconnect(Node * n, Game * g);
 	virtual void checkClose(Game * g) = 0;
 	virtual void checkUnclose(Game * g) = 0;
-	virtual uchar getScore() = 0;
+	virtual int getScore() = 0;
 	virtual Node * clone(Tile const * parent, Game const * g) const = 0;
 #if USE_RESET
 	virtual void reset(Tile const * parent, Game const * g);
 #endif
 	
-	inline uint uniqueTileCount()
+	inline int uniqueTileCount()
 	{
 		int uniqueTiles = 0;
 		Tile const * last = 0;
@@ -131,7 +135,7 @@ public:
 #if USE_RESET
 	virtual void reset(Tile const * parent, Game const * g);
 #endif
-	inline virtual uchar getScore()
+	inline virtual int getScore()
 	{
 		return uniqueTileCount() + getCityData()->bonus;
 	}
@@ -189,13 +193,13 @@ public:
 #if USE_RESET
 	virtual void reset(Tile const * parent, Game const * g);
 #endif
-	inline virtual uchar getScore()
+	inline virtual int getScore()
 	{
 		std::unordered_set<Node *> closedCities;
 		for (CityNode * c : getFieldData()->cities)
 			if (c->isClosed())
 				closedCities.insert(c);
-		return closedCities.size() * 3;
+		return (int)closedCities.size() * 3;
 	}
 	virtual Node * clone(Tile const * parent, Game const * g) const
 	{
@@ -241,7 +245,7 @@ public:
 	virtual void connect(Node * n, Game * g);
 	virtual void disconnect(Node * n, Game * g);
 	virtual void checkClose(Game * g);
-	inline virtual uchar getScore() { return uniqueTileCount(); }
+	inline virtual int getScore() { return uniqueTileCount(); }
 	virtual void checkUnclose(Game * g);
 #if USE_RESET
 	virtual void reset(Tile const * parent, Game const * g);
@@ -276,7 +280,7 @@ public:
 	virtual void connect(Node * /*n*/, Game * /*g*/) { Q_ASSERT(false); }
 	virtual void disconnect(Node * /*n*/, Game * /*g*/) { Q_ASSERT(false); }
 	virtual void checkClose(Game * g);
-	inline virtual uchar getScore() { return surroundingTiles; }
+	inline virtual int getScore() { return surroundingTiles; }
 	virtual void checkUnclose(Game * g);
 #if USE_RESET
 	virtual void reset(Tile const * parent, Game const * g);
@@ -364,7 +368,7 @@ public:
 
 private:
 	EdgeType * getEdgeNodes(Side side);
-	void setEdgeNode(Side side, uchar index, Node * n);
+	void setEdgeNode(Side side, int index, Node * n);
 	void createEdgeList(Side side);
 
 	static inline int edgeNodeCount(TerrainType t)

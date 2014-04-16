@@ -5,9 +5,12 @@
 #include "location.h"
 #include "expansion.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
 #include <QString>
 #include <QXmlStreamReader>
 #include <QPoint>
+#pragma GCC diagnostic pop
 
 namespace jcz
 {

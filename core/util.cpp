@@ -4,7 +4,7 @@
 void Util::syncGamesFast(const Game & from, Game & to)
 {
 	auto const & history = from.getMoveHistory();
-	for (size_t i = to.getMoveHistory().size(); i < history.size(); ++i)
+	for (size_t i = to.getMoveHistory().size(), s = history.size(); i < s; ++i)
 		to.simStep(history[i]);
 }
 
@@ -16,7 +16,7 @@ void Util::syncGames(const Game & from, Game & to)
 	while (toHistory.size() > fromHistory.size())
 		to.undo();
 
-	int offset = toHistory.size();
+	size_t offset = toHistory.size();
 	for (size_t i = 0; i < toHistory.size(); ++i)
 	{
 		if (fromHistory[i] != toHistory[i])
