@@ -20,12 +20,12 @@ private:
 	Game const * game = 0;
 	Game * simGame = 0;
 	jcz::TileFactory * tileFactory;
-	bool useComplexUtility;
+	int useComplexUtility;
 	MeepleMove meepleMove;
 	static RandomTable r;
 
 public:
-	constexpr MonteCarloPlayer2(jcz::TileFactory * tileFactory, bool useComplexUtility = true)
+	constexpr MonteCarloPlayer2(jcz::TileFactory * tileFactory, int useComplexUtility = 1)
 	    : tileFactory(tileFactory),
 	      useComplexUtility(useComplexUtility)
 	{
@@ -42,27 +42,20 @@ private:
 	int playout();
 	void unplayout(int steps);
 
-	inline static int utilitySimple(int const * scores, int const playerCount, int const myIndex)
-	{
-		return Util::utilitySimple(scores, playerCount, myIndex);
-	}
-
-	inline static int utilityComplex(int const * scores, int const playerCount, int const myIndex)
-	{
-		return Util::utilityComplex(scores, playerCount, myIndex);
-	}
-
-	typedef int (*utilityFunctionType)(int const *, int const, int const);
-	constexpr utilityFunctionType utilityFunction()
-	{
-		return useComplexUtility ? &utilityComplex : &utilitySimple;
-	}
-
 	inline int utility(int const * scores, int const playerCount, int const myIndex)
 	{
-//		return utilityComplex(scores, playerCount, myIndex);
-		return useComplexUtility ? utilityComplex(scores, playerCount, myIndex) : utilitySimple(scores, playerCount, myIndex);
-//		return utilityFunction()(scores, playerCount, myIndex);
+//		return useComplexUtility ? utilityComplex(scores, playerCount, myIndex) : utilitySimple(scores, playerCount, myIndex);
+		switch (useComplexUtility)
+		{
+			case 0:
+				return Util::utilitySimple(scores, playerCount, myIndex);
+			case 1:
+				return Util::utilityComplex(scores, playerCount, myIndex);
+			case 2:
+				return Util::utilityComplexOld(scores, playerCount, myIndex);
+			default:
+				return 0;
+		}
 	}
 
 	inline int chooseTileMove(TileMovesType const & possible)

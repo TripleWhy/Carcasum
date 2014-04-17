@@ -105,10 +105,11 @@ int main(int argc, char *argv[])
 	std::vector<Player *> players;
 //	players.push_back(new MonteCarloPlayer(tileFactory, false));
 //	players.push_back(new MonteCarloPlayer(tileFactory, true));
-	players.push_back(new MonteCarloPlayer2(tileFactory, false));
-//	players.push_back(new MonteCarloPlayer2(tileFactory, true));
-	players.push_back(new MonteCarloPlayerUCT(tileFactory, false));
+	players.push_back(new MonteCarloPlayer2(tileFactory, 1));
+	players.push_back(new MonteCarloPlayer2(tileFactory, 2));
+//	players.push_back(new MonteCarloPlayerUCT(tileFactory, false));
 //	players.push_back(new MonteCarloPlayerUCT(tileFactory, true));
+//	players.push_back(new MCTSPlayer(tileFactory));
 
 
 #ifdef TIMEOUT

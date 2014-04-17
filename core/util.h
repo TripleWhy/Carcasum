@@ -29,7 +29,7 @@ namespace Util
 //		return true;
 		return !n->isOccupied();
 	}
-	
+
 	inline void sleep(int millis)
 	{
 		std::chrono::milliseconds dura( millis );
@@ -97,8 +97,7 @@ namespace Util
 			return -1;
 	}
 
-	//TODO This utility discourages opponents having the same score. Find something better.
-	inline int utilityComplex(int const * scores, int const playerCount, int const myIndex)
+	inline int utilityComplexOld(int const * scores, int const playerCount, int const myIndex)
 	{
 		std::multimap<int, int> map;
 		for (int i = 0; i < playerCount; ++i)
@@ -122,26 +121,111 @@ namespace Util
 		return u;
 	}
 
+	inline int utilityComplex(int const * scores, int const playerCount, int const myIndex)
+	{
+		std::multimap<int, int> map;
+		for (int i = 0; i < playerCount; ++i)
+			map.insert(std::pair<int, int>(scores[i], i));
+
+		int u = 0;
+		int m = 0;
+		int lastScore = -1;
+		int index = 1;
+		// last player first
+		for (auto const & e : map)
+		{
+			if (e.first != lastScore)
+			{
+				int count = (int)map.count(e.first);
+				m = index * index;
+				for (int i = 1; i < count; ++i)
+					m += (index+i)*(index+i);
+				m /= count;
+			}
+
+			if (e.second == myIndex)
+				u += m * e.first;
+			else
+				u -= m * e.first;
+			lastScore = e.first;
+			++index;
+		}
+
+		return u;
+	}
+
+	inline qreal utilityComplexF(int const * scores, int const playerCount, int const myIndex)
+	{
+		std::multimap<int, int> map;
+		for (int i = 0; i < playerCount; ++i)
+			map.insert(std::pair<int, int>(scores[i], i));
+
+		qreal u = 0;
+		qreal m = 0;
+		int lastScore = -1;
+		int index = 1;
+		// last player first
+		for (auto const & e : map)
+		{
+			if (e.first != lastScore)
+			{
+				int count = (int)map.count(e.first);
+				m = index * index;
+				for (int i = 1; i < count; ++i)
+					m += (index+i)*(index+i);
+				m /= count;
+			}
+
+			if (e.second == myIndex)
+				u += m * e.first;
+			else
+				u -= m * e.first;
+			lastScore = e.first;
+			++index;
+		}
+
+		return u;
+	}
+
 	inline int utilityUpperBound(int const playerCount, int const upperScoreBound)
 	{
-		return playerCount * upperScoreBound;
+//		return playerCount * upperScoreBound;
+		int scores[MAX_PLAYERS] = { upperScoreBound };
+		return utilityComplex(scores, playerCount, 0);
 	}
 
 	inline int utilityLowerBound(int const playerCount, int const upperScoreBound)
 	{
-//		return -((upperScoreBound * playerCount * (playerCount+1)) / 2);              	// == sum(upperScoreBound*i), for i from 1 to playerCount.
-		return -((upperScoreBound * (playerCount*playerCount + playerCount - 2)) / 2);	// == sum(upperScoreBound*i), for i from 2 to playerCount.
+//		return -((upperScoreBound * (playerCount*playerCount + playerCount - 2)) / 2);	// == sum(upperScoreBound*i), for i from 2 to playerCount.
+		int scores[MAX_PLAYERS] = { };
+		for (int i = 1; i < playerCount; ++i)
+			scores[i] = upperScoreBound;
+		return utilityComplex(scores, playerCount, 0);
 	}
-	
+
+	inline qreal utilityUpperBoundF(int const playerCount, int const upperScoreBound)
+	{
+		int scores[MAX_PLAYERS] = { 0 };
+		scores[0] = upperScoreBound;
+		return utilityComplexF(scores, playerCount, 0);
+	}
+
+	inline qreal utilityLowerBoundF(int const playerCount, int const upperScoreBound)
+	{
+		int scores[MAX_PLAYERS] = { upperScoreBound };
+		scores[0] = 0;
+		return utilityComplexF(scores, playerCount, 0);
+	}
+
 	inline qreal utilityComplexNormalized(int const * scores, int const playerCount, int const myIndex, int const upperScoreBound)
 	{
 		int const u = utilityComplex(scores, playerCount, myIndex);
 
 		int const uBound = utilityUpperBound(playerCount, upperScoreBound);
 		int const lBound = utilityLowerBound(playerCount, upperScoreBound);
-		qreal const range = uBound - lBound;
-		qreal const A = range / 20.0;
-		qreal const B = 4 * playerCount / range;
+		int const range = uBound - lBound;
+		qreal const A = (range * playerCount) / 300.0;
+		qreal const B = (6 * playerCount) / qreal(range);
 
 		return tanh(((u+A) * B) + 1) / 2;
 	}
@@ -152,8 +236,8 @@ namespace Util
 		int const uBound = utilityUpperBound(playerCount, upperScoreBound);
 		int const lBound = utilityLowerBound(playerCount, upperScoreBound);
 		int const range = uBound - lBound;
-		qreal const A = range / 20.0;
-		qreal const B = 4 * playerCount / qreal(range);
+		qreal const A = (range * playerCount) / 300.0;
+		qreal const B = (6 * playerCount) / qreal(range);
 
 		size = range + 1;
 		offset = -lBound;
