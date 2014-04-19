@@ -118,8 +118,9 @@ int main(int argc, char *argv[])
 //	players.push_back(new MonteCarloPlayer2(tileFactory, 2));
 //	players.push_back(new MonteCarloPlayerUCT(tileFactory, false));
 //	players.push_back(new MonteCarloPlayerUCT(tileFactory, true));
-	players.push_back(new MCTSPlayer<false>(tileFactory));
+//	players.push_back(new MCTSPlayer<false>(tileFactory));
 	players.push_back(new MCTSPlayer<true>(tileFactory));
+	players.push_back(new MCTSPlayer<true, Playouts::EarlyCutoff<10>>(tileFactory));
 
 
 #ifdef TIMEOUT

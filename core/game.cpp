@@ -528,8 +528,7 @@ void Game::undo()
 
 	if (tiles.isEmpty())
 	{
-		board->unscoreEndGame();
-		active = true;
+		simUnEndGame();
 	}
 	
 	{
@@ -644,8 +643,7 @@ void Game::simPartUndoMeeple()
 
 	if (tiles.isEmpty())
 	{
-		board->unscoreEndGame();
-		active = true;
+		simUnEndGame();
 	}
 
 	simEntry = moveHistory.back();
@@ -816,6 +814,12 @@ void Game::simEndGame()
 	for (uint i = 0; i < getPlayerCount(); ++i)
 		Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT);
 #endif
+}
+
+void Game::simUnEndGame()
+{
+	board->unscoreEndGame();
+	active = true;
 }
 
 void Game::endGame()

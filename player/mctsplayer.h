@@ -2,13 +2,15 @@
 #define MCTSPLAYER_H
 
 #include "static.h"
+#include "playouts.h"
 #include "core/player.h"
 #include "core/game.h"
 #include "core/random.h"
 #include "core/tile.h"
 #include <boost/mpl/if.hpp>
+#include <boost/mpl/bool.hpp>
 
-template<bool UC>
+template<bool UseComplexUtility, class Playout = Playouts::RandomPlayout>
 class MCTSPlayer : public Player
 {
 	constexpr static int Cp = 1;
@@ -18,7 +20,7 @@ class MCTSPlayer : public Player
 #endif
 
 	typedef Util::OffsetArray<qreal> UtilityMapType;
-	typedef typename boost::mpl::if_c<UC, qreal, int>::type RewardType;
+	typedef typename boost::mpl::if_c<UseComplexUtility, qreal, int>::type RewardType;
 //	typedef typename boost::mpl::if_c<UC, VarLengthArrayWrapper<qreal, MAX_PLAYERS>::type, Util::RewardType>::type RewardListType;
 	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
 
@@ -104,6 +106,12 @@ private:
 	MeepleMove meepleMove;
 	UtilityMapType utilityMap;
 	static Util::Math const & math;
+	QString typeName;
+
+	//The first line is the one I want, but it produces a linker error when compiled in debug mode. WTF?
+//	static constexpr Playout playoutPolicy = Playout();
+	const Playout playoutPolicy = Playout();
+
 
 #if MCTS_COUNT_EXPAND_HITS
 public:
@@ -114,10 +122,14 @@ public:
 public:
 	MCTSPlayer(jcz::TileFactory * tileFactory);
 
-	template<typename T>
-	void apply(T t, Game & g);
-	template<typename NodeType>
-	void unapply(NodeType * node, Game & g);
+	void applyChance(int action, Game & g);
+	void applyTile(TileMove * action, Game & g);
+	void applyMeeple(MeepleMove * action, Game & g);
+	void applyNode(MCTSNode * node, Game & g);
+	void unapplyChance(Game & g);
+	void unapplyTile(Game & g);
+	void unapplyMeeple(Game & g);
+	void unapplyNode(MCTSNode * node, Game & g);
 
 	virtual void newGame(int player, Game const * game);
 	virtual void playerMoved(int player, Tile const * tile, MoveHistoryEntry const & move);
@@ -154,6 +166,15 @@ private:
 			possible = g.getPossibleMeeplePlacements(t);
 		return possible;
 	}
+};
+
+template<bool UseComplexUtility>
+class MCTSPlayer_Helper
+{
+	typedef typename boost::mpl::if_c<UseComplexUtility, qreal, int>::type RewardType;
+	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
+public:
+	static RewardListType utility(const int * scores, const int playerCount, Util::OffsetArray<qreal> const & utilityMap);
 };
 
 #include "mctsplayer.tpp"

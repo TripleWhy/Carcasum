@@ -2,8 +2,8 @@
 #include "randomplayer.h"
 #include <QElapsedTimer>
 
-#define MCTS_T template<bool UC>
-#define MCTS_TU <UC>
+#define MCTS_T template<bool UseComplexUtility, class Playout>
+#define MCTS_TU <UseComplexUtility, Playout>
 
 MCTS_T
 Util::Math const & MCTSPlayer MCTS_TU::math = Util::mathInstance;
@@ -52,6 +52,7 @@ MCTS_T
 MCTSPlayer MCTS_TU::MCTSPlayer(jcz::TileFactory * tileFactory)
     : tileFactory(tileFactory)
 {
+	typeName = QString("MCTSPlayer<%1, %2>").arg(UseComplexUtility ? "true" : "false").arg(Playout::name);
 }
 
 MCTS_T
@@ -91,7 +92,7 @@ TileMove MCTSPlayer MCTS_TU::getTileMove(int player, const Tile * tile, const Mo
 #ifdef TIMEOUT
 	while (!t.hasExpired(TIMEOUT));
 #endif
-	unapply(v0, simGame);
+	unapplyNode(v0, simGame);
 
 	int b = bestChild0(v0);
 	auto a = v0->possible[b];
@@ -128,7 +129,7 @@ typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::treePolicy(MCTSNode 
 		else
 		{
 			v = bestChild(v);
-			apply(v, simGame);
+			applyNode(v, simGame);
 		}
 	}
 	Q_ASSERT(v != 0);
@@ -216,7 +217,7 @@ typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::bestChild(MCTSNode *
 		{
 			if (vPrime == 0)
 				continue;
-			qreal val = (Q(vPrime) / qreal(N(vPrime))) + Cp * (MCTSPlayer<UC>::math).sqrt( math.ln( N(v) ) / N(vPrime) );
+			qreal val = (Q(vPrime) / qreal(N(vPrime))) + Cp * (MCTSPlayer MCTS_TU::math).sqrt( math.ln( N(v) ) / N(vPrime) );
 			if (val > max)
 			{
 				max = val;
@@ -259,38 +260,33 @@ typename MCTSPlayer MCTS_TU::RewardListType MCTSPlayer MCTS_TU::defaultPolicy(MC
 			TileMove tileMove;
 			TileMovesType && possibleTiles = simGame.getPossibleTilePlacements(tile);
 			if (possibleTiles.size())
-				tileMove = RandomPlayer::instance.getTileMove(v->player, tile, simGame.simEntry, possibleTiles);
+				tileMove = playoutPolicy.chooseTileMove(v->player, tile, simGame.simEntry, possibleTiles);
 			simGame.simPartStepTile(tileMove);
 
 			MeepleMovesType && possibleMeeples = getPossibleMeeples(v->player, &tileMove, tile, simGame);
-			simGame.simPartStepMeeple(RandomPlayer::instance.getMeepleMove(v->player, tile, simGame.simEntry, possibleMeeples));
+			MeepleMove const & meepleMove = playoutPolicy.chooseMeepleMove(v->player, tile, simGame.simEntry, possibleMeeples);
+			simGame.simPartStepMeeple(meepleMove);
 
 			break;
 		}
 		case MCTSNode::TypeMeeple:
 		{
-			simGame.simPartStepMeeple(RandomPlayer::instance.getMeepleMove(v->player, 0, simGame.simEntry, static_cast<MCTSMeepleNode *>(v)->possible));
+			MeepleMove const & meepleMove = playoutPolicy.chooseMeepleMove(v->player, 0, simGame.simEntry, static_cast<MCTSMeepleNode *>(v)->possible);
+			simGame.simPartStepMeeple(meepleMove);
 			break;
 		}
 		case MCTSNode::TypeChance:
 			break;
 	}
 
-	int steps = 0;
-	if (!simGame.isFinished())
-	{
-		do
-			++steps;
-		while (simGame.simStep(&RandomPlayer::instance));
-	}
+	int steps = playoutPolicy.playout(simGame);
 #if COUNT_PLAYOUTS
 	++playouts;
 #endif
 
 	RewardListType && reward = utilities(simGame.getScores(), simGame.getPlayerCount());
 
-	for (int i = 0; i < steps; ++i)
-		simGame.undo();
+	playoutPolicy.undoPlayout(simGame, steps);
 
 	switch (v->type)
 	{
@@ -318,7 +314,7 @@ void MCTSPlayer MCTS_TU::backup(MCTSNode * v, RewardListType const & delta)
 
 		if (v->parent == 0)
 			break;
-		unapply(v, simGame);
+		unapplyNode(v, simGame);
 		v = v->parent;
 	}
 }
@@ -334,7 +330,7 @@ typename MCTSPlayer MCTS_TU::MCTSTileNode * MCTSPlayer MCTS_TU::generateTileNode
 {
 	int player = g.getNextPlayer();
 	Tile const * t = g.getTileByType(parentAction);
-	apply(parentAction, g);
+	applyChance(parentAction, g);
 	TileMovesType && possible = g.getPossibleTilePlacements(t);
 	if (possible.size() == 0)
 		possible.push_back(TileMove()); // I could probably add a null MeepleMove child here, too.
@@ -346,7 +342,7 @@ MCTS_T
 typename MCTSPlayer MCTS_TU::MCTSMeepleNode * MCTSPlayer MCTS_TU::generateMeepleNode(MCTSNode * parent, TileMove * parentAction, const Tile * t, Game & g)
 {
 	int player = g.getNextPlayer();
-	apply(parentAction, g);
+	applyTile(parentAction, g);
 	MCTSMeepleNode * node;
 	{
 		MeepleMovesType && possible = getPossibleMeeples(player, parentAction, t, g);
@@ -359,9 +355,101 @@ MCTS_T
 typename MCTSPlayer MCTS_TU::MCTSChanceNode * MCTSPlayer MCTS_TU::generateChanceNode(MCTSNode * parent, MeepleMove * parentAction, Game & g)
 {
 	int player = g.getNextPlayer();
-	apply(parentAction, g);
+	applyMeeple(parentAction, g);
 	TileCountType const & tileCounts = g.getTileCounts();
 	MCTSChanceNode * node = new MCTSChanceNode((uchar)player, tileCounts, parent, parentAction);
 
 	return node;
+}
+
+MCTS_T
+void MCTSPlayer MCTS_TU::applyChance(int action, Game & g)
+{
+	g.simPartStepChance(g.getTileIndexByType(action));
+}
+
+MCTS_T
+void MCTSPlayer MCTS_TU::applyTile(TileMove * action, Game & g)
+{
+	g.simPartStepTile(*action);
+}
+
+MCTS_T
+void MCTSPlayer MCTS_TU::applyMeeple(MeepleMove * action, Game & g)
+{
+	g.simPartStepMeeple(*action);
+}
+
+MCTS_T
+void MCTSPlayer MCTS_TU::applyNode(MCTSNode * node, Game & g)
+{
+	switch (node->type)
+	{
+		case MCTSNode::TypeTile:
+			return applyChance(static_cast<MCTSTileNode *>(node)->parentAction, g);
+		case MCTSNode::TypeMeeple:
+			return applyTile(static_cast<MCTSMeepleNode *>(node)->parentAction, g);
+		case MCTSNode::TypeChance:
+			return applyMeeple(static_cast<MCTSChanceNode *>(node)->parentAction, g);
+	}
+}
+
+MCTS_T
+void MCTSPlayer MCTS_TU::unapplyChance(Game & g)
+{
+	g.simPartUndoChance();
+}
+
+MCTS_T
+void MCTSPlayer MCTS_TU::unapplyTile(Game & g)
+{
+	g.simPartUndoTile();
+}
+
+MCTS_T
+void MCTSPlayer MCTS_TU::unapplyMeeple(Game & g)
+{
+	g.simPartUndoMeeple();
+}
+
+MCTS_T
+void MCTSPlayer MCTS_TU::unapplyNode(MCTSPlayer::MCTSNode * node, Game & g)
+{
+	switch (node->type)
+	{
+		case MCTSNode::TypeTile:
+			unapplyChance(g);
+			break;
+		case MCTSNode::TypeMeeple:
+			unapplyTile(g);
+			break;
+		case MCTSNode::TypeChance:
+			unapplyMeeple(g);
+			break;
+	}
+}
+
+MCTS_T
+typename MCTSPlayer MCTS_TU::RewardListType MCTSPlayer MCTS_TU::utilities(const int * scores, const int playerCount)
+{
+	return MCTSPlayer_Helper<UseComplexUtility>::utility(scores, playerCount, utilityMap);
+}
+
+MCTS_T
+void MCTSPlayer MCTS_TU::newGame(int /*player*/, const Game * g)
+{
+	game = g;
+	simGame.clearPlayers();
+	for (uint i = 0; i < g->getPlayerCount(); ++i)
+		simGame.addPlayer(&RandomPlayer::instance);
+	simGame.newGame(g->getTileSets(), tileFactory, g->getMoveHistory());
+
+	if (UseComplexUtility)
+		utilityMap = Util::getUtilityMap(g);
+}
+
+MCTS_T
+const char * MCTSPlayer MCTS_TU::getTypeName()
+{
+	return typeName.toStdString().c_str();
 }

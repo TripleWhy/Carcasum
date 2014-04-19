@@ -126,7 +126,10 @@ public:
 private:
 	void scoreNode(Node * n, const int score);
 	void unscoreNode(Node * n, const int score);
+public:
 	void simEndGame();
+	void simUnEndGame();
+private:
 	inline void endGame();
 	inline void moveTile(Tile * tile, TileMove const & tileMove);
 	int calcUpperScoreBound(const QList<Tile *> & tiles);
