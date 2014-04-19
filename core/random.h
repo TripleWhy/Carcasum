@@ -92,7 +92,7 @@ public:
 		{
 			int * t = table;
 			table = 0;
-			delete t;
+			delete[] t;
 		}
 	}
 

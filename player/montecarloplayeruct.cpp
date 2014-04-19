@@ -15,21 +15,10 @@ void MonteCarloPlayerUCT::newGame(int /*player*/, const Game * g)
 	simGame->clearPlayers();
 	for (uint i = 0; i < playerCount; ++i)
 		simGame->addPlayer(&RandomPlayer::instance);
-	simGame->newGame(game->getTileSets(), tileFactory, g->getMoveHistory());
+	simGame->newGame(g->getTileSets(), tileFactory, g->getMoveHistory());
 
 	if (useComplexUtility)
-	{
-		utilityMap = utilityMaps[playerCount];
-		if (!utilityMap)
-		{
-			int const upperScoreBound = game->getUpperScoreBound();
-			int size, offset;
-//			utilityMap = Util::newUtilityComplexNormalizedTable(playerCount, upperScoreBound, size, offset);
-			auto m = Util::newUtilityComplexNormalizationTable(playerCount, upperScoreBound, size, offset);
-			utilityMap = UtilityMapType(m, size, offset);
-			utilityMaps[playerCount] = utilityMap;
-		}
-	}
+		utilityMap = Util::getUtilityMap(g);
 }
 
 void MonteCarloPlayerUCT::playerMoved(int /*player*/, const Tile * /*tile*/, const MoveHistoryEntry & /*move*/)

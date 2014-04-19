@@ -6,15 +6,21 @@
 #include "core/game.h"
 #include "core/random.h"
 #include "core/tile.h"
+#include <boost/mpl/if.hpp>
 
+template<bool UC>
 class MCTSPlayer : public Player
 {
+	constexpr static int Cp = 1;
+
 #ifndef TIMEOUT
 	static int const M = 4000;
 #endif
 
-public:
-	static int const Cp = 1;
+	typedef Util::OffsetArray<qreal> UtilityMapType;
+	typedef typename boost::mpl::if_c<UC, qreal, int>::type RewardType;
+//	typedef typename boost::mpl::if_c<UC, VarLengthArrayWrapper<qreal, MAX_PLAYERS>::type, Util::RewardType>::type RewardListType;
+	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
 
 private:
 	struct MCTSNode
@@ -25,7 +31,7 @@ private:
 		Type type;
 		uint notExpanded;
 		uint visitCount = 0;
-		int reward = 0;
+		RewardType reward = 0;
 
 		std::vector<MCTSNode *> children;
 		MCTSNode * parent;
@@ -52,8 +58,8 @@ private:
 				delete c;
 		}
 
-		inline std::vector<MCTSMeepleNode *> * castChildren() { return reinterpret_cast<std::vector<MCTSMeepleNode *> *>(&children); }
-		inline MCTSChanceNode * castParent() { return static_cast<MCTSChanceNode *>(parent); }
+		inline std::vector<MCTSMeepleNode *> * castChildren() { return reinterpret_cast<std::vector<MCTSMeepleNode *> *>(&(MCTSNode::children)); }
+		inline MCTSChanceNode * castParent() { return static_cast<MCTSChanceNode *>(MCTSNode::parent); }
 	};
 
 	struct MCTSMeepleNode : public MCTSNode
@@ -69,8 +75,8 @@ private:
 				delete c;
 		}
 
-		inline std::vector<MCTSChanceNode *> * castChildren() { return reinterpret_cast<std::vector<MCTSChanceNode *> *>(&children); }
-		inline MCTSTileNode * castParent() { return static_cast<MCTSTileNode *>(parent); }
+		inline std::vector<MCTSChanceNode *> * castChildren() { return reinterpret_cast<std::vector<MCTSChanceNode *> *>(&(MCTSNode::children)); }
+		inline MCTSTileNode * castParent() { return static_cast<MCTSTileNode *>(MCTSNode::parent); }
 	};
 
 	struct MCTSChanceNode : public MCTSNode
@@ -86,8 +92,8 @@ private:
 				delete c;
 		}
 
-		inline std::vector<MCTSTileNode *> * castChildren() { return reinterpret_cast<std::vector<MCTSTileNode *> *>(&children); }
-		inline MCTSMeepleNode * castParent() { return static_cast<MCTSMeepleNode *>(parent); }
+		inline std::vector<MCTSTileNode *> * castChildren() { return reinterpret_cast<std::vector<MCTSTileNode *> *>(&(MCTSNode::children)); }
+		inline MCTSMeepleNode * castParent() { return static_cast<MCTSMeepleNode *>(MCTSNode::parent); }
 	};
 
 private:
@@ -96,6 +102,7 @@ private:
 	jcz::TileFactory * tileFactory;
 	RandomTable r;
 	MeepleMove meepleMove;
+	UtilityMapType utilityMap;
 	static Util::Math const & math;
 
 #if MCTS_COUNT_EXPAND_HITS
@@ -123,12 +130,12 @@ public:
 	MCTSNode * expand(MCTSNode * v);
 	MCTSNode * bestChild(MCTSNode * v);
 	int bestChild0(MCTSNode * v);
-	RewardType defaultPolicy(MCTSNode * v);
-	void backup(MCTSNode * v, const RewardType & delta);
+	RewardListType defaultPolicy(MCTSNode * v);
+	void backup(MCTSNode * v, const RewardListType & delta);
 
 	void syncGame();
 
-	inline int & Q(MCTSNode * v) { return v->reward; }
+	inline RewardType & Q(MCTSNode * v) { return v->reward; }
 	inline uint & N(MCTSNode * v) { return v->visitCount; }
 
 private:
@@ -136,10 +143,7 @@ private:
 	MCTSMeepleNode * generateMeepleNode(MCTSNode * parent, TileMove * parentAction, const Tile * t, Game & g);
 	MCTSChanceNode * generateChanceNode(MCTSNode * parent, MeepleMove * parentAction, Game & g);
 
-	inline RewardType utilities(int const * scores, int const playerCount)
-	{
-		return Util::utilitySimpleMulti(scores, playerCount);
-	}
+	RewardListType utilities(int const * scores, int const playerCount);
 
 	inline MeepleMovesType getPossibleMeeples(int player, TileMove * parentAction, Tile const * t, Game & g)
 	{
@@ -151,5 +155,7 @@ private:
 		return possible;
 	}
 };
+
+#include "mctsplayer.tpp"
 
 #endif // MCTSPLAYER_H

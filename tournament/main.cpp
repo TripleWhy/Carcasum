@@ -13,8 +13,9 @@ struct Result
 {
 	QVarLengthArray<int, MAX_PLAYERS> scores;
 	QVarLengthArray<int, MAX_PLAYERS> utilities;
+	QVarLengthArray<quint64, MAX_PLAYERS> playouts;
 
-	Result(int size) : scores(size), utilities(size) {}
+	Result(int size) : scores(size), utilities(size), playouts(size) {}
 };
 
 void printResults(std::vector<Result> const & results, int const playerCount)
@@ -22,11 +23,13 @@ void printResults(std::vector<Result> const & results, int const playerCount)
 	QVarLengthArray<int, MAX_PLAYERS> wins(playerCount);
 	QVarLengthArray<int, MAX_PLAYERS> draws(playerCount);
 	QVarLengthArray<int, MAX_PLAYERS> scores(playerCount);
+	QVarLengthArray<quint64, MAX_PLAYERS> playouts(playerCount);
 	for (int i = 0; i < playerCount; ++i)
 	{
 		wins[i] = 0;
 		draws[i] = 0;
 		scores[i] = 0;
+		playouts[i] = 0;
 	}
 
 	for (Result const & r : results)
@@ -38,6 +41,7 @@ void printResults(std::vector<Result> const & results, int const playerCount)
 			else if (r.utilities[i] == 0)
 				++draws[i];
 			scores[i] += r.scores[i];
+			playouts[i] += r.playouts[i];
 		}
 	}
 
@@ -45,7 +49,8 @@ void printResults(std::vector<Result> const & results, int const playerCount)
 	{
 		qDebug() << "player" << i << "   wins:" << wins[i] << "/" << results.size() << "=" << (wins[i] / qreal(results.size()))
 		         <<"   draws:" << draws[i] << "/" << results.size() << "=" << (draws[i] / qreal(results.size()))
-		         << "   avg. score:" << (scores[i] / qreal(results.size()));
+		         << "   avg. score:" << (scores[i] / qreal(results.size()))
+		         << "\tavg. playouts:" << (qreal(playouts[i]) / qreal(results.size()));
 	}
 }
 
@@ -56,7 +61,6 @@ void printTimes(QVarLengthArray<quint64, MAX_PLAYERS> const & times, QVarLengthA
 		qreal s = qreal(quint64(steps[i]) * quint64(1000000));
 		Player * p = players[i];
 		qDebug() << "player" << i << "   playouts:" << p->playouts << "\tavg. thinking time:" << ((qreal)times[i] / s) << "ms   avg. overrun:" << ((qreal)diffs[i] / s) << "ms";
-		p->playouts = 0;
 	}
 }
 
@@ -103,13 +107,19 @@ int main(int argc, char *argv[])
 
 	int const N = 50;
 	std::vector<Player *> players;
+//	players.push_back(&RandomPlayer::instance);
+//	players.push_back(&RandomPlayer::instance);
+//	players.push_back(&RandomPlayer::instance);
+//	players.push_back(&RandomPlayer::instance);
+//	players.push_back(&RandomPlayer::instance);
 //	players.push_back(new MonteCarloPlayer(tileFactory, false));
 //	players.push_back(new MonteCarloPlayer(tileFactory, true));
-	players.push_back(new MonteCarloPlayer2(tileFactory, 1));
-	players.push_back(new MonteCarloPlayer2(tileFactory, 2));
+//	players.push_back(new MonteCarloPlayer2(tileFactory, 1));
+//	players.push_back(new MonteCarloPlayer2(tileFactory, 2));
 //	players.push_back(new MonteCarloPlayerUCT(tileFactory, false));
 //	players.push_back(new MonteCarloPlayerUCT(tileFactory, true));
-//	players.push_back(new MCTSPlayer(tileFactory));
+	players.push_back(new MCTSPlayer<false>(tileFactory));
+	players.push_back(new MCTSPlayer<true>(tileFactory));
 
 
 #ifdef TIMEOUT
@@ -175,12 +185,16 @@ int main(int argc, char *argv[])
 			{
 				result.scores[playerAt[i]] = scores[i];
 				result.utilities[playerAt[i]] = utilities[i];
+				result.playouts[i] = players[i]->playouts;
 			}
 
 			results.push_back(std::move(result));
 
 			printResults(results, playerCount);
 			printTimes(times, diffs, steps, players);
+
+			for (Player * p : players)
+				p->playouts = 0;
 			qDebug();
 		}
 	}

@@ -15,8 +15,6 @@
 #include <thread>
 #include <chrono>
 
-typedef QVarLengthArray<int, MAX_PLAYERS> RewardType;
-
 namespace Util
 {
 	inline bool isGUIThread()
@@ -247,6 +245,7 @@ namespace Util
 		return table;
 	}
 
+	typedef VarLengthArrayWrapper<int, MAX_PLAYERS>::type RewardType;
 	inline RewardType utilitySimpleMulti(int const * scores, int const playerCount)
 	{
 		RewardType reward(playerCount);
@@ -275,6 +274,43 @@ namespace Util
 			else
 				reward[i] = -1;
 		}
+		return reward;
+	}
+
+	inline RewardType utilityComplexMulti(int const * scores, int const playerCount)
+	{
+		RewardType reward(playerCount);
+
+		std::multimap<int, int> map;
+		for (int i = 0; i < playerCount; ++i)
+			map.insert(std::pair<int, int>(scores[i], i));
+
+		int u = 0;
+		int m = 0;
+		int lastScore = -1;
+		int index = 1;
+		// last player first
+		for (auto const & e : map)
+		{
+			if (e.first != lastScore)
+			{
+				int count = (int)map.count(e.first);
+				m = index * index;
+				for (int i = 1; i < count; ++i)
+					m += (index+i)*(index+i);
+				m /= count;
+			}
+
+			u += (reward[e.second] = m * e.first);
+			lastScore = e.first;
+			++index;
+		}
+
+		for (int i = 0; i < playerCount; ++i)
+		{
+			reward[i] = 2*reward[i] - u;
+		}
+
 		return reward;
 	}
 
@@ -332,6 +368,8 @@ namespace Util
 		}
 	#endif
 	};
+
+	OffsetArray<qreal> getUtilityMap(const Game * game);
 
 	class Math
 	{
