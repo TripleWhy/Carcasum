@@ -190,3 +190,15 @@ void MCTSPlayer<true>::newGame(int player, const Game * g)
 
 	utilityMap = Util::getUtilityMap(g);
 }
+
+template<>
+const char * MCTSPlayer<true>::getTypeName()
+{
+	return "MCTSPlayer<true>";
+}
+
+template<>
+const char * MCTSPlayer<false>::getTypeName()
+{
+	return "MCTSPlayer<false>";
+}

@@ -116,12 +116,6 @@ void MCTSPlayer MCTS_TU::endGame()
 }
 
 MCTS_T
-const char * MCTSPlayer MCTS_TU::getTypeName()
-{
-	return "MCTSPlayer";
-}
-
-MCTS_T
 typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::treePolicy(MCTSNode * v)
 {
 	while (!simGame.isFinished())

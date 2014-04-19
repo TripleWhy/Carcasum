@@ -38,7 +38,7 @@ public:
 	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	virtual void endGame();
-	virtual char const * getTypeName() { return "MonteCarloPlayer"; }
+	virtual char const * getTypeName() { return useComplexUtility ? "MonteCarloPlayer(complex)" : "MonteCarloPlayer(simple)"; }
 	
 private:
 	inline static int utilitySimple(int const * scores, int const playerCount, int const myIndex)
