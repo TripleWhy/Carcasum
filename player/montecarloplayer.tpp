@@ -2,7 +2,11 @@
 #include "randomplayer.h"
 #include <QElapsedTimer>
 
-void MonteCarloPlayer::newGame(int /*player*/, const Game * g)
+#define MC_T template<class UtilityProvider, class Playout>
+#define MC_TU <UtilityProvider, Playout>
+
+MC_T
+void MonteCarloPlayer MC_TU::newGame(int /*player*/, const Game * g)
 {
 	if (simGame == 0)
 		simGame = new Game(0);
@@ -13,12 +17,14 @@ void MonteCarloPlayer::newGame(int /*player*/, const Game * g)
 	simGame->newGame(game->getTileSets(), tileFactory, g->getMoveHistory());
 }
 
-void MonteCarloPlayer::playerMoved(int /*player*/, const Tile * /*tile*/, const MoveHistoryEntry & /*move*/)
+MC_T
+void MonteCarloPlayer MC_TU::playerMoved(int /*player*/, const Tile * /*tile*/, const MoveHistoryEntry & /*move*/)
 {
 	Util::syncGamesFast(*game, *simGame);
 }
 
-TileMove MonteCarloPlayer::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & possible)
+MC_T
+TileMove MonteCarloPlayer MC_TU::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & possible)
 {
 #ifdef TIMEOUT
 	QElapsedTimer timer;
@@ -45,6 +51,7 @@ TileMove MonteCarloPlayer::getTileMove(int player, const Tile * /*tile*/, const 
 		for (TileMove const & tileMove : possible)
 		{
 #if USE_RESET
+// This branch is out of date.
 			g.restartGame(history);
 			Q_ASSERT(game->equals(g));
 			g.step(move.tile, tileMove, player, &RandomPlayer::instance);
@@ -54,16 +61,19 @@ TileMove MonteCarloPlayer::getTileMove(int player, const Tile * /*tile*/, const 
 
 			utilities[moveIndex] += utility(g.getScores(), playerCount, player);
 #else
-			simGame->simStep(move.tile, tileMove, player, &RandomPlayer::instance);
-
-			int steps = 1;
-			for ( ; !simGame->isFinished(); ++steps)
-				simGame->simStep(&RandomPlayer::instance);
+//			simGame->simStep(move.tile, tileMove, player, &RandomPlayer::instance);
+			// Hm, this looks a bit ugly.
+			simGame->simPartStepChance(move.tile);
+			simGame->simPartStepTile(tileMove);
+			MeepleMove meepleMove;
+			if (simGame->getPlayerMeeples(player) > 0)
+				meepleMove = playoutPolicy.chooseMeepleMove(player, simGame->simTile, simGame->simEntry, simGame->getPossibleMeeplePlacements(simGame->simTile));
+			simGame->simPartStepMeeple(meepleMove);
+			int steps = 1 + playoutPolicy.playout(*simGame);
 			
 			utilities[moveIndex] += utility(simGame->getScores(), playerCount, player);
 			
-			for (int i = 0; i < steps; ++i)
-				simGame->undo();
+			playoutPolicy.undoPlayout(*simGame, steps);
 			Q_ASSERT(game->equals(*simGame));
 #endif
 			++moveIndex;
@@ -92,7 +102,8 @@ TileMove MonteCarloPlayer::getTileMove(int player, const Tile * /*tile*/, const 
 	return *bestMove;
 }
 
-MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const MeepleMovesType & possible)
+MC_T
+MeepleMove MonteCarloPlayer MC_TU::getMeepleMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const MeepleMovesType & possible)
 {
 #ifdef TIMEOUT
 	QElapsedTimer timer;
@@ -166,7 +177,8 @@ MeepleMove MonteCarloPlayer::getMeepleMove(int player, const Tile * /*tile*/, co
 	return *bestMove;
 }
 
-void MonteCarloPlayer::endGame()
+MC_T
+void MonteCarloPlayer MC_TU::endGame()
 {
 	delete simGame;
 	simGame = 0;

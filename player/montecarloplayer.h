@@ -2,10 +2,13 @@
 #define MONTECARLOPLAYER_H
 
 #include "static.h"
+#include "utilities.h"
+#include "playouts.h"
 #include "core/game.h"
 #include "core/player.h"
 #include "jcz/tilefactory.h"
 
+template<class UtilityProvider = Utilities::ComplexUtility, class Playout = Playouts::RandomPlayout>
 class MonteCarloPlayer : public Player
 {
 #ifndef TIMEOUT
@@ -16,53 +19,39 @@ class MonteCarloPlayer : public Player
  #endif
 #endif
 
+	typedef typename UtilityProvider::RewardType RewardType;
+	typedef typename UtilityProvider::RewardListType RewardListType;
+
 private:
 	Game const * game = 0;
 	Game * simGame = 0;
 	jcz::TileFactory * tileFactory;
-	bool useComplexUtility;
+
+	QString typeName;
+	STATICCONSTEXPR Playout playoutPolicy = Playout();
+	UtilityProvider utilityProvider = UtilityProvider();
 	
 public:
-	constexpr MonteCarloPlayer(jcz::TileFactory * tileFactory, bool useComplexUtility = true)
+	constexpr MonteCarloPlayer(jcz::TileFactory * tileFactory)
 	    : tileFactory(tileFactory),
-	      useComplexUtility(useComplexUtility)
+	      typeName(QString("MonteCarloPlayer<%1, %2>").arg(UtilityProvider::name).arg(Playout::name))
 	{
 	}
 
-//	~MonteCarloPlayer()
-//	{
-//		delete simGame;
-//	}
 	virtual void newGame(int player, Game const * g);
 	virtual void playerMoved(int player, Tile const * tile, MoveHistoryEntry const & move);
 	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	virtual void endGame();
-	virtual char const * getTypeName() { return useComplexUtility ? "MonteCarloPlayer(complex)" : "MonteCarloPlayer(simple)"; }
+	virtual QString getTypeName() { return typeName; }
 	
 private:
-	inline static int utilitySimple(int const * scores, int const playerCount, int const myIndex)
-	{
-		return Util::utilitySimple(scores, playerCount, myIndex);
-	}
-
-	inline static int utilityComplex(int const * scores, int const playerCount, int const myIndex)
-	{
-		return Util::utilityComplex(scores, playerCount, myIndex);
-	}
-
-	typedef int (*utilityFunctionType)(int const *, int const, int const);
-	constexpr utilityFunctionType utilityFunction()
-	{
-		return useComplexUtility ? &utilityComplex : &utilitySimple;
-	}
-
 	inline int utility(int const * scores, int const playerCount, int const myIndex)
 	{
-//		return utilityComplex(scores, playerCount, myIndex);
-		return useComplexUtility ? utilityComplex(scores, playerCount, myIndex) : utilitySimple(scores, playerCount, myIndex);
-//		return utilityFunction()(scores, playerCount, myIndex);
+		return utilityProvider.utility(scores, playerCount, myIndex);
 	}
 };
+
+#include "montecarloplayer.tpp"
 
 #endif // MONTECARLOPLAYER_H

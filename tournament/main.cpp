@@ -69,7 +69,17 @@ int main(int argc, char *argv[])
 	if (false)
 	{
 		QElapsedTimer t;
-		auto const & math = Util::mathInstance;
+		auto const & math = Util::Math::instance;
+
+		for (uint i = 0; i < LN_TABLE_SIZE; ++i)
+		{
+			qreal l1 = ::log(i);
+			qreal l2 = math.ln(i);
+			if (l1 != l2)
+			{
+				qDebug() << "i: " << i << l1 << l2;
+			}
+		}
 
 		for (int i = 0; i < 3; ++i)
 		{
@@ -113,25 +123,29 @@ int main(int argc, char *argv[])
 //	players.push_back(&RandomPlayer::instance);
 //	players.push_back(&RandomPlayer::instance);
 //	players.push_back(new MonteCarloPlayer(tileFactory, false));
-//	players.push_back(new MonteCarloPlayer(tileFactory, true));
-//	players.push_back(new MonteCarloPlayer2(tileFactory, 1));
+//	players.push_back(new MonteCarloPlayer<>(tileFactory));
+	players.push_back(new MonteCarloPlayer<Utilities::SimpleUtility>(tileFactory));
+	players.push_back(new MonteCarloPlayer<Utilities::HeydensUtility>(tileFactory));
+//	players.push_back(new MonteCarloPlayer2<>(tileFactory));
 //	players.push_back(new MonteCarloPlayer2(tileFactory, 2));
 //	players.push_back(new MonteCarloPlayerUCT(tileFactory, false));
-//	players.push_back(new MonteCarloPlayerUCT(tileFactory, true));
-//	players.push_back(new MCTSPlayer<false>(tileFactory));
-	players.push_back(new MCTSPlayer<true>(tileFactory));
-	players.push_back(new MCTSPlayer<true, Playouts::EarlyCutoff<10>>(tileFactory));
+//	players.push_back(new MonteCarloPlayerUCT<>(tileFactory));
+//	players.push_back(new MCTSPlayer<Utilities::SimpleUtility>(tileFactory));
+//	players.push_back(new MCTSPlayer<Utilities::SimpleUtilityF>(tileFactory));
+//	players.push_back(new MCTSPlayer<>(tileFactory));
+//	players.push_back(new MCTSPlayer<Utilities::ComplexUtility, Playouts::EarlyCutoff<10>>(tileFactory));
 
 
 #ifdef TIMEOUT
 	qDebug() << "TIMEOUT" << TIMEOUT;
 #endif
 	for (Player * p : players)
-		qDebug(p->getTypeName());
+		qDebug() << p->getTypeName();
 	std::vector<Result> results;
 	RandomNextTileProvider rntp;
 	Game game(&rntp);
 	int const playerCount = (int)players.size();
+	Utilities::SimpleUtility utility;
 
 	QElapsedTimer timer;
 	QVarLengthArray<quint64, MAX_PLAYERS> times(playerCount);
@@ -169,7 +183,11 @@ int main(int argc, char *argv[])
 				if (!game.getMoveHistory().back().move.tileMove.isNull())
 				{
 					times[playerAt[player]] += elapsed;
+#ifdef TIMEOUT
 					qint64 d = elapsed - qint64(1000000)*qint64(TIMEOUT);
+#else
+					qint64 d = elapsed;
+#endif
 					diffs[playerAt[player]] += d;
 					++steps[playerAt[player]];
 				}
@@ -181,7 +199,7 @@ int main(int argc, char *argv[])
 
 			Result result(playerCount);
 			auto scores = game.getScores();
-			auto utilities = Util::utilitySimpleMulti(scores, playerCount);
+			auto utilities = utility.utilities(scores, playerCount);
 			for (int i = 0; i < playerCount; ++i)
 			{
 				result.scores[playerAt[i]] = scores[i];

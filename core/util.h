@@ -70,31 +70,6 @@ namespace Util
 		return "";
 	}
 
-	inline int utilitySimple(int const * scores, int const playerCount, int const myIndex)
-	{
-		int best = std::numeric_limits<int>::min();
-		int winner = -1;
-		for (int i = 0; i < playerCount; ++i)
-		{
-			const int score = scores[i];
-			if (score > best)
-			{
-				best = score;
-				winner = i;
-			}
-			else if (score == best)
-			{
-				winner = -1;
-			}
-		}
-		if (winner == myIndex)
-			return 1;
-		else if (winner == -1 && best == scores[myIndex])
-			return 0;
-		else
-			return -1;
-	}
-
 	inline int utilityComplexOld(int const * scores, int const playerCount, int const myIndex)
 	{
 		std::multimap<int, int> map;
@@ -119,201 +94,6 @@ namespace Util
 		return u;
 	}
 
-	inline int utilityComplex(int const * scores, int const playerCount, int const myIndex)
-	{
-		std::multimap<int, int> map;
-		for (int i = 0; i < playerCount; ++i)
-			map.insert(std::pair<int, int>(scores[i], i));
-
-		int u = 0;
-		int m = 0;
-		int lastScore = -1;
-		int index = 1;
-		// last player first
-		for (auto const & e : map)
-		{
-			if (e.first != lastScore)
-			{
-				int count = (int)map.count(e.first);
-				m = index * index;
-				for (int i = 1; i < count; ++i)
-					m += (index+i)*(index+i);
-				m /= count;
-			}
-
-			if (e.second == myIndex)
-				u += m * e.first;
-			else
-				u -= m * e.first;
-			lastScore = e.first;
-			++index;
-		}
-
-		return u;
-	}
-
-	inline qreal utilityComplexF(int const * scores, int const playerCount, int const myIndex)
-	{
-		std::multimap<int, int> map;
-		for (int i = 0; i < playerCount; ++i)
-			map.insert(std::pair<int, int>(scores[i], i));
-
-		qreal u = 0;
-		qreal m = 0;
-		int lastScore = -1;
-		int index = 1;
-		// last player first
-		for (auto const & e : map)
-		{
-			if (e.first != lastScore)
-			{
-				int count = (int)map.count(e.first);
-				m = index * index;
-				for (int i = 1; i < count; ++i)
-					m += (index+i)*(index+i);
-				m /= count;
-			}
-
-			if (e.second == myIndex)
-				u += m * e.first;
-			else
-				u -= m * e.first;
-			lastScore = e.first;
-			++index;
-		}
-
-		return u;
-	}
-
-	inline int utilityUpperBound(int const playerCount, int const upperScoreBound)
-	{
-//		return playerCount * upperScoreBound;
-		int scores[MAX_PLAYERS] = { upperScoreBound };
-		return utilityComplex(scores, playerCount, 0);
-	}
-
-	inline int utilityLowerBound(int const playerCount, int const upperScoreBound)
-	{
-//		return -((upperScoreBound * (playerCount*playerCount + playerCount - 2)) / 2);	// == sum(upperScoreBound*i), for i from 2 to playerCount.
-		int scores[MAX_PLAYERS] = { };
-		for (int i = 1; i < playerCount; ++i)
-			scores[i] = upperScoreBound;
-		return utilityComplex(scores, playerCount, 0);
-	}
-
-	inline qreal utilityUpperBoundF(int const playerCount, int const upperScoreBound)
-	{
-		int scores[MAX_PLAYERS] = { 0 };
-		scores[0] = upperScoreBound;
-		return utilityComplexF(scores, playerCount, 0);
-	}
-
-	inline qreal utilityLowerBoundF(int const playerCount, int const upperScoreBound)
-	{
-		int scores[MAX_PLAYERS] = { upperScoreBound };
-		scores[0] = 0;
-		return utilityComplexF(scores, playerCount, 0);
-	}
-
-	inline qreal utilityComplexNormalized(int const * scores, int const playerCount, int const myIndex, int const upperScoreBound)
-	{
-		int const u = utilityComplex(scores, playerCount, myIndex);
-
-		int const uBound = utilityUpperBound(playerCount, upperScoreBound);
-		int const lBound = utilityLowerBound(playerCount, upperScoreBound);
-		int const range = uBound - lBound;
-		qreal const A = (range * playerCount) / 300.0;
-		qreal const B = (6 * playerCount) / qreal(range);
-
-		return tanh(((u+A) * B) + 1) / 2;
-	}
-
-	inline qreal * newUtilityComplexNormalizationTable(int const playerCount, int const upperScoreBound, int & size, int & offset)
-	{
-
-		int const uBound = utilityUpperBound(playerCount, upperScoreBound);
-		int const lBound = utilityLowerBound(playerCount, upperScoreBound);
-		int const range = uBound - lBound;
-		qreal const A = (range * playerCount) / 300.0;
-		qreal const B = (6 * playerCount) / qreal(range);
-
-		size = range + 1;
-		offset = -lBound;
-		qreal * table = new qreal[size];
-		for (int i = lBound; i <= uBound; ++i)
-			table[i - lBound] = tanh(((i+A) * B) + 1) / 2;
-		return table;
-	}
-
-	typedef VarLengthArrayWrapper<int, MAX_PLAYERS>::type RewardType;
-	inline RewardType utilitySimpleMulti(int const * scores, int const playerCount)
-	{
-		RewardType reward(playerCount);
-		int max = std::numeric_limits<int>::min();
-		int winner = -1;
-		for (int i = 0; i < playerCount; ++i)
-		{
-			int s = scores [i];
-			if (s > max)
-			{
-				max = s;
-				winner = i;
-			}
-			else if (s == max)
-			{
-				winner = -1;
-			}
-		}
-
-		for (int i = 0; i < playerCount; ++i)
-		{
-			if (i == winner)
-				reward[i] = 1;
-			else if (winner == -1 && scores[i] == max)
-				reward[i] = 0;
-			else
-				reward[i] = -1;
-		}
-		return reward;
-	}
-
-	inline RewardType utilityComplexMulti(int const * scores, int const playerCount)
-	{
-		RewardType reward(playerCount);
-
-		std::multimap<int, int> map;
-		for (int i = 0; i < playerCount; ++i)
-			map.insert(std::pair<int, int>(scores[i], i));
-
-		int u = 0;
-		int m = 0;
-		int lastScore = -1;
-		int index = 1;
-		// last player first
-		for (auto const & e : map)
-		{
-			if (e.first != lastScore)
-			{
-				int count = (int)map.count(e.first);
-				m = index * index;
-				for (int i = 1; i < count; ++i)
-					m += (index+i)*(index+i);
-				m /= count;
-			}
-
-			u += (reward[e.second] = m * e.first);
-			lastScore = e.first;
-			++index;
-		}
-
-		for (int i = 0; i < playerCount; ++i)
-		{
-			reward[i] = 2*reward[i] - u;
-		}
-
-		return reward;
-	}
-
 	void syncGamesFast(Game const & from, Game & to);
 	void syncGames(Game const & from, Game & to);
 
@@ -328,20 +108,20 @@ namespace Util
 	public:
 		constexpr OffsetArray(T * arr, int size, int offset) : arr(arr + offset), _size(size), _offset(offset) {}
 		constexpr OffsetArray() : arr(0), _size(0), _offset(0) {}
-		OffsetArray & operator=(const OffsetArray<T> &) = default;
+		OffsetArray & operator=(const OffsetArray<T> &) = delete;
 
-	#if OFFSET_ARRAY_ENABLE_CHECKS
+#if OFFSET_ARRAY_ENABLE_CHECKS
 		const T & operator[](int const & index) const
 		{
 			rangeCheck(index);
 			return arr[index];
 		}
-	#else
+#else
 		constexpr const T & operator[](int const & index) const
 		{
 			return arr[index];
 		}
-	#endif
+#endif
 		constexpr explicit operator bool() const
 		{
 			return arr;
@@ -351,20 +131,36 @@ namespace Util
 			return _size;
 		}
 
-	#if OFFSET_ARRAY_ENABLE_CHECKS
+		void clear()
+		{
+			delete[] (arr - _offset);
+			arr = 0;
+			_size = 0;
+			_offset = 0;
+		}
+
+		void setData(T * data, int size, int offset)
+		{
+			delete[] (arr - _offset);
+			arr = data + offset;
+			_size = size;
+			_offset = offset;
+		}
+
+#if OFFSET_ARRAY_ENABLE_CHECKS
 		void rangeCheck(int const & index) const
 		{
 			int chkIndex = index + _offset;
-	 #if defined(QT_NO_DEBUG) && !defined(QT_FORCE_ASSERTS)
+ #if defined(QT_NO_DEBUG) && !defined(QT_FORCE_ASSERTS)
 			if (chkIndex < 0 || chkIndex >= _size)
 			{
 				qFatal(QString("Index out of bounds: %1").arg(index).toStdString().c_str());
 				exit(1);
 			}
-	 #else
+ #else
 			Q_ASSERT(chkIndex >= 0);
 			Q_ASSERT(chkIndex < _size);
-	 #endif
+ #endif
 		}
 	#endif
 	};
@@ -373,6 +169,9 @@ namespace Util
 
 	class Math
 	{
+	public:
+		static Math const instance;
+
 	private:
 		static OffsetArray<qreal> lnTable;
 
@@ -384,7 +183,7 @@ namespace Util
 				qreal * table = new qreal[LN_TABLE_SIZE];
 				for (uint i = 0; i < LN_TABLE_SIZE; ++i)
 					table[i] = ::log(i);
-				lnTable = OffsetArray<qreal>(table, LN_TABLE_SIZE, 0);
+				lnTable.setData(table, LN_TABLE_SIZE, 0);
 			}
 		}
 
@@ -400,7 +199,6 @@ namespace Util
 			return lnTable[r];
 		}
 	};
-	Math const mathInstance;
 
 
 	// From http://qt-project.org/forums/viewthread/23849/#110462

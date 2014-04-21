@@ -459,6 +459,7 @@ void Game::simPartStepChance(int index)
 #endif
 
 	simEntry.tile = index;
+	simTile = tiles[index];
 }
 
 void Game::simPartStepTile(TileMove const & tileMove)
@@ -466,16 +467,16 @@ void Game::simPartStepTile(TileMove const & tileMove)
 #if CHECK_SIM_STATE
 	Q_ASSERT(simState++ == 1);
 #endif
+	Q_ASSERT(simTile != 0);
 
 	simEntry.move.tileMove = tileMove;
-	Tile * tile = tiles[simEntry.tile];
 	if (tileMove.isNull())
 	{
-		discardedTiles.push_back(tile);
+		discardedTiles.push_back(simTile);
 	}
 	else
 	{
-		moveTile(tile, tileMove);
+		moveTile(simTile, tileMove);
 	}
 
 	assertMeepleCount();
@@ -488,25 +489,28 @@ void Game::simPartStepMeeple(const MeepleMove & meepleMove)
 	simState = 0;
 #endif
 
-	Tile * tile = tiles[simEntry.tile];
-
+	Q_ASSERT(simTile != 0);
+	Q_ASSERT(meepleMove.isNull() || playerMeeples[nextPlayer] > 0);
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
-	auto && possible = getPossibleMeeplePlacements(tile);
+	auto && possible = getPossibleMeeplePlacements(simTile);
 	Q_ASSERT(std::find(possible.begin(), possible.end(), meepleMove) != possible.end());
 #endif
 
 	simEntry.move.meepleMove = meepleMove;
 	if (!simEntry.move.tileMove.isNull())
 	{
-		moveMeeple(tile, nextPlayer, meepleMove);
+		moveMeeple(simTile, nextPlayer, meepleMove);
 		returnMeeplesToPlayers();
 		setNextPlayer();
 	}
 
 	tiles.removeAt(simEntry.tile);
-	--tileCount[tile->tileType];
+	--tileCount[simTile->tileType];
 	moveHistory.push_back(std::move(simEntry));
 	simEntry = MoveHistoryEntry();
+#ifndef QT_NO_DEBUG
+	simTile = 0;
+#endif
 
 	assertMeepleCount();
 
@@ -612,6 +616,9 @@ void Game::simPartUndoChance()
 #endif
 
 	simEntry.tile = -1;
+#ifndef QT_NO_DEBUG
+	simTile = 0;
+#endif
 }
 
 void Game::simPartUndoTile()
@@ -674,6 +681,7 @@ void Game::simPartUndoMeeple()
 			meepleMove = MeepleMove();
 		}
 	}
+	simTile = tile;
 
 	tiles.insert(simEntry.tile, tile);
 	++tileCount[tile->tileType];

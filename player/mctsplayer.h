@@ -3,14 +3,13 @@
 
 #include "static.h"
 #include "playouts.h"
+#include "utilities.h"
 #include "core/player.h"
 #include "core/game.h"
 #include "core/random.h"
 #include "core/tile.h"
-#include <boost/mpl/if.hpp>
-#include <boost/mpl/bool.hpp>
 
-template<bool UseComplexUtility, class Playout = Playouts::RandomPlayout>
+template<class UtilityProvider = Utilities::ComplexUtilityNormalized, class Playout = Playouts::RandomPlayout>
 class MCTSPlayer : public Player
 {
 	constexpr static int Cp = 1;
@@ -19,10 +18,8 @@ class MCTSPlayer : public Player
 	static int const M = 4000;
 #endif
 
-	typedef Util::OffsetArray<qreal> UtilityMapType;
-	typedef typename boost::mpl::if_c<UseComplexUtility, qreal, int>::type RewardType;
-//	typedef typename boost::mpl::if_c<UC, VarLengthArrayWrapper<qreal, MAX_PLAYERS>::type, Util::RewardType>::type RewardListType;
-	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
+	typedef typename UtilityProvider::RewardType RewardType;
+	typedef typename UtilityProvider::RewardListType RewardListType;
 
 private:
 	struct MCTSNode
@@ -104,13 +101,11 @@ private:
 	jcz::TileFactory * tileFactory;
 	RandomTable r;
 	MeepleMove meepleMove;
-	UtilityMapType utilityMap;
 	static Util::Math const & math;
-	QString typeName;
 
-	//The first line is the one I want, but it produces a linker error when compiled in debug mode. WTF?
-//	static constexpr Playout playoutPolicy = Playout();
-	const Playout playoutPolicy = Playout();
+	QString typeName;
+	STATICCONSTEXPR Playout playoutPolicy = Playout();
+	UtilityProvider utilityProvider = UtilityProvider();
 
 
 #if MCTS_COUNT_EXPAND_HITS
@@ -136,7 +131,7 @@ public:
 	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	virtual void endGame();
-	virtual char const * getTypeName();
+	virtual QString getTypeName();
 
 	MCTSNode * treePolicy(MCTSNode * node);
 	MCTSNode * expand(MCTSNode * v);
@@ -166,15 +161,6 @@ private:
 			possible = g.getPossibleMeeplePlacements(t);
 		return possible;
 	}
-};
-
-template<bool UseComplexUtility>
-class MCTSPlayer_Helper
-{
-	typedef typename boost::mpl::if_c<UseComplexUtility, qreal, int>::type RewardType;
-	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
-public:
-	static RewardListType utility(const int * scores, const int playerCount, Util::OffsetArray<qreal> const & utilityMap);
 };
 
 #include "mctsplayer.tpp"

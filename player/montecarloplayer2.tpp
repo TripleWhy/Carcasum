@@ -2,9 +2,14 @@
 #include "randomplayer.h"
 #include <QElapsedTimer>
 
-RandomTable MonteCarloPlayer2::r = RandomTable();
+#define MC2_T template<class UtilityProvider, class Playout>
+#define MC2_TU <UtilityProvider, Playout>
 
-void MonteCarloPlayer2::newGame(int /*player*/, const Game * g)
+MC2_T
+RandomTable MonteCarloPlayer2 MC2_TU::r = RandomTable();
+
+MC2_T
+void MonteCarloPlayer2 MC2_TU::newGame(int /*player*/, const Game * g)
 {
 	if (simGame == 0)
 		simGame = new Game(0);
@@ -15,12 +20,14 @@ void MonteCarloPlayer2::newGame(int /*player*/, const Game * g)
 	simGame->newGame(game->getTileSets(), tileFactory, g->getMoveHistory());
 }
 
-void MonteCarloPlayer2::playerMoved(int /*player*/, const Tile * /*tile*/, const MoveHistoryEntry & /*move*/)
+MC2_T
+void MonteCarloPlayer2 MC2_TU::playerMoved(int /*player*/, const Tile * /*tile*/, const MoveHistoryEntry & /*move*/)
 {
 	Util::syncGamesFast(*game, *simGame);
 }
 
-TileMove MonteCarloPlayer2::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & possible)
+MC2_T
+TileMove MonteCarloPlayer2 MC2_TU::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & possible)
 {
 #ifdef TIMEOUT
 	QElapsedTimer timer;
@@ -37,8 +44,8 @@ TileMove MonteCarloPlayer2::getTileMove(int player, const Tile * /*tile*/, const
 	auto rewards = VarLengthArrayWrapper<VarLengthArrayWrapper<int, 16>::type, 128>::type(possibleSize);
 	auto playoutCount = VarLengthArrayWrapper<VarLengthArrayWrapper<int, 16>::type, 128>::type(possibleSize);
 	{
-		Tile * simTile = simGame->getTiles()[move.tile];
 		simGame->simPartStepChance(move.tile);
+		Tile * simTile = simGame->simTile;
 		for (int i = 0; i < possibleSize; ++i)
 		{
 			TileMove const & tm = possible[i];
@@ -118,32 +125,27 @@ TileMove MonteCarloPlayer2::getTileMove(int player, const Tile * /*tile*/, const
 	return *bestMove;
 }
 
-MeepleMove MonteCarloPlayer2::getMeepleMove(int /*player*/, const Tile * /*tile*/, const MoveHistoryEntry & /*move*/, const MeepleMovesType & /*possible*/)
+MC2_T
+MeepleMove MonteCarloPlayer2 MC2_TU::getMeepleMove(int /*player*/, const Tile * /*tile*/, const MoveHistoryEntry & /*move*/, const MeepleMovesType & /*possible*/)
 {
 	return meepleMove;
 }
 
-void MonteCarloPlayer2::endGame()
+MC2_T
+void MonteCarloPlayer2 MC2_TU::endGame()
 {
 	delete simGame;
 	simGame = 0;
 }
 
-int MonteCarloPlayer2::playout()
+MC2_T
+int MonteCarloPlayer2 MC2_TU::playout()
 {
-	int steps = 0;
-	if (!simGame->isFinished())
-	{
-		do
-		{
-			++steps;
-		} while (simGame->simStep(&RandomPlayer::instance));
-	}
-	return steps;
+	return playoutPolicy.playout(*simGame);
 }
 
-void MonteCarloPlayer2::unplayout(int steps)
+MC2_T
+void MonteCarloPlayer2 MC2_TU::unplayout(int steps)
 {
-	for (; steps > 0; --steps)
-		simGame->undo();
+	playoutPolicy.undoPlayout(*simGame, steps);
 }

@@ -79,13 +79,14 @@ SOURCES += core/tile.cpp \
     jcz/tilefactory.cpp \
     jcz/location.cpp \
     jcz/expansion.cpp \
-    player/montecarloplayer.cpp \
+    player/montecarloplayer.tpp \
     core/random.cpp \
     core/nexttileprovider.cpp \
-    player/montecarloplayer2.cpp \
-    player/montecarloplayeruct.cpp \
+    player/montecarloplayer2.tpp \
+    player/montecarloplayeruct.tpp \ #TODO where?
     player/mctsplayer.cpp \
-    player/playouts.cpp
+    player/playouts.cpp \
+    player/utilities.cpp
 
 HEADERS += \
 	core/tile.h \
@@ -106,7 +107,8 @@ HEADERS += \
     player/montecarloplayer2.h \
     player/montecarloplayeruct.h \
     player/mctsplayer.tpp \
-    player/playouts.h
+    player/playouts.h \
+    player/utilities.h
 
 RESOURCES += \
 	jcz/jcz.qrc
@@ -117,5 +119,6 @@ DEFINES += APP_REVISION=$$REVISION
 CONFIG += c++11
 QMAKE_CXXFLAGS_WARN_ON += -Wextra -Werror=switch -Werror=return-type -Werror=delete-non-virtual-dtor -Wconversion
 
+#DEFINES += QT_FORCE_ASSERTS
 #QMAKE_CXXFLAGS_RELEASE += -g
 #QMAKE_CFLAGS_RELEASE += -g

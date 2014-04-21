@@ -2,10 +2,13 @@
 #define MONTECARLOPLAYER2_H
 
 #include "static.h"
+#include "playouts.h"
+#include "utilities.h"
 #include "core/game.h"
 #include "core/player.h"
 #include "jcz/tilefactory.h"
 
+template<class UtilityProvider = Utilities::ComplexUtility, class Playout = Playouts::RandomPlayout>
 class MonteCarloPlayer2 : public Player
 {
 #ifndef TIMEOUT
@@ -20,14 +23,21 @@ private:
 	Game const * game = 0;
 	Game * simGame = 0;
 	jcz::TileFactory * tileFactory;
-	int useComplexUtility;
 	MeepleMove meepleMove;
 	static RandomTable r;
 
+	QString typeName;
+	STATICCONSTEXPR Playout playoutPolicy = Playout();
+	UtilityProvider utilityProvider = UtilityProvider();
+
+//public:
+//	int min = std::numeric_limits<int>::max();
+//	int max = std::numeric_limits<int>::min();
+
 public:
-	constexpr MonteCarloPlayer2(jcz::TileFactory * tileFactory, int useComplexUtility = 1)
+	constexpr MonteCarloPlayer2(jcz::TileFactory * tileFactory)
 	    : tileFactory(tileFactory),
-	      useComplexUtility(useComplexUtility)
+	      typeName(QString("MonteCarloPlayer2<%1, %2>").arg(UtilityProvider::name).arg(Playout::name))
 	{
 	}
 
@@ -36,7 +46,7 @@ public:
 	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	virtual void endGame();
-	virtual char const * getTypeName() { return useComplexUtility ? "MonteCarloPlayer2(complex)" : "MonteCarloPlayer2(simple)"; }
+	virtual QString getTypeName() { return typeName; }
 
 private:
 	int playout();
@@ -44,18 +54,7 @@ private:
 
 	inline int utility(int const * scores, int const playerCount, int const myIndex)
 	{
-//		return useComplexUtility ? utilityComplex(scores, playerCount, myIndex) : utilitySimple(scores, playerCount, myIndex);
-		switch (useComplexUtility)
-		{
-			case 0:
-				return Util::utilitySimple(scores, playerCount, myIndex);
-			case 1:
-				return Util::utilityComplex(scores, playerCount, myIndex);
-			case 2:
-				return Util::utilityComplexOld(scores, playerCount, myIndex);
-			default:
-				return 0;
-		}
+		return utilityProvider.utility(scores, playerCount, myIndex);
 	}
 
 	inline int chooseTileMove(TileMovesType const & possible)
@@ -68,5 +67,7 @@ private:
 		return r.nextInt(possible.size());
 	}
 };
+
+#include "montecarloplayer2.tpp"
 
 #endif // MONTECARLOPLAYER2_H

@@ -2,11 +2,11 @@
 #include "randomplayer.h"
 #include <QElapsedTimer>
 
-#define MCTS_T template<bool UseComplexUtility, class Playout>
-#define MCTS_TU <UseComplexUtility, Playout>
+#define MCTS_T template<class UtilityProvider, class Playout>
+#define MCTS_TU <UtilityProvider, Playout>
 
 MCTS_T
-Util::Math const & MCTSPlayer MCTS_TU::math = Util::mathInstance;
+Util::Math const & MCTSPlayer MCTS_TU::math = Util::Math::instance;
 
 MCTS_T
 MCTSPlayer MCTS_TU::MCTSNode::MCTSNode(uchar player, Type type, int size, MCTSNode * parent)
@@ -52,7 +52,7 @@ MCTS_T
 MCTSPlayer MCTS_TU::MCTSPlayer(jcz::TileFactory * tileFactory)
     : tileFactory(tileFactory)
 {
-	typeName = QString("MCTSPlayer<%1, %2>").arg(UseComplexUtility ? "true" : "false").arg(Playout::name);
+	typeName = QString("MCTSPlayer<%1, %2>").arg(UtilityProvider::name).arg(Playout::name);
 }
 
 MCTS_T
@@ -217,7 +217,7 @@ typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::bestChild(MCTSNode *
 		{
 			if (vPrime == 0)
 				continue;
-			qreal val = (Q(vPrime) / qreal(N(vPrime))) + Cp * (MCTSPlayer MCTS_TU::math).sqrt( math.ln( N(v) ) / N(vPrime) );
+			qreal val = (qreal(Q(vPrime)) / qreal(N(vPrime))) + Cp * (MCTSPlayer MCTS_TU::math).sqrt( math.ln( N(v) ) / N(vPrime) );
 			if (val > max)
 			{
 				max = val;
@@ -226,6 +226,17 @@ typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::bestChild(MCTSNode *
 		}
 	}
 	Q_ASSERT(best != 0);
+	if ( Q_UNLIKELY(best == 0) )	//This should not happen. Used this for debugging, lets just keep it in case something goes wrong.
+	{
+		best = v->children[0];
+		int level = 0;
+		for (MCTSNode * n = v; n->parent != 0; n = n->parent)
+			++level;
+		qWarning() << getTypeName() << "::bestChild: best == 0";
+		qWarning() << "\tlevel:" << level << "  children:" << v->children.size() << "  N:" << N(v);
+		for (auto * vPrime : v->children)
+			qWarning() << "\tchild: " << vPrime << "  Q:" << Q(vPrime) << "  N:" << N(vPrime) << "  value:" << ((qreal(Q(vPrime)) / qreal(N(vPrime))) + Cp * (MCTSPlayer MCTS_TU::math).sqrt( math.ln( N(v) ) / N(vPrime) ));
+	}
 	return best;
 }
 
@@ -256,7 +267,7 @@ typename MCTSPlayer MCTS_TU::RewardListType MCTSPlayer MCTS_TU::defaultPolicy(MC
 	{
 		case MCTSNode::TypeTile:
 		{
-			Tile const * tile = simGame.getTiles()[simGame.simEntry.tile];
+			Tile const * tile = simGame.simTile;
 			TileMove tileMove;
 			TileMovesType && possibleTiles = simGame.getPossibleTilePlacements(tile);
 			if (possibleTiles.size())
@@ -432,24 +443,22 @@ void MCTSPlayer MCTS_TU::unapplyNode(MCTSPlayer::MCTSNode * node, Game & g)
 MCTS_T
 typename MCTSPlayer MCTS_TU::RewardListType MCTSPlayer MCTS_TU::utilities(const int * scores, const int playerCount)
 {
-	return MCTSPlayer_Helper<UseComplexUtility>::utility(scores, playerCount, utilityMap);
+	return utilityProvider.utilities(scores, playerCount);
 }
 
 MCTS_T
-void MCTSPlayer MCTS_TU::newGame(int /*player*/, const Game * g)
+void MCTSPlayer MCTS_TU::newGame(int player, Game const * g)
 {
 	game = g;
 	simGame.clearPlayers();
 	for (uint i = 0; i < g->getPlayerCount(); ++i)
 		simGame.addPlayer(&RandomPlayer::instance);
 	simGame.newGame(g->getTileSets(), tileFactory, g->getMoveHistory());
-
-	if (UseComplexUtility)
-		utilityMap = Util::getUtilityMap(g);
+	utilityProvider.newGame(player, g);
 }
 
 MCTS_T
-const char * MCTSPlayer MCTS_TU::getTypeName()
+QString MCTSPlayer<UtilityProvider, Playout>::getTypeName()
 {
-	return typeName.toStdString().c_str();
+	return typeName;
 }

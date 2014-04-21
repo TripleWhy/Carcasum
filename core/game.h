@@ -85,6 +85,7 @@ private:
 
 public:
 	MoveHistoryEntry simEntry;
+	Tile * simTile = 0;
 
 public:
 	Game(NextTileProvider * ntp);
@@ -164,6 +165,13 @@ public:
 				possibleMeeples.push_back(MeepleMove(i));
 		Q_ASSERT_X(possibleMeeples.size() <= NODE_ARRAY_LENGTH, "Game::step()", "possibleMeeples initial size too low");
 		return possibleMeeples;
+	}
+	inline MeepleMovesType getPossibleMeeplePlacements(int player, Tile const * tile) const
+	{
+		if (getPlayerMeeples(player) > 0)
+			return getPossibleMeeplePlacements(tile);
+		else
+			return MeepleMovesType(1);
 	}
 
 	inline int getTileIndexByType(int tileType) const

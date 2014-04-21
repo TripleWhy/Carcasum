@@ -2,6 +2,7 @@
 #include "game.h"
 
 Util::OffsetArray<qreal> Util::Math::lnTable = OffsetArray<qreal>();
+Util::Math const Util::Math::instance = Util::Math();
 
 void Util::syncGamesFast(const Game & from, Game & to)
 {
@@ -33,29 +34,3 @@ void Util::syncGames(const Game & from, Game & to)
 	syncGamesFast(from, to);
 }
 
-
-Util::OffsetArray<qreal> Util::getUtilityMap(Game const * game)
-{
-	static OffsetArray<qreal> utilityMaps[MAX_PLAYERS];
-	static int upperScoreBound = 0;
-
-	const int playerCount = game->getPlayerCount();
-	int const usb = game->getUpperScoreBound();
-	if (usb != upperScoreBound)
-	{
-		//TODO Memory never gets deleted.
-		for (int i = 0; i < MAX_PLAYERS; ++i)
-			utilityMaps[i] = OffsetArray<qreal>();
-		upperScoreBound = usb;
-	}
-
-
-	OffsetArray<qreal> & utilityMap = utilityMaps[playerCount];
-	if (!utilityMap)
-	{
-		int size, offset;
-		auto m = Util::newUtilityComplexNormalizationTable(playerCount, usb, size, offset);
-		utilityMap = OffsetArray<qreal>(m, size, offset);
-	}
-	return utilityMap;
-}
