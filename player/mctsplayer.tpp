@@ -2,8 +2,8 @@
 #include "randomplayer.h"
 #include <QElapsedTimer>
 
-#define MCTS_T template<class UtilityProvider, class Playout>
-#define MCTS_TU <UtilityProvider, Playout>
+#define MCTS_T template<class UtilityProvider, class Playout, int Cp>
+#define MCTS_TU <UtilityProvider, Playout, Cp>
 
 MCTS_T
 Util::Math const & MCTSPlayer MCTS_TU::math = Util::Math::instance;
@@ -52,7 +52,7 @@ MCTS_T
 MCTSPlayer MCTS_TU::MCTSPlayer(jcz::TileFactory * tileFactory)
     : tileFactory(tileFactory)
 {
-	typeName = QString("MCTSPlayer<%1, %2>").arg(UtilityProvider::name).arg(Playout::name);
+	typeName = QString("MCTSPlayer<%1, %2, %3>").arg(UtilityProvider::name).arg(Playout::name).arg(Cp);
 }
 
 MCTS_T
@@ -458,7 +458,7 @@ void MCTSPlayer MCTS_TU::newGame(int player, Game const * g)
 }
 
 MCTS_T
-QString MCTSPlayer<UtilityProvider, Playout>::getTypeName()
+QString MCTSPlayer MCTS_TU::getTypeName()
 {
 	return typeName;
 }

@@ -9,11 +9,9 @@
 #include "core/random.h"
 #include "core/tile.h"
 
-template<class UtilityProvider = Utilities::ComplexUtilityNormalized, class Playout = Playouts::RandomPlayout>
+template<class UtilityProvider = Utilities::ComplexUtilityNormalized, class Playout = Playouts::RandomPlayout, int Cp = 1>
 class MCTSPlayer : public Player
 {
-	constexpr static int Cp = 1;
-
 #ifndef TIMEOUT
 	static int const M = 4000;
 #endif

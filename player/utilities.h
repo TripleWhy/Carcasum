@@ -317,7 +317,7 @@ public:
 class ComplexUtilityNormalized
 {
 public:
-	constexpr static char const * name = "ComplexUtility";
+	constexpr static char const * name = "ComplexUtilityNormalized";
 	typedef qreal RewardType;
 	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
 
