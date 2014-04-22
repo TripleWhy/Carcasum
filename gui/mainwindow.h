@@ -4,8 +4,7 @@
 #include "core/game.h"
 #include "core/player.h"
 #include "boardgraphicsscene.h"
-
-#include <QMainWindow>
+#include "guiIncludes.h"
 
 namespace Ui {
 class MainWindow;
@@ -13,7 +12,6 @@ class MainWindow;
 
 class PlayerInfoView;
 
-#include <QTimer>
 class MainWindow : public QMainWindow, public Player
 {
 	Q_OBJECT

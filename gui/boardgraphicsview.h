@@ -1,7 +1,7 @@
 #ifndef BOARDGRAPHICSVIEW_H
 #define BOARDGRAPHICSVIEW_H
 
-#include <QGraphicsView>
+#include "guiIncludes.h"
 
 class BoardGraphicsView : public QGraphicsView
 {

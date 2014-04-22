@@ -31,10 +31,10 @@ MainWindow::MainWindow(QWidget *parent) :
 	readSettings();
 
 	Player * p1 = &RandomPlayer::instance;
-	Player * p2 = new MonteCarloPlayer(&tileFactory, true);
-	Player * p4 = new MonteCarloPlayer(&tileFactory, false);
-	Player * p5 = new MonteCarloPlayer2(&tileFactory, true);
-	Player * p3 = new MCTSPlayer(&tileFactory);
+	Player * p2 = new MonteCarloPlayer<>(&tileFactory);
+	Player * p4 = new MonteCarloPlayer<Utilities::SimpleUtility>(&tileFactory);
+	Player * p5 = new MonteCarloPlayer2<>(&tileFactory);
+	Player * p3 = new MCTSPlayer<>(&tileFactory);
 
 	game->addWatchingPlayer(this);
 	
@@ -109,7 +109,7 @@ void MainWindow::newGame(int player, const Game * game)
 	auto const & players = game->getPlayers();
 	for (size_t i = 0; i < players.size(); ++i)
 	{
-		settings.setArrayIndex(i);
+		settings.setArrayIndex((int)i);
 		settings.setValue("type", players[i]->getTypeName());
 	}
 	settings.endArray();
@@ -138,7 +138,7 @@ void MainWindow::playerMoved(int player, const Tile * tile, const MoveHistoryEnt
 	settings.beginWriteArray("moves");
 	for (size_t i = moveSize; i < history.size(); ++i)
 	{
-		settings.setArrayIndex(i);
+		settings.setArrayIndex((int)i);
 		MoveHistoryEntry const & m = history[i];
 		settings.setValue("tile", m.tile);
 		settings.setValue("x", m.move.tileMove.x);
@@ -219,7 +219,7 @@ void MainWindow::readSettings()
 		std::default_random_engine generator(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count());
 		for (int i = 0; i < 5000; ++i)
 			distribution(generator);
-		for (int i = 0, end = distribution(generator); i < end; ++i)
+		for (quint64 i = 0, end = distribution(generator); i < end; ++i)
 			distribution(generator);
 		for (uint i = 0; i <= sizeof(id) * 8; ++i)
 			id = (id << 8) ^ distribution(generator);

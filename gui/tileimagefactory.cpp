@@ -30,7 +30,7 @@ const QPixmap TileImageFactory::getImage(Tile::TileSet set, TileTypeType localTy
 {
 	QList<QPixmap> & imgList = images[set];
 	while (imgList.size() - 1 < localType)
-		imgList.append(loadImage(set, imgList.size()));
+		imgList.append(loadImage(set, (TileTypeType)imgList.size()));
 
 	return imgList[localType];
 }
@@ -96,9 +96,9 @@ QPixmap TileImageFactory::generateMeepleStanding(int size, QColor color)
 	int w = size;
 	int h = size;
 	if (r < 1.0)
-		w = r * h;
+		w = (int)round(r * h);
 	else
-		h = w / r;
+		h = (int)round(w / r);
 	
 	QPixmap pixmap(w, h);
 	pixmap.fill(Qt::transparent);

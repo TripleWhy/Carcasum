@@ -546,8 +546,8 @@ void BoardGraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent)
 
 void BoardGraphicsScene::indexAt(const QPointF & scenePos, uint & x, uint & y)
 {
-	x = (scenePos.x() + BOARD_TILE_SIZE / 2) / BOARD_TILE_SIZE;
-	y = (scenePos.y() + BOARD_TILE_SIZE / 2) / BOARD_TILE_SIZE;
+	x = ((int)scenePos.x() + BOARD_TILE_SIZE / 2) / BOARD_TILE_SIZE;
+	y = ((int)scenePos.y() + BOARD_TILE_SIZE / 2) / BOARD_TILE_SIZE;
 }
 
 QGraphicsItemGroup * BoardGraphicsScene::meepleAt(const QPointF & scenePos)

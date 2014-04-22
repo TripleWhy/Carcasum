@@ -2,9 +2,7 @@
 #define REMAININGTILEVIEW_H
 
 #include "tileimagefactory.h"
-
-#include <QWidget>
-#include <QGraphicsColorizeEffect>
+#include "guiIncludes.h"
 
 namespace Ui {
 class RemainingTileView;

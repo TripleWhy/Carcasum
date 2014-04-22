@@ -36,7 +36,7 @@ void RemainingTilesView::setUp(const Game * g, TileImageFactory * imgFactory)
 	Tile::TileSets handled;
 	std::map<Tile::TileSet, QGridLayout *> map;
 	TileCountType const & tileCounts = g->getTileCounts();
-	for (int i = 0; i < tileCounts.size(); ++i)
+	for (TileTypeType i = 0, s = (TileTypeType)tileCounts.size(); i < s; ++i)
 	{
 		Tile::TileSet set = Util::getSet(i);
 		if (tileCounts[i] > 0 && sets.testFlag(set) && !handled.testFlag(set))
@@ -50,7 +50,7 @@ void RemainingTilesView::setUp(const Game * g, TileImageFactory * imgFactory)
 			map[set] = layout;
 		}
 	}
-	for (int i = 0; i < tileCounts.size(); ++i)
+	for (TileTypeType i = 0, s = (TileTypeType)tileCounts.size(); i < s; ++i)
 	{
 		views.append(0);
 		Tile::TileSet set = Util::getSet(i);

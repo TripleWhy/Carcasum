@@ -3,9 +3,7 @@
 
 #include "static.h"
 #include "tileimagefactory.h"
-
-#include <QWidget>
-#include <QLabel>
+#include "guiIncludes.h"
 
 namespace Ui {
 class PlayerInfoView;

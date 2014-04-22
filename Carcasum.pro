@@ -53,7 +53,8 @@ core {
 		gui/boardgraphicsscene.h \
 		gui/playerinfoview.h \
 		gui/remainingtilesview.h \
-		gui/remainingtileview.h
+		gui/remainingtileview.h \
+		gui/guiIncludes.h
 
 	FORMS    += gui/mainwindow.ui \
 		gui/playerinfoview.ui \

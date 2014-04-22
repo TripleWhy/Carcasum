@@ -6,12 +6,7 @@
 #include "core/player.h"
 #include "jcz/tilefactory.h"
 #include "tileimagefactory.h"
-
-#include <QWidget>
-#include <QGraphicsScene>
-#include <QSet>
-#include <QGraphicsSvgItem>
-
+#include "guiIncludes.h"
 #include <atomic>
 #include <mutex>
 

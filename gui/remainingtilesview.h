@@ -5,9 +5,7 @@
 #include "core/tile.h"
 #include "core/nexttileprovider.h"
 #include "remainingtileview.h"
-#include <QWidget>
-#include <QGridLayout>
-#include <QMouseEvent>
+#include "guiIncludes.h"
 #include <map>
 
 namespace Ui {
