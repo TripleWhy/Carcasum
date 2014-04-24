@@ -124,8 +124,8 @@ int main(int argc, char *argv[])
 	if (true)
 	{
 		Player * p1 = &RandomPlayer::instance;
-//		auto * p2 = new MonteCarloPlayer(tileFactory, false);
-		auto * p2 = new MonteCarloPlayer2(tileFactory, true);
+//		auto * p2 = new MonteCarloPlayer<>(tileFactory);
+		auto * p2 = new MonteCarloPlayer2<>(tileFactory);
 
 		game->addPlayer(p1);
 		game->addPlayer(p2);
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 	if (true)
 	{
 		Player * p1 = &RandomPlayer::instance;
-		MCTSPlayer * p2 = new MCTSPlayer(tileFactory);
+		auto * p2 = new MCTSPlayer<>(tileFactory);
 
 		game->addPlayer(p1);
 		game->addPlayer(p2);
