@@ -20,6 +20,6 @@ Makefile
 *-build-*
 
 Thumbs.db
-gui/img/classic/*
-jcz/resources/plugins/classic/tiles/*/*.jpg
-jcz/resources/plugins/rgg_siege/tiles/*/*.jpg
+Carcasum/gui/img/classic/*
+Carcasum/jcz/resources/plugins/classic/tiles/*/*.jpg
+Carcasum/jcz/resources/plugins/rgg_siege/tiles/*/*.jpg
