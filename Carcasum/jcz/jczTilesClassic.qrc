@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/tile/BaseGame">
+    <qresource prefix="/tiles/BA">
         <file alias="C">resources/plugins/classic/tiles/BA/C.jpg</file>
         <file alias="Cc.1">resources/plugins/classic/tiles/BA/Cc.1.jpg</file>
         <file alias="CC.2">resources/plugins/classic/tiles/BA/CC.2.jpg</file>

@@ -3,10 +3,15 @@
 
 #include <QtSvg/QSvgRenderer>
 #include <QPainter>
+#include <QDir>
+#include <QBuffer>
+#include <quazip/quazip.h>
+#include <quazip/quazipfile.h>
 
 TileImageFactory::TileImageFactory(jcz::TileFactory * tileFactory)
 	: tileFactory(tileFactory)
 {
+	zipData = getPluginData();
 }
 
 TileImageFactory::~TileImageFactory()
@@ -149,11 +154,78 @@ QPixmap TileImageFactory::loadImage(Tile::TileSet tileSet, TileTypeType localTyp
 	switch (tileSet)
 	{
 		case Tile::BaseGame:
-			prefix = "BaseGame";
+			prefix = "BA";
 			break;
 	}
 
-	QPixmap img(QString(":/tile/%1/%2").arg(prefix).arg(tileFactory->getTileIdentifier(tileSet, localType)));
+	QString path = QString("tiles/%1/%2").arg(prefix).arg(tileFactory->getTileIdentifier(tileSet, localType));
+
+	QPixmap img = loadPluginImage(QString("%1.jpg").arg(path));
+	if (img.isNull())
+		img.load(QString(":/%1").arg(path));
 	Q_ASSERT(!img.isNull());
 	return img.scaled(BOARD_TILE_SIZE, BOARD_TILE_SIZE, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+}
+
+QByteArray TileImageFactory::getPluginData()
+{
+	QDir dir = QDir(QCoreApplication::applicationDirPath());
+	QFileInfo fi(dir, QString("JCloisterZone-2.6.zip"));
+	QByteArray data;
+	QByteArray pluginData;
+	if (fi.exists())
+	{
+		QFile file(fi.absoluteFilePath());
+		file.open(QIODevice::ReadOnly);
+		data = file.readAll();
+		file.close();
+	}
+	else
+	{
+		return QByteArray();
+	}
+
+	QBuffer buffer(&data);
+	QuaZip qz(&buffer);
+	qz.open(QuaZip::mdUnzip);
+	bool found = false;
+	while (qz.goToNextFile())
+	{
+		QString name = qz.getCurrentFileName();
+		if (name.endsWith("plugins/classic.jar"))
+		{
+			found = true;
+			break;
+		}
+	}
+	if (found)
+	{
+		QuaZipFile zip(&qz);
+		zip.open(QIODevice::ReadOnly);
+		pluginData = zip.readAll();
+		zip.close();
+	}
+	qz.close();
+
+	return pluginData;
+}
+
+QPixmap TileImageFactory::loadPluginImage(QString const & path)
+{
+	QPixmap px;
+	if (zipData.isNull())
+		return px;
+
+	QBuffer buffer(&zipData);
+	QuaZip qz(&buffer);
+	qz.open(QuaZip::mdUnzip);
+	QuaZipFile file(&qz);
+	if (qz.setCurrentFile(path))
+	{
+		file.open(QIODevice::ReadOnly);
+		px.loadFromData(file.readAll());
+		file.close();
+	}
+	qz.close();
+	return px;
 }

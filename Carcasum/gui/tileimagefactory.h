@@ -15,6 +15,7 @@ private:
 	QHash<Tile::TileSet, QList<QPixmap>> images;
 
 	QHash<jcz::Expansion, QList<jcz::XmlParser::XMLTile>> xmlTiles;
+	QByteArray zipData;
 
 public:
 	TileImageFactory(jcz::TileFactory * tileFactory);
@@ -34,6 +35,8 @@ public:
 
 private:
 	QPixmap loadImage(Tile::TileSet tileSet, TileTypeType localType);
+	QByteArray getPluginData();
+	QPixmap loadPluginImage(QString const & path);
 };
 
 #endif // TILEIMAGEFACTORY_H

@@ -69,6 +69,13 @@ core {
 
 	RESOURCES += \
 		gui/graphics.qrc
+
+	win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../quazip/release/ -lquazip
+	else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../quazip/debug/ -lquazip
+	else:unix: LIBS += -L$$OUT_PWD/../quazip/ -lquazip
+
+	INCLUDEPATH += $$PWD/../
+	DEPENDPATH += $$PWD/../quazip
 }
 
 SOURCES += core/tile.cpp \
