@@ -28,8 +28,10 @@ private:
 	QHash<Tile::TileSet, QStringList> tileIdentifiers;
 	QHash<Tile::TileSet, QList<Tile *>> tileTemplates;
 	QHash<Tile *, TileMetaData> tileMetaData;
+	bool printUnsupportedNodeTypes;
 
 public:
+	TileFactory(bool printUnsupportedNodeTypes = true);
 	~TileFactory();
 	QList<Tile *> createPack(Tile::TileSets tileSets, const Game * g);
 	void createPack(Tile::TileSet tileSet, QList<Tile *> & pack, const Game * g);
