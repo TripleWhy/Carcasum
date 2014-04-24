@@ -219,7 +219,7 @@ void MainWindow::readSettings()
 		std::default_random_engine generator(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count());
 		for (int i = 0; i < 5000; ++i)
 			distribution(generator);
-		for (quint64 i = 0, end = distribution(generator); i < end; ++i)
+		for (quint64 i = 0, end = distribution(generator) % 1000000; i < end; ++i)
 			distribution(generator);
 		for (uint i = 0; i <= sizeof(id) * 8; ++i)
 			id = (id << 8) ^ distribution(generator);
