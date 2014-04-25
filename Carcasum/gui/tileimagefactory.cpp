@@ -147,6 +147,11 @@ QMap<uchar, QPoint> TileImageFactory::getPoints(Tile const * tile)
 	return points;
 }
 
+QString TileImageFactory::zipFileName()
+{
+	return "JCloisterZone-2.6.zip";
+}
+
 
 QPixmap TileImageFactory::loadImage(Tile::TileSet tileSet, TileTypeType localType)
 {
@@ -170,7 +175,7 @@ QPixmap TileImageFactory::loadImage(Tile::TileSet tileSet, TileTypeType localTyp
 QByteArray TileImageFactory::getPluginData()
 {
 	QDir dir = QDir(QCoreApplication::applicationDirPath());
-	QFileInfo fi(dir, QString("JCloisterZone-2.6.zip"));
+	QFileInfo fi(dir, QString(zipFileName()));
 	QByteArray data;
 	QByteArray pluginData;
 	if (fi.exists())

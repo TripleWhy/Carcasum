@@ -34,7 +34,7 @@ core {
 } else {
 	QT       += gui svg
 
-	greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+	greaterThan(QT_MAJOR_VERSION, 4): QT += widgets network
 
 	TARGET = carcasum_gui
 
@@ -45,7 +45,8 @@ core {
 		gui/boardgraphicsscene.cpp \
 		gui/playerinfoview.cpp \
 		gui/remainingtilesview.cpp \
-		gui/remainingtileview.cpp
+		gui/remainingtileview.cpp \
+		gui/downloader.cpp
 
 	HEADERS  += gui/mainwindow.h \
 		gui/tileimagefactory.h \
@@ -54,12 +55,14 @@ core {
 		gui/playerinfoview.h \
 		gui/remainingtilesview.h \
 		gui/remainingtileview.h \
-		gui/guiIncludes.h
+		gui/guiIncludes.h \
+		gui/downloader.h
 
 	FORMS    += gui/mainwindow.ui \
 		gui/playerinfoview.ui \
 		gui/remainingtilesview.ui \
-		gui/remainingtileview.ui
+		gui/remainingtileview.ui \
+		gui/downloader.ui
 
 	classicTiles {
 		RESOURCES += jcz/jczTilesClassic.qrc

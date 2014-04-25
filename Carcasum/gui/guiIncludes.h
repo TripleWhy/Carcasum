@@ -14,6 +14,7 @@
 #include <QGraphicsSvgItem>
 #include <QGraphicsScene>
 #include <QGraphicsColorizeEffect>
+#include <QDialog>
 #pragma GCC diagnostic pop
 
 

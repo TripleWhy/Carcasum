@@ -32,6 +32,7 @@ public:
 
 	QMap<uchar, QPoint> getPoints(Tile const * tile);
 	QString getName(TileTypeType type) { Q_UNUSED(type); return QString(); }	//TODO?
+	static QString zipFileName();
 
 private:
 	QPixmap loadImage(Tile::TileSet tileSet, TileTypeType localType);
