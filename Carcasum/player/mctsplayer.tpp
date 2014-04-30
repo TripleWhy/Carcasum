@@ -2,8 +2,8 @@
 #include "randomplayer.h"
 #include <QElapsedTimer>
 
-#define MCTS_T template<class UtilityProvider, class Playout, int Cp>
-#define MCTS_TU <UtilityProvider, Playout, Cp>
+#define MCTS_T template<class UtilityProvider, class Playout>
+#define MCTS_TU <UtilityProvider, Playout>
 
 MCTS_T
 Util::Math const & MCTSPlayer MCTS_TU::math = Util::Math::instance;
@@ -49,10 +49,12 @@ MCTSPlayer MCTS_TU::MCTSChanceNode::MCTSChanceNode(uchar player, TileCountType c
 
 
 MCTS_T
-MCTSPlayer MCTS_TU::MCTSPlayer(jcz::TileFactory * tileFactory)
-    : tileFactory(tileFactory)
+constexpr MCTSPlayer MCTS_TU::MCTSPlayer(jcz::TileFactory * tileFactory, int m, bool mIsTimeout)
+	: tileFactory(tileFactory),
+	  typeName(QString("MCTSPlayer<%1, %2>").arg(UtilityProvider::name).arg(Playout::name)),
+	  M(m),
+	  useTimeout(mIsTimeout)
 {
-	typeName = QString("MCTSPlayer<%1, %2, %3>").arg(UtilityProvider::name).arg(Playout::name).arg(Cp);
 }
 
 MCTS_T
@@ -73,25 +75,25 @@ TileMove MCTSPlayer MCTS_TU::getTileMove(int player, const Tile * tile, const Mo
 	Q_UNUSED(player);
 	MCTSTileNode * v0 = generateTileNode(0, tile->tileType, simGame);
 
-	QElapsedTimer t;
-	t.start();
-#ifdef TIMEOUT
-	do
-#else
-	for (int i = 0; i < M; ++i)
-#endif
 	{
-//		qDebug() << i;
-		Q_ASSERT(game->equals(simGame));
+		QElapsedTimer t;
+		if (useTimeout)
+			t.start();
+		int i = 0;
+		do
+		{
+//			qDebug() << i;
+			Q_ASSERT(game->equals(simGame));
 
-		auto vl = treePolicy(v0);
-		auto const & delta = defaultPolicy(vl);
-		backup(vl, delta);
-		Q_ASSERT(game->equals(simGame));
+			auto vl = treePolicy(v0);
+			auto const & delta = defaultPolicy(vl);
+			backup(vl, delta);
+			Q_ASSERT(game->equals(simGame));
+			if (!useTimeout)
+				++i;
+		}
+		while (useTimeout ? !t.hasExpired(M) : i < M);
 	}
-#ifdef TIMEOUT
-	while (!t.hasExpired(TIMEOUT));
-#endif
 	unapplyNode(v0, simGame);
 
 	int b = bestChild0(v0);
@@ -458,7 +460,7 @@ void MCTSPlayer MCTS_TU::newGame(int player, Game const * g)
 }
 
 MCTS_T
-QString MCTSPlayer MCTS_TU::getTypeName()
+QString MCTSPlayer<UtilityProvider, Playout>::getTypeName()
 {
 	return typeName;
 }

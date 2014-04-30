@@ -4,6 +4,11 @@
 #include <QFile>
 
 //#include <QDebug>
+jcz::TileFactory::TileFactory(bool printUnsupportedNodeTypes)
+    : printUnsupportedNodeTypes(printUnsupportedNodeTypes)
+{
+}
+
 jcz::TileFactory::~TileFactory()
 {
 	for (auto it = tileTemplates.constBegin(); it != tileTemplates.constEnd(); ++it)
@@ -309,7 +314,7 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 				}
 			}
 		}
-		else
+		else if (printUnsupportedNodeTypes)
 		{
 			qWarning() << "unsupported node type:" << xml.name();
 		}
