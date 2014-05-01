@@ -112,6 +112,9 @@
         <item row="0" column="2">
          <widget class="QWidget" name="playerInfos" native="true">
           <layout class="QVBoxLayout" name="playerInfoLayout">
+           <property name="spacing">
+            <number>9</number>
+           </property>
            <property name="leftMargin">
             <number>0</number>
            </property>

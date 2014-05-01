@@ -90,6 +90,17 @@ void MainWindow::newGame(int player, const Game * game)
 	for (uint i = 0; i < game->getPlayerCount(); ++i)
 	{
 		PlayerInfoView * pi = new PlayerInfoView(i, game, &imgFactory);
+
+		QString name = ngPlayerEdits[i].nameEdit->text();
+		if (name.isEmpty())
+		{
+			if (ngPlayerEdits[i].typeBox->currentIndex() == 3)
+				name = ngPlayerEdits[i].typeBox->currentText();
+			else
+				name = tr("Player %1").arg(i+1);
+		}
+		pi->setPlayerName(name);
+
 		l->insertWidget(i, pi);
 		connect(this, SIGNAL(updateNeeded()), pi, SLOT(updateView()));
 		playerInfos.push_back(pi);
@@ -346,7 +357,7 @@ void MainWindow::on_buttonBox_accepted()
 		if (p != 0)
 			game->addPlayer(p);
 	}
-	for (int i = 0; i < ngPlayerEdits.size(); ++i)
+	for (uint i = 0; i < ngPlayerEdits.size(); ++i)
 	{
 		NgPlayerEdit const & pe = ngPlayerEdits[i];
 		QColor color = colors[pe.colorBox->currentIndex()];

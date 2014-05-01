@@ -48,6 +48,11 @@ void PlayerInfoView::setPlayer(int player, Game const * g, TileImageFactory * ti
 	}
 }
 
+void PlayerInfoView::setPlayerName(const QString & name)
+{
+	ui->nameLabel->setText(name);
+}
+
 void PlayerInfoView::updateView()
 {
 	int meeples = game->getPlayerMeeples(playerIndex);
