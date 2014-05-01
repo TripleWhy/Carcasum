@@ -346,6 +346,12 @@ void MainWindow::on_buttonBox_accepted()
 		if (p != 0)
 			game->addPlayer(p);
 	}
+	for (int i = 0; i < ngPlayerEdits.size(); ++i)
+	{
+		NgPlayerEdit const & pe = ngPlayerEdits[i];
+		QColor color = colors[pe.colorBox->currentIndex()];
+		imgFactory.setPlayerColor(i, color);
+	}
 
 	if (game->getPlayerCount() < 1)
 		return;

@@ -4,7 +4,7 @@
 #include "core/tile.h"
 #include "jcz/tilefactory.h"
 #include "jcz/xmlparser.h"
-
+#include <array>
 #include <QHash>
 #include <QPixmap>
 
@@ -16,6 +16,7 @@ private:
 
 	QHash<jcz::Expansion, QList<jcz::XmlParser::XMLTile>> xmlTiles;
 	QByteArray zipData;
+	std::array<QColor, MAX_PLAYERS> playerColors = {{Qt::red, Qt::blue, Qt::yellow, Qt::darkGreen, Qt::black, Qt::gray}};
 
 public:
 	TileImageFactory(jcz::TileFactory * tileFactory);
@@ -27,6 +28,7 @@ public:
 	QString getMeepleOutlineSvg(Node const * node) const;
 	QString getMeepleFillSvgStanding() const;
 	QString getMeepleOutlineSvgStanding() const;
+	void setPlayerColor(int player, QColor const & color);
 	QColor getPlayerColor(int player) const;
 	QPixmap generateMeepleStanding(int size, QColor color);
 

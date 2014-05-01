@@ -72,26 +72,20 @@ QString TileImageFactory::getMeepleOutlineSvgStanding() const
 	return ":/img/meeple/standing-outline";
 }
 
+void TileImageFactory::setPlayerColor(int player, const QColor & color)
+{
+	if (player < 0 || player >= (int)playerColors.size())
+		return;
+	else
+		playerColors[player] = color;
+}
+
 QColor TileImageFactory::getPlayerColor(int player) const
 {
-	//TODO make dynamic
-	switch (player)
-	{
-		case 0:
-			return Qt::red;
-		case 1:
-			return Qt::blue;
-		case 2:
-			return Qt::yellow;
-		case 3:
-			return Qt::darkGreen;
-		case 4:
-			return Qt::black;
-		case 5:
-			return Qt::gray;
-		default:
-			return Qt::magenta;
-	}
+	if (player < 0 || player >= (int)playerColors.size())
+		return Qt::magenta;
+	else
+		return playerColors[player];
 }
 
 QPixmap TileImageFactory::generateMeepleStanding(int size, QColor color)
