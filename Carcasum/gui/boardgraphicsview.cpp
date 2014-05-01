@@ -12,6 +12,7 @@ BoardGraphicsView::BoardGraphicsView(QWidget *parent) :
 
 	qreal const s = BOARDVIEW_INITIAL_TILE_SIZE / qreal(BOARD_TILE_SIZE);
 	scale(s, s);
+	setMouseTracking(true);
 }
 
 void BoardGraphicsView::mousePressEvent(QMouseEvent *event)
