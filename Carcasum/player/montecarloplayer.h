@@ -46,7 +46,7 @@ public:
 	virtual QString getTypeName() { return typeName; }
 	
 private:
-	inline int utility(int const * scores, int const playerCount, int const myIndex)
+	inline RewardType utility(int const * scores, int const playerCount, int const myIndex)
 	{
 		return utilityProvider.utility(scores, playerCount, myIndex);
 	}

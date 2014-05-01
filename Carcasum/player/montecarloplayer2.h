@@ -19,6 +19,10 @@ class MonteCarloPlayer2 : public Player
  #endif
 #endif
 
+	typedef typename UtilityProvider::RewardType RewardType;
+	typedef typename UtilityProvider::RewardListType RewardListType;
+
+
 private:
 	Game const * game = 0;
 	Game * simGame = 0;
@@ -52,7 +56,7 @@ private:
 	int playout();
 	void unplayout(int steps);
 
-	inline int utility(int const * scores, int const playerCount, int const myIndex)
+	inline RewardType utility(int const * scores, int const playerCount, int const myIndex)
 	{
 		return utilityProvider.utility(scores, playerCount, myIndex);
 	}

@@ -35,7 +35,7 @@ TileMove MonteCarloPlayer MC_TU::getTileMove(int player, const Tile * /*tile*/, 
 
 	int const playerCount = game->getPlayerCount();
 	int const possibleSize = possible.size();
-	auto utilities = QVarLengthArray<long long int, 128>(possibleSize);
+	auto utilities = QVarLengthArray<RewardType, 128>(possibleSize);
 	for (int i = 0; i < possibleSize; ++i)
 		utilities[i] = 0;
 
@@ -87,7 +87,7 @@ TileMove MonteCarloPlayer MC_TU::getTileMove(int player, const Tile * /*tile*/, 
 #endif
 	
 	TileMove const * bestMove = 0;
-	long long int bestUtility = std::numeric_limits<long long int>::min();
+	RewardType bestUtility = std::numeric_limits<RewardType>::has_infinity ? (-std::numeric_limits<RewardType>::infinity()) : std::numeric_limits<RewardType>::lowest();
 	for (int i = 0; i < possibleSize; ++i)
 	{
 		auto u = utilities[i];
@@ -112,7 +112,7 @@ MeepleMove MonteCarloPlayer MC_TU::getMeepleMove(int player, const Tile * /*tile
 
 	int const playerCount = game->getPlayerCount();
 	int const possibleSize = possible.size();
-	auto utilities = QVarLengthArray<long long int, 128>(possibleSize);
+	auto utilities = QVarLengthArray<RewardType, 128>(possibleSize);
 	for (int i = 0; i < possibleSize; ++i)
 		utilities[i] = 0;
 	
@@ -161,7 +161,7 @@ MeepleMove MonteCarloPlayer MC_TU::getMeepleMove(int player, const Tile * /*tile
 	playouts += N * possibleSize;
 #endif
 	
-	long long int bestUtility = std::numeric_limits<long long int>::min();
+	RewardType bestUtility = std::numeric_limits<RewardType>::has_infinity ? (-std::numeric_limits<RewardType>::infinity()) : std::numeric_limits<RewardType>::lowest();
 	MeepleMove const * bestMove = 0;
 	for (int i = 0; i < possibleSize; ++i)
 	{
