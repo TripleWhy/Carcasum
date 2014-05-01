@@ -46,7 +46,8 @@ core {
 		gui/playerinfoview.cpp \
 		gui/remainingtilesview.cpp \
 		gui/remainingtileview.cpp \
-		gui/downloader.cpp
+		gui/downloader.cpp \
+		gui/playerselector.cpp
 
 	HEADERS  += gui/mainwindow.h \
 		gui/tileimagefactory.h \
@@ -56,13 +57,15 @@ core {
 		gui/remainingtilesview.h \
 		gui/remainingtileview.h \
 		gui/guiIncludes.h \
-		gui/downloader.h
+		gui/downloader.h \
+		gui/playerselector.h
 
 	FORMS    += gui/mainwindow.ui \
 		gui/playerinfoview.ui \
 		gui/remainingtilesview.ui \
 		gui/remainingtileview.ui \
-		gui/downloader.ui
+		gui/downloader.ui \
+		gui/playerselector.ui
 
 	classicTiles {
 		RESOURCES += jcz/jczTilesClassic.qrc

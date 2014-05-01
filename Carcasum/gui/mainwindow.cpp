@@ -1,9 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-
 #include "playerinfoview.h"
 #include "jcz/tilefactory.h"
-
 #include <QActionGroup>
 #include <QSettings>
 
@@ -16,12 +14,46 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
+	playerSelector = new PlayerSelector(&tileFactory, this);
+
+	for (int i = 1; i <= MAX_PLAYERS; ++i)
+	{
+		QLabel * numberLabel = new QLabel(QString::number(i));
+		ui->ngPlayerLayout->addWidget(numberLabel, i, 0);
+
+		QComboBox * colorBox = new QComboBox();
+		for (uint j = 0; j < colors.size(); ++j)
+		{
+			colorBox->addItem(colorNames[j]);
+
+			QPixmap px(32, 32);
+			QPainter painter(&px);
+			painter.fillRect(px.rect(), colors[j]);
+			painter.drawRect(0, 0, px.width() - 1, px.height() - 1);
+			colorBox->setItemIcon(j, QIcon(px));
+		}
+		colorBox->setCurrentIndex(i-1);
+		ui->ngPlayerLayout->addWidget(colorBox, i, 1);
+		connect(colorBox, SIGNAL(currentIndexChanged(int)), this, SLOT(colorBoxChanged(int)));
+
+		QComboBox * typeBox = new QComboBox();
+		typeBox->addItems(QStringList{tr(""), tr("Human"), tr("Computer")});
+		ui->ngPlayerLayout->addWidget(typeBox, i, 2);
+		connect(typeBox, SIGNAL(currentIndexChanged(int)), this, SLOT(typeBoxChanged(int)));
+
+		QLineEdit * nameEdit = new QLineEdit();
+		ui->ngPlayerLayout->addWidget(nameEdit, i, 3);
+
+		ngPlayerEdits[i-1] = NgPlayerEdit{colorBox, typeBox, nameEdit};
+	}
+
 	auto actionGroup = new QActionGroup(this);
 	actionGroup->addAction(ui->actionRandom_Tiles);
 	actionGroup->addAction(ui->actionChoose_Tiles);
 
 	boardUi = new BoardGraphicsScene(&tileFactory, &imgFactory, ui->boardView);
 	game = new Game(&rntp);
+	gameThread = new GameThread(game, this);
 
 	boardUi->setGame(game);
 	ui->boardView->setScene(boardUi);
@@ -30,45 +62,18 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	readSettings();
 
-	Player * p1 = &RandomPlayer::instance;
-	Player * p2 = new MonteCarloPlayer<>(&tileFactory);
-	Player * p4 = new MonteCarloPlayer<Utilities::SimpleUtility>(&tileFactory);
-	Player * p5 = new MonteCarloPlayer2<>(&tileFactory);
-	Player * p3 = new MCTSPlayer<>(&tileFactory);
-
 	game->addWatchingPlayer(this);
-	
-//	game->addPlayer(p1);
-//	game->addPlayer(p1);
-//	game->addPlayer(p1);
-//	game->addPlayer(p1);
-//	game->addPlayer(p1);
-//	game->addPlayer(p1);
-	game->addPlayer(p2);
-//	game->addPlayer(p3);
-//	game->addPlayer(p4);
-	game->addPlayer(p5);
-//	game->addPlayer(this);
-	game->newGame(Tile::BaseGame, &tileFactory);
-
-	new std::thread( [this]() {
-		while (!game->isFinished())
-		{
-//			Util::sleep(150);
-			game->step();
-		}
-	} );
-
-//	timer = new QTimer(this);
-//	connect(timer, SIGNAL(timeout()), this, SLOT(timeout()));
-//	timer->setInterval(500);
-//	timer->setSingleShot(false);
-//	timer->start();
 }
 
 MainWindow::~MainWindow()
 {
 	delete ui;
+	for (Player *& p : selectedPlayers)
+	{
+		if (p != this)
+			delete p;
+		p = 0;
+	}
 }
 
 void MainWindow::newGame(int player, const Game * game)
@@ -241,6 +246,83 @@ void MainWindow::recenter(QRectF rect)
 	ui->boardView->centerOn(rect.center());
 }
 
+void MainWindow::colorBoxChanged(int index)
+{
+	QObject * snd = sender();
+
+	bool colorUsed[MAX_PLAYERS];
+	for (int i = 0; i < MAX_PLAYERS; ++i)
+		colorUsed[i] = false;
+
+	for (NgPlayerEdit const & pe : ngPlayerEdits)
+	{
+		QComboBox * cb = pe.colorBox;
+		colorUsed[cb->currentIndex()] = true;
+	}
+	for (NgPlayerEdit const & pe : ngPlayerEdits)
+	{
+		QComboBox * cb = pe.colorBox;
+		if (cb == snd)
+			continue;
+		if (cb->currentIndex() == index)
+		{
+			for (int i = 0; i < MAX_PLAYERS; ++i)
+			{
+				if (!colorUsed[i])
+				{
+					colorUsed[i] = true;
+					cb->setCurrentIndex(i);
+					break;
+				}
+			}
+		}
+	}
+}
+
+void MainWindow::typeBoxChanged(int index)
+{
+	QComboBox * snd = static_cast<QComboBox *>(sender());
+	int playerIndex = 0;
+	for (NgPlayerEdit const & pe : ngPlayerEdits)
+	{
+		QComboBox * cb = pe.typeBox;
+		if (cb == snd)
+			break;
+		++playerIndex;
+	}
+
+	Player *& p = selectedPlayers[playerIndex];
+	if (index != 3)
+	{
+		if (p != this)
+			delete p;
+		snd->removeItem(3);
+	}
+	switch (index)
+	{
+		case 0:
+			p = 0;
+			break;
+		case 1:
+			p = this;
+			break;
+		case 2:
+		{
+			if (playerSelector->exec() == QDialog::Accepted)
+			{
+				p = playerSelector->createPlayer();
+				snd->addItem(playerSelector->playerDisplayName());
+				snd->setCurrentIndex(3);
+			}
+			else
+			{
+				p = 0;
+				snd->setCurrentIndex(0);
+			}
+		}
+	}
+}
+
 void MainWindow::on_actionRandom_Tiles_toggled(bool checked)
 {
 	if (checked)
@@ -251,4 +333,35 @@ void MainWindow::on_actionChoose_Tiles_toggled(bool checked)
 {
 	if (checked)
 		game->setNextTileProvider(ui->remainingTiles);
+}
+
+void MainWindow::on_buttonBox_accepted()
+{
+	gameThread->requestInterruption();
+	gameThread->wait();
+
+	game->clearPlayers();
+	for (Player * p : selectedPlayers)
+	{
+		if (p != 0)
+			game->addPlayer(p);
+	}
+
+	if (game->getPlayerCount() < 1)
+		return;
+	game->newGame(Tile::BaseGame, &tileFactory);
+
+	ui->stackedWidget->setCurrentWidget(ui->gameDisplayPage);
+
+	gameThread->start();
+}
+
+
+void MainWindow::GameThread::run()
+{
+	while (!isInterruptionRequested() && !g->isFinished())
+	{
+		msleep(100);
+		g->step();
+	}
 }
