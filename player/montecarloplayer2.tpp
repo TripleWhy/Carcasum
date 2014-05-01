@@ -41,7 +41,7 @@ TileMove MonteCarloPlayer2 MC2_TU::getTileMove(int player, const Tile * /*tile*/
 	int const playerCount = game->getPlayerCount();
 	int const possibleSize = possible.size();
 	auto meepleMoves = VarLengthArrayWrapper<MeepleMovesType, 128>::type(possibleSize);
-	auto rewards = VarLengthArrayWrapper<VarLengthArrayWrapper<int, 16>::type, 128>::type(possibleSize);
+	auto rewards = QVarLengthArray<QVarLengthArray<RewardType, 16>, 128>(possibleSize);	//VarLengthArrayWrapper does not work?!
 	auto playoutCount = VarLengthArrayWrapper<VarLengthArrayWrapper<int, 16>::type, 128>::type(possibleSize);
 	{
 		simGame->simPartStepChance(move.tile);
@@ -58,7 +58,7 @@ TileMove MonteCarloPlayer2 MC2_TU::getTileMove(int player, const Tile * /*tile*/
 				mm.push_back(MeepleMove());
 			int const mms = mm.size();
 			meepleMoves[i] = mm;
-			rewards[i] = VarLengthArrayWrapper<int, 16>::type(mms);
+			rewards[i] = QVarLengthArray<RewardType, 16>(mms);
 			playoutCount[i] = VarLengthArrayWrapper<int, 16>::type(mms);
 
 			for (int j = 0; j < mms; ++j)
@@ -104,7 +104,7 @@ TileMove MonteCarloPlayer2 MC2_TU::getTileMove(int player, const Tile * /*tile*/
 	qreal bestUtility = -std::numeric_limits<qreal>::infinity();
 	for (int i = 0; i < possibleSize; ++i)
 	{
-		VarLengthArrayWrapper<int, 16>::type const & rew = rewards[i];
+		auto const & rew = rewards[i];
 		for (int j = 0; j < rew.size(); ++j)
 		{
 #if COUNT_PLAYOUTS
