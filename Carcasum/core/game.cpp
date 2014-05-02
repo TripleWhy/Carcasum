@@ -232,7 +232,7 @@ bool Game::step()
 		else
 		{
 			qWarning("Player returned invalid move!");
-			Q_ASSERT_X(false, "Game::step()", "Player returned invalid tile move!");
+//			Q_ASSERT_X(false, "Game::step()", "Player returned invalid tile move!");
 			endGame();
 			return false;
 		}

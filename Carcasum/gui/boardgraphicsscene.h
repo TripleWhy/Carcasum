@@ -39,6 +39,7 @@ private:
 	bool userMoveReady;
 	TileMove userMove;
 	MeepleMove userMeepleMove;
+	bool _quit = false;
 
 public:
 	explicit BoardGraphicsScene(jcz::TileFactory * tileFactory = 0, TileImageFactory * imgFactory = 0, QObject * parent = 0);
@@ -53,6 +54,7 @@ public:
 	virtual void playerMoved(int player, Tile const * const tile, MoveHistoryEntry const & move);
 	virtual void endGame();
 	virtual QString getTypeName() { return "BoardGraphicsScene"; }
+	void quit() { _quit = true; }
 
 protected:
 	virtual void mousePressEvent (QGraphicsSceneMouseEvent * mouseEvent);

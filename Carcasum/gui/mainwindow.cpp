@@ -208,13 +208,21 @@ void MainWindow::endGame()
 
 void MainWindow::closeEvent(QCloseEvent * event)
 {
+	gameThread->requestInterruption();
+	qWarning("MainWindow::closeEvent: If the following line warns about an invalid move, ignore it.");
+	boardUi->quit();
+
 	QSettings settings;
 	settings.beginGroup("mainWindow");
 	settings.setValue("geometry", saveGeometry());
 	settings.setValue("windowState", saveState());
-	QMainWindow::closeEvent(event);
-
 	settings.endGroup();
+
+	gameThread->wait(1000);
+	gameThread->terminate();
+	gameThread->wait(1000);
+
+	QMainWindow::closeEvent(event);
 }
 
 void MainWindow::readSettings()
@@ -376,6 +384,7 @@ void MainWindow::on_buttonBox_accepted()
 
 void MainWindow::GameThread::run()
 {
+	setTerminationEnabled(true);
 	while (!isInterruptionRequested() && !g->isFinished())
 	{
 		msleep(100);

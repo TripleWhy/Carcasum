@@ -64,6 +64,9 @@ void BoardGraphicsScene::setTileImageFactory(TileImageFactory * factory)
 
 TileMove BoardGraphicsScene::getTileMove(int /*player*/, const Tile * tile, const MoveHistoryEntry & /*move*/, TileMovesType const & placements)
 {
+	if (_quit)
+		return TileMove();
+
 	std::unique_lock<std::mutex> lck(lock);
 	if (running != 0)
 		return TileMove();
@@ -74,7 +77,7 @@ TileMove BoardGraphicsScene::getTileMove(int /*player*/, const Tile * tile, cons
 	displayGetTileMove(data);
 
 	TileMove m;
-	while (true)
+	while (!_quit)
 	{
 		lck.lock();
 		if (userMoveReady)
@@ -99,8 +102,7 @@ TileMove BoardGraphicsScene::getTileMove(int /*player*/, const Tile * tile, cons
 	}
 
 	running = 0;
-	lck.unlock();
-	return TileMove(m.x, m.y, m.orientation);
+	return m;
 }
 
 void BoardGraphicsScene::displayGetTileMove(void * data, int callDepth)
@@ -154,6 +156,9 @@ void BoardGraphicsScene::displayGetTileMove(void * data, int callDepth)
 
 MeepleMove BoardGraphicsScene::getMeepleMove(int player, const Tile * tile, const MoveHistoryEntry & /*move*/, MeepleMovesType const & possible)
 {
+	if (_quit)
+		return MeepleMove();
+
 	std::unique_lock<std::mutex> lck(lock);
 	if (running != 0)
 		return MeepleMove();
@@ -166,7 +171,7 @@ MeepleMove BoardGraphicsScene::getMeepleMove(int player, const Tile * tile, cons
 	displayGetMeepleMove(data);
 
 	MeepleMove m;
-	while (true)
+	while (!_quit)
 	{
 		lck.lock();
 		if (userMoveReady)
@@ -189,7 +194,6 @@ MeepleMove BoardGraphicsScene::getMeepleMove(int player, const Tile * tile, cons
 	}
 
 	running = 0;
-	lck.unlock();
 	return m;
 }
 
