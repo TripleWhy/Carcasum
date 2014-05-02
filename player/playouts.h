@@ -72,7 +72,8 @@ public:
 	}
 	inline void undoPlayout(Game & simGame, int steps) const
 	{
-		if (simGame.isFinished() && simGame.getTileCount() != 0)
+		Q_ASSERT(simGame.isFinished());
+		if (!simGame.isTerminal())
 			simGame.simUnEndGame();
 		RandomPlayout::undoPlayout(simGame, steps);
 	}

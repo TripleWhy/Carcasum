@@ -387,6 +387,42 @@ public:
 	}
 };
 
+class ComplexUtilityNormalizedEC
+{
+public:
+	constexpr static char const * name = "ComplexUtilityNormalizedEC";
+	typedef qreal RewardType;
+	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
+
+private:
+	ComplexUtilityNormalized complex;
+	SimpleUtilityNormalized simple;
+	Game const * game;
+
+public:
+	inline void newGame(int player, Game const * g)
+	{
+		game = g;
+		complex.newGame(player, g);
+		simple.newGame(player, g);
+	}
+
+	RewardType utility(int const * scores, int const playerCount, int const myIndex) const
+	{
+		if (game->isTerminal())
+			return simple.utility(scores, playerCount, myIndex);
+		else
+			return complex.utility(scores, playerCount, myIndex);
+	}
+	RewardListType utilities(const int * scores, const int playerCount) const
+	{
+		if (game->isTerminal())
+			return simple.utilities(scores, playerCount);
+		else
+			return complex.utilities(scores, playerCount);
+	}
+};
+
 class HeydensUtility
 {
 public:

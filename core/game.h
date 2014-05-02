@@ -139,6 +139,7 @@ public:
 	bool equals(const Game & other) const;
 
 	inline bool isFinished() const { return !active; }
+	inline bool isTerminal() const { return tiles.isEmpty(); }
 	inline uint getPlayerCount() const { return playerCount; }
 	inline std::vector<MoveHistoryEntry> const & getMoveHistory() const { return moveHistory; }
 	inline Tile::TileSets const & getTileSets() const { return tileSets; }
