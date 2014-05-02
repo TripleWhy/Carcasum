@@ -22,6 +22,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 	ui->setupUi(this);
 	ui->optionsWidget->setVisible(ui->optionsCheckBox->isChecked());
+	setWindowTitle(APP_NAME);
 
 	playerSelector = new PlayerSelector(&tileFactory, this);
 

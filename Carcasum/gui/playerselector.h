@@ -49,7 +49,7 @@ private:
 	const std::array<UtilityData, 4> utilityData = {{ {UtilityTypeSimple, "Simple", ""},
 	                                                  {UtilityTypeHeyden, "Heyden", ""},
 	                                                  {UtilityTypeComplex, "Complex", ""},
-	                                                  {UtilityTypeComplexNormalized, "Normalized", ""}
+	                                                  {UtilityTypeComplexNormalized, "Complex Normalized", ""}
 	                                                }};
 	const std::array<PlayoutData, 2> playoutData = {{ {PlayoutTypeRandom, "Random", ""},
 	                                                  {PlayoutTypeEarlyCutoff, "Early Cutoff", ""}

@@ -55,6 +55,7 @@
 #define COUNT_PLAYOUTS             1
 // MCTSPlayer
 #define MCTS_COUNT_EXPAND_HITS     0
+#define MCTS_PRINT_UTILITIES       0
 // Util
 #define OFFSET_ARRAY_ENABLE_CHECKS 0
 

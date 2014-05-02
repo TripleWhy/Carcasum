@@ -245,6 +245,29 @@ typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::bestChild(MCTSNode *
 MCTS_T
 int MCTSPlayer MCTS_TU::bestChild0(MCTSNode * v)
 {
+#if MCTS_PRINT_UTILITIES
+	QList<MCTSNode *> queue;
+	queue.append(v);
+
+	qDebug("MCTSPlayer::bestChild0 (showing only 100 nodes)");
+	for (int i = 0; !queue.isEmpty() && i < 100; ++i)
+	{
+		MCTSNode * n = queue.takeFirst();
+		qDebug() << n << "parent:" << n->parent;
+		qDebug() << "  type:" << n->type << "player:" << n->player << "notExpanded:" << n->notExpanded << "visitCount:" << n->visitCount << "reward:" << n->reward;
+		qDebug() << "  Q/N:" << (Q(n) / qreal(N(n)));
+		qDebug() << "  children:";
+		for (MCTSNode * c : n->children)
+		{
+			qDebug() << "   " << c;
+			if (c != 0)
+				queue.append(c);
+		}
+	}
+	qDebug();
+	qDebug();
+#endif
+
 	qreal max = -std::numeric_limits<qreal>::infinity();
 	int a = 0;
 	for (int i = 0, s = (int)v->children.size(); i < s; ++i)
