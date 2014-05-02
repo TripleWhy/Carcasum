@@ -119,11 +119,10 @@ void jcz::XmlParser::readTile(QXmlStreamReader & xml, XMLTile & tile)
 //	qDebug();
 }
 
-void jcz::XmlParser::readPoints(QString const & file, QList<XMLTile> & tiles)
+void jcz::XmlParser::readPoints(QIODevice * f, QList<XMLTile> & tiles)
 {
-	QFile f(file);
-	f.open(QIODevice::ReadOnly);
-	QXmlStreamReader xml(&f);
+	f->open(QIODevice::ReadOnly);
+	QXmlStreamReader xml(f);
 
 	xml.readNextStartElement();
 	if (xml.name() != "points")
@@ -147,7 +146,7 @@ void jcz::XmlParser::readPoints(QString const & file, QList<XMLTile> & tiles)
 		}
 	}
 
-	f.close();
+	f->close();
 }
 
 void jcz::XmlParser::readPoint(QXmlStreamReader & xml, QList<XMLTile> & tiles)

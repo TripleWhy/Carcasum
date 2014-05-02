@@ -4,9 +4,6 @@
 #include <QtSvg/QSvgRenderer>
 #include <QPainter>
 #include <QDir>
-#include <QBuffer>
-#include <quazip/quazip.h>
-#include <quazip/quazipfile.h>
 
 TileImageFactory::TileImageFactory(jcz::TileFactory * tileFactory)
 	: tileFactory(tileFactory)
@@ -121,8 +118,14 @@ QMap<uchar, QPoint> TileImageFactory::getPoints(Tile const * tile)
 	if (!xmlTiles.contains(expansion))
 	{
 		auto && tiles = jcz::XmlParser::readTileDefinitions(expansion);
-		jcz::XmlParser::readPoints(":/jcz/defaults/points.xml", tiles);
-		jcz::XmlParser::readPoints(":/jcz/resources/plugins/classic/tiles/points.xml", tiles);
+		QFile file(":/jcz/defaults/points.xml");
+		jcz::XmlParser::readPoints(&file, tiles);
+		QFile file2(":/jcz/resources/plugins/classic/tiles/points.xml");
+		jcz::XmlParser::readPoints(&file2, tiles);
+
+		PluginFileMgr mgr(zipData, "tiles/points.xml");
+		if (mgr.fileExists())
+			jcz::XmlParser::readPoints(mgr.getFile(), tiles);
 		xmlTiles.insert(expansion, tiles);
 	}
 
@@ -212,19 +215,12 @@ QByteArray TileImageFactory::getPluginData()
 QPixmap TileImageFactory::loadPluginImage(QString const & path)
 {
 	QPixmap px;
-	if (zipData.isNull())
+
+	PluginFileMgr mgr(zipData, path, true);
+	if (!mgr.fileExists())
 		return px;
 
-	QBuffer buffer(&zipData);
-	QuaZip qz(&buffer);
-	qz.open(QuaZip::mdUnzip);
-	QuaZipFile file(&qz);
-	if (qz.setCurrentFile(path))
-	{
-		file.open(QIODevice::ReadOnly);
-		px.loadFromData(file.readAll());
-		file.close();
-	}
-	qz.close();
+	QuaZipFile * file = mgr.getFile();
+	px.loadFromData(file->readAll());
 	return px;
 }

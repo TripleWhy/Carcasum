@@ -25,9 +25,4 @@
         <file alias="RRR">resources/plugins/classic/tiles/BA/RRR.jpg</file>
         <file alias="RRRR">resources/plugins/classic/tiles/BA/RRRR.jpg</file>
     </qresource>
-    <qresource prefix="/jcz/resources/plugins/classic/tiles">
-        <file>resources/plugins/classic/tiles/aliases.xml</file>
-        <file alias="points.xml">resources/plugins/classic/tiles/points.xml</file>
-        <file>resources/plugins/classic/tiles/shapes.xml</file>
-    </qresource>
 </RCC>

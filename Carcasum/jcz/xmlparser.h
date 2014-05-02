@@ -41,7 +41,7 @@ private:
 	static void readTile(QXmlStreamReader & xml, XMLTile & tile);
 
 public:
-	static void readPoints(const QString & file, QList<XMLTile> & tiles);
+	static void readPoints(QIODevice * f, QList<XMLTile> & tiles);
 private:
 	static void readPoint(QXmlStreamReader & xml, QList<XMLTile> & tiles);
 };
