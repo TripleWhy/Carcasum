@@ -35,6 +35,19 @@
       <widget class="QWidget" name="newGamePage">
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
+         <spacer name="verticalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
          <widget class="QLabel" name="label">
           <property name="font">
            <font>
@@ -51,6 +64,13 @@
         <item>
          <widget class="QWidget" name="ngPlayerWidget" native="true">
           <layout class="QGridLayout" name="ngPlayerLayout">
+           <item row="0" column="1">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>Color</string>
+             </property>
+            </widget>
+           </item>
            <item row="0" column="2">
             <widget class="QLabel" name="label_4">
              <property name="text">
@@ -65,13 +85,6 @@
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
-            <widget class="QLabel" name="label_3">
-             <property name="text">
-              <string>Color</string>
-             </property>
-            </widget>
-           </item>
            <item row="0" column="0">
             <widget class="QLabel" name="label_14">
              <property name="text">
@@ -80,6 +93,43 @@
             </widget>
            </item>
           </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="optionsCheckBox">
+          <property name="text">
+           <string>More Options</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QWidget" name="optionsWidget" native="true">
+          <layout class="QHBoxLayout" name="horizontalLayout">
+           <item>
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string>Load board file:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="boardFileEdit"/>
+           </item>
+           <item>
+            <widget class="QPushButton" name="boardFileButton">
+             <property name="text">
+              <string>Browse...</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QDialogButtonBox" name="buttonBox">
+          <property name="standardButtons">
+           <set>QDialogButtonBox::Ok</set>
+          </property>
          </widget>
         </item>
         <item>
@@ -94,13 +144,6 @@
            </size>
           </property>
          </spacer>
-        </item>
-        <item>
-         <widget class="QDialogButtonBox" name="buttonBox">
-          <property name="standardButtons">
-           <set>QDialogButtonBox::Ok</set>
-          </property>
-         </widget>
         </item>
        </layout>
       </widget>
@@ -169,6 +212,9 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionNew_Game"/>
+    <addaction name="separator"/>
+    <addaction name="actionStore_board"/>
    </widget>
    <widget class="QMenu" name="menuGame">
     <property name="title">
@@ -209,6 +255,16 @@
     <string>Choose Tiles</string>
    </property>
   </action>
+  <action name="actionNew_Game">
+   <property name="text">
+    <string>New Game</string>
+   </property>
+  </action>
+  <action name="actionStore_board">
+   <property name="text">
+    <string>Store board...</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
@@ -225,5 +281,22 @@
   </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>optionsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>optionsWidget</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>37</x>
+     <y>155</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>41</x>
+     <y>172</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

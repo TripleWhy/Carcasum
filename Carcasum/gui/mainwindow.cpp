@@ -2,18 +2,27 @@
 #include "ui_mainwindow.h"
 #include "playerinfoview.h"
 #include "jcz/tilefactory.h"
-#include <QActionGroup>
 #include <QSettings>
+#include <QFileDialog>
 
-#include "player/randomplayer.h"
-#include "player/montecarloplayer.h"
-#include "player/montecarloplayer2.h"
-#include "player/mctsplayer.h"
+void MainWindow::GameThread::run()
+{
+	setTerminationEnabled(true);
+	while (!isInterruptionRequested() && !g->isFinished())
+	{
+		msleep(100);
+		g->step();
+	}
+}
+
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
+	ui->optionsWidget->setVisible(ui->optionsCheckBox->isChecked());
+
 	playerSelector = new PlayerSelector(&tileFactory, this);
 
 	for (int i = 1; i <= MAX_PLAYERS; ++i)
@@ -208,7 +217,7 @@ void MainWindow::endGame()
 
 void MainWindow::closeEvent(QCloseEvent * event)
 {
-	gameThread->requestInterruption();
+	requestEndGame();
 	qWarning("MainWindow::closeEvent: If the following line warns about an invalid move, ignore it.");
 	boardUi->quit();
 
@@ -218,10 +227,7 @@ void MainWindow::closeEvent(QCloseEvent * event)
 	settings.setValue("windowState", saveState());
 	settings.endGroup();
 
-	gameThread->wait(1000);
-	gameThread->terminate();
-	gameThread->wait(1000);
-
+	forceEndGame();
 	QMainWindow::closeEvent(event);
 }
 
@@ -251,6 +257,19 @@ void MainWindow::readSettings()
 	}
 
 	settings.endGroup();
+}
+
+void MainWindow::requestEndGame()
+{
+	gameThread->requestInterruption();
+}
+
+void MainWindow::forceEndGame()
+{
+	requestEndGame();
+	gameThread->wait(1000);
+	gameThread->terminate();
+	gameThread->wait(1000);
 }
 
 void MainWindow::timeout()
@@ -356,8 +375,18 @@ void MainWindow::on_actionChoose_Tiles_toggled(bool checked)
 
 void MainWindow::on_buttonBox_accepted()
 {
-	gameThread->requestInterruption();
-	gameThread->wait();
+	requestEndGame();
+
+	std::vector<MoveHistoryEntry> history;
+	if (ui->optionsCheckBox->isChecked())
+	{
+		QString path = ui->boardFileEdit->text();
+		QFileInfo fi(path);
+		if (fi.exists())
+			history = Game::loadFromFile(path);
+	}
+
+	forceEndGame();
 
 	game->clearPlayers();
 	for (Player * p : selectedPlayers)
@@ -374,20 +403,29 @@ void MainWindow::on_buttonBox_accepted()
 
 	if (game->getPlayerCount() < 1)
 		return;
-	game->newGame(Tile::BaseGame, &tileFactory);
+	game->newGame(Tile::BaseGame, &tileFactory, history, true);
 
 	ui->stackedWidget->setCurrentWidget(ui->gameDisplayPage);
 
 	gameThread->start();
 }
 
-
-void MainWindow::GameThread::run()
+void MainWindow::on_actionNew_Game_triggered()
 {
-	setTerminationEnabled(true);
-	while (!isInterruptionRequested() && !g->isFinished())
-	{
-		msleep(100);
-		g->step();
-	}
+	requestEndGame();
+	ui->stackedWidget->setCurrentWidget(ui->newGamePage);
+}
+
+void MainWindow::on_actionStore_board_triggered()
+{
+	auto history = game->getMoveHistory();
+	QString path = QFileDialog::getSaveFileName(this, tr("Save Board"));
+	if (!path.isEmpty())
+		Game::storeToFile(path, history);
+}
+
+void MainWindow::on_boardFileButton_clicked()
+{
+	QString path = QFileDialog::getOpenFileName(this, tr("Board File"));
+	ui->boardFileEdit->setText(path);
 }

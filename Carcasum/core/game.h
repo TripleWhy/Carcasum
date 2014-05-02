@@ -92,7 +92,7 @@ public:
 	~Game();
 
 	void newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory);
-	void newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory, std::vector<MoveHistoryEntry> const & history);
+	void newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory, std::vector<MoveHistoryEntry> const & history, bool informPlayers = false);
 	void restartGame();
 	void restartGame(std::vector<MoveHistoryEntry> const & history);
 	void addPlayer(Player * player);
@@ -113,6 +113,8 @@ public:
 	void simPartUndoChance();
 	void simPartUndoTile();
 	void simPartUndoMeeple();
+	static void storeToFile(QString const & path, std::vector<MoveHistoryEntry> const & history);
+	static std::vector<MoveHistoryEntry> loadFromFile(QString const & path);
 
 
 	void cityClosed(CityNode * n);
@@ -236,7 +238,7 @@ private:
 
 private:
 	void cleanUp();
-	void applyHistory(std::vector<MoveHistoryEntry> const & history);
+	void applyHistory(std::vector<MoveHistoryEntry> const & history, bool informPlayers = false);
 
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
 	void assertMeepleCount();

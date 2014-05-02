@@ -74,6 +74,8 @@ protected:
 
 private:
 	void readSettings();
+	void requestEndGame();
+	void forceEndGame();
 
 signals:
 	void updateNeeded();
@@ -87,6 +89,11 @@ private slots:
 	void on_actionRandom_Tiles_toggled(bool checked);
 	void on_actionChoose_Tiles_toggled(bool arg1);
 	void on_buttonBox_accepted();
+	void on_actionNew_Game_triggered();
+
+	void on_actionStore_board_triggered();
+
+	void on_boardFileButton_clicked();
 
 private:
 	Ui::MainWindow *ui;

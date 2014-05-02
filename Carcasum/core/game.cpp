@@ -2,6 +2,7 @@
 #include "board.h"
 #include "player.h"
 #include "jcz/tilefactory.h"
+#include <QFile>
 
 Game::Game(NextTileProvider * ntp)
     : ntp(ntp)
@@ -55,11 +56,11 @@ void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)
 #endif
 }
 
-void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory, const std::vector<MoveHistoryEntry> & history)
+void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory, const std::vector<MoveHistoryEntry> & history, bool informPlayers)
 {
 	newGame(tileSets, tileFactory);
 	if (getPlayerCount())
-		applyHistory(history);
+		applyHistory(history, informPlayers);
 }
 
 void Game::restartGame()
@@ -689,6 +690,85 @@ void Game::simPartUndoMeeple()
 	assertMeepleCount();
 }
 
+void Game::storeToFile(const QString & path, const std::vector<MoveHistoryEntry> & history)
+{
+	QFile file(path);
+	file.open(QIODevice::WriteOnly | QIODevice::Truncate);
+
+	QDataStream out(&file);
+
+	// file format version
+	out << (quint32)1;
+
+	// history size
+	out << (quint32)history.size();
+
+	for (MoveHistoryEntry const & e : history)
+	{
+		out << (qint32)e.tile;
+
+		Move const & move = e.move;
+		TileMove const & tileMove = move.tileMove;
+		out << (quint32)tileMove.x;
+		out << (quint32)tileMove.y;
+		out << (quint8)tileMove.orientation;
+
+		MeepleMove const & meepleMove = move.meepleMove;
+		out << (quint8)meepleMove.nodeIndex;
+	}
+
+	file.close();
+}
+
+std::vector<MoveHistoryEntry> Game::loadFromFile(const QString & path)
+{
+	std::vector<MoveHistoryEntry> history;
+
+	QFile file(path);
+	file.open(QIODevice::ReadOnly);
+
+	QDataStream in(&file);
+
+	// file format version
+	quint32 version;
+	in >> version;
+	if (version != 1)
+		return history;
+
+	// history size
+	quint32 size;
+	in >> size;
+
+	history.resize(size);
+
+	for (quint32 i = 0; i < size; ++i)
+	{
+		qint32 i32;
+		quint32 u32;
+		quint8 u8;
+
+		MoveHistoryEntry &e = history[i];
+		in >> i32;
+		e.tile = (int)i32;
+
+		Move & move = e.move;
+		TileMove & tileMove = move.tileMove;
+		in >> u32;
+		tileMove.x = (uint)u32;
+		in >> u32;
+		tileMove.y = (uint)u32;
+		in >> u8;
+		tileMove.orientation = (Tile::Side)u8;
+
+		MeepleMove & meepleMove = move.meepleMove;
+		in >> u8;
+		meepleMove.nodeIndex = (uchar)u8;
+	}
+
+	file.close();
+	return history;
+}
+
 void Game::cityClosed(CityNode * n)
 {
 	int score = n->getScore();
@@ -950,11 +1030,28 @@ void Game::cleanUp()
 	delete[] returnMeeples;
 }
 
-void Game::applyHistory(const std::vector<MoveHistoryEntry> & history)
+void Game::applyHistory(const std::vector<MoveHistoryEntry> & history, bool informPlayers)
 {
-	for (MoveHistoryEntry const & e : history)
-		simStep(e);
-	returnMeeplesToPlayers();
+	if (informPlayers)
+	{
+		for (MoveHistoryEntry const & e : history)
+		{
+			int playerIndex = nextPlayer;
+			Tile const * tile = tiles[e.tile];
+			simStep(e);
+			returnMeeplesToPlayers();
+			for (Player * p : allPlayers)
+				p->playerMoved(playerIndex, tile, e);
+			if (tiles.isEmpty())
+				endGame();
+		}
+	}
+	else
+	{
+		for (MoveHistoryEntry const & e : history)
+			simStep(e);
+		returnMeeplesToPlayers();
+	}
 }
 
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
