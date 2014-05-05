@@ -97,8 +97,8 @@ SOURCES += core/tile.cpp \
     core/random.cpp \
     core/nexttileprovider.cpp \
     player/montecarloplayer2.tpp \
-    player/montecarloplayeruct.tpp \ #TODO where?
-    player/mctsplayer.cpp \
+    player/montecarloplayeruct.tpp \
+    player/mctsplayer.tpp \
     player/playouts.cpp \
     player/utilities.cpp
 
@@ -120,7 +120,6 @@ HEADERS += \
     player/mctsplayer.h \
     player/montecarloplayer2.h \
     player/montecarloplayeruct.h \
-    player/mctsplayer.tpp \
     player/playouts.h \
     player/utilities.h
 
