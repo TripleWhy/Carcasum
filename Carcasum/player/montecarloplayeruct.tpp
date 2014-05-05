@@ -164,6 +164,12 @@ void MonteCarloPlayerUCT MCU_TU::endGame()
 }
 
 MCU_T
+Player * MonteCarloPlayerUCT MCU_TU::clone() const
+{
+	return new MonteCarloPlayerUCT(tileFactory);
+}
+
+MCU_T
 int MonteCarloPlayerUCT MCU_TU::playout()
 {
 	return playoutPolicy.playout(*simGame);

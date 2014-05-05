@@ -20,6 +20,10 @@ public:
 #endif
 
 public:
+	Player() = default;
+	Player (const Player &) = delete;
+	Player & operator = (const Player &) = delete;
+
 	virtual ~Player() {}
 	virtual void newGame(int player, Game const * game) = 0;
 	virtual void playerMoved(int player, Tile const * tile, MoveHistoryEntry const & move) = 0;
@@ -27,6 +31,7 @@ public:
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible) = 0;
 	virtual void endGame() = 0;
 	virtual QString getTypeName() = 0;
+	virtual Player * clone() const = 0;
 };
 
 #endif // PLAYER_H

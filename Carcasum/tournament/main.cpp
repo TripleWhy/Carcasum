@@ -5,31 +5,51 @@
 #include "player/montecarloplayer2.h"
 #include "player/montecarloplayeruct.h"
 #include "player/mctsplayer.h"
+#include "player/mctsplayer1.h"
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QVarLengthArray>
+#include <array>
+#include <thread>
 
 struct Result
 {
 	QVarLengthArray<int, MAX_PLAYERS> scores;
 	QVarLengthArray<int, MAX_PLAYERS> utilities;
 	QVarLengthArray<quint64, MAX_PLAYERS> playouts;
+	QVarLengthArray<quint64, MAX_PLAYERS> times;
+	QVarLengthArray<qint64, MAX_PLAYERS> timeDiffs;
+	QVarLengthArray<int, MAX_PLAYERS> plys;
 
-	Result(int size) : scores(size), utilities(size), playouts(size) {}
+	Result(int size = 0)
+	    : scores(size),
+	      utilities(size),
+	      playouts(size),
+	      times(size),
+	      timeDiffs(size),
+	      plys(size)
+	{}
 };
 
-void printResults(std::vector<Result> const & results, int const playerCount)
+template<typename T>
+void printResults(T const & results, int const playerCount)
 {
 	QVarLengthArray<int, MAX_PLAYERS> wins(playerCount);
 	QVarLengthArray<int, MAX_PLAYERS> draws(playerCount);
 	QVarLengthArray<int, MAX_PLAYERS> scores(playerCount);
 	QVarLengthArray<quint64, MAX_PLAYERS> playouts(playerCount);
+	QVarLengthArray<int, MAX_PLAYERS> plys(playerCount);
+	QVarLengthArray<quint64, MAX_PLAYERS> times(playerCount);
+	QVarLengthArray<qint64, MAX_PLAYERS> timeDiffs(playerCount);
 	for (int i = 0; i < playerCount; ++i)
 	{
 		wins[i] = 0;
 		draws[i] = 0;
 		scores[i] = 0;
 		playouts[i] = 0;
+		plys[i] = 0;
+		times[i] = 0;
+		timeDiffs[i] = 0;
 	}
 
 	for (Result const & r : results)
@@ -42,126 +62,77 @@ void printResults(std::vector<Result> const & results, int const playerCount)
 				++draws[i];
 			scores[i] += r.scores[i];
 			playouts[i] += r.playouts[i];
+			plys[i] += r.plys[i];
+			times[i] += r.times[i];
+			timeDiffs[i] += r.timeDiffs[i];
 		}
 	}
 
+	size_t const size = results.size();
+	qreal const dSize = qreal(size);
 	for (int i = 0; i < playerCount; ++i)
 	{
-		qDebug() << "player" << i << "   wins:" << wins[i] << "/" << results.size() << "=" << (wins[i] / qreal(results.size()))
-		         <<"   draws:" << draws[i] << "/" << results.size() << "=" << (draws[i] / qreal(results.size()))
-		         << "   avg. score:" << (scores[i] / qreal(results.size()))
-		         << "\tavg. playouts:" << (qreal(playouts[i]) / qreal(results.size()));
+		qDebug() << "player" << i
+		         << "   wins:" << wins[i] << "/" << size << "=" << (wins[i] / dSize)
+		         << "   draws:" << draws[i] << "/" << size << "=" << (draws[i] / dSize)
+//		         << "\n"
+		         << "\tavg. score:" << (scores[i] / dSize)
+		         << "\tavg. playouts:" << (qreal(playouts[i]) / dSize)
+		         << "\tavg. plys:" << (plys[i] / dSize) << "(" << (qreal(playouts[i]) / plys[i]) << "ppp )"
+		         << "\tavg. time:" << (qreal(times[i]) / (dSize*1000000)) << "(" << (qreal(playouts[i]*1000*1000000) / qreal(times[i])) << "pps )"
+		         << "\tavg. overrun:" << (qreal(timeDiffs[i]) / qreal(qint64(plys[i])*1000000))
+		   ;
 	}
 }
 
-void printTimes(QVarLengthArray<quint64, MAX_PLAYERS> const & times, QVarLengthArray<qint64, MAX_PLAYERS> const & diffs, QVarLengthArray<int, MAX_PLAYERS> const & steps, std::vector<Player *> const & players)
+template<typename T>
+void printResult(T const & results, int const playerCount, size_t index)
 {
-	for (int i = 0; i < times.size(); ++i)
+	QDebug && d = qDebug();
+	for (int i = 0; i < playerCount; ++i)
 	{
-		qreal s = qreal(quint64(steps[i]) * quint64(1000000));
-		Player * p = players[i];
-		qDebug() << "player" << i << "   playouts:" << p->playouts << "\tavg. thinking time:" << ((qreal)times[i] / s) << "ms   avg. overrun:" << ((qreal)diffs[i] / s) << "ms";
+		Result const & r = results[index];
+		auto _score = r.scores[i];
+		auto _playouts = r.playouts[i];
+		auto _plys = r.plys[i];
+		auto _time = r.times[i];
+		d.nospace() << index << " player " << i
+		  << "   score: " << _score
+		  << "   playouts: " << _playouts
+		  << "   plys: " << _plys << " (" << (qreal(_playouts) / qreal(_plys)) << " ppp)"
+		  << "   time: " << (_time/1000000) << " (" << (qreal(_playouts*1000*1000000) / qreal(_time)) << " pps)"
+		  << "\n";
 	}
 }
 
-int main(int argc, char *argv[])
+void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory, std::vector<Result> & results, int const N, int const threadId, int const threadCount)
 {
-	if (false)
-	{
-		QElapsedTimer t;
-		auto const & math = Util::Math::instance;
-
-		for (uint i = 0; i < LN_TABLE_SIZE; ++i)
-		{
-			qreal l1 = ::log(i);
-			qreal l2 = math.ln(i);
-			if (l1 != l2)
-			{
-				qDebug() << "i: " << i << l1 << l2;
-			}
-		}
-
-		for (int i = 0; i < 3; ++i)
-		{
-			qreal sum = 0;
-			t.start();
-			for (int k = 0; k < 1000; ++k)
-			{
-				for (uint j = 1; j < 1000000; ++j)
-					sum += ::log(j);
-			}
-			auto e = t.elapsed();
-			qDebug() << e << sum;
-		}
-		qDebug();
-
-		for (int i = 0; i < 3; ++i)
-		{
-			qreal sum = 0;
-			t.start();
-			for (int k = 0; k < 1000; ++k)
-			{
-				for (uint j = 1; j < 1000000; ++j)
-					sum += math.ln(j);
-			}
-			auto e = t.elapsed();
-			qDebug() << e << sum;
-		}
-
-		return 0;
-	}
-
-	QCoreApplication app(argc, argv);
-	jcz::TileFactory * tileFactory = new jcz::TileFactory();
-
-
-	int const N = 50;
-	std::vector<Player *> players;
-//	players.push_back(&RandomPlayer::instance);
-//	players.push_back(&RandomPlayer::instance);
-//	players.push_back(&RandomPlayer::instance);
-//	players.push_back(&RandomPlayer::instance);
-//	players.push_back(&RandomPlayer::instance);
-//	players.push_back(new MonteCarloPlayer(tileFactory, false));
-//	players.push_back(new MonteCarloPlayer<>(tileFactory));
-	players.push_back(new MonteCarloPlayer<Utilities::SimpleUtility>(tileFactory));
-	players.push_back(new MonteCarloPlayer<Utilities::HeydensUtility>(tileFactory));
-//	players.push_back(new MonteCarloPlayer2<>(tileFactory));
-//	players.push_back(new MonteCarloPlayer2(tileFactory, 2));
-//	players.push_back(new MonteCarloPlayerUCT(tileFactory, false));
-//	players.push_back(new MonteCarloPlayerUCT<>(tileFactory));
-//	players.push_back(new MCTSPlayer<Utilities::SimpleUtility>(tileFactory));
-//	players.push_back(new MCTSPlayer<Utilities::SimpleUtilityF>(tileFactory));
-//	players.push_back(new MCTSPlayer<>(tileFactory));
-//	players.push_back(new MCTSPlayer<Utilities::ComplexUtility, Playouts::EarlyCutoff<10>>(tileFactory));
-
-
-#ifdef TIMEOUT
-	qDebug() << "TIMEOUT" << TIMEOUT;
+#ifdef Q_OS_UNIX
+	// The follwing code ties one thread to one core on linux.
+	//-->
+	cpu_set_t cpuset;
+	CPU_ZERO(&cpuset);
+	CPU_SET(threadId, &cpuset);
+	sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
+	//<--
 #endif
-	for (Player * p : players)
-		qDebug() << p->getTypeName();
-	std::vector<Result> results;
+
+	std::vector<Player *> players;
+	for (Player const * p : players_)
+		players.push_back(p->clone());
+
 	RandomNextTileProvider rntp;
 	Game game(&rntp);
 	int const playerCount = (int)players.size();
 	Utilities::SimpleUtility utility;
 
 	QElapsedTimer timer;
-	QVarLengthArray<quint64, MAX_PLAYERS> times(playerCount);
-	QVarLengthArray<qint64, MAX_PLAYERS> diffs(playerCount);
-	QVarLengthArray<int, MAX_PLAYERS> steps(playerCount);
-	for (int i = 0; i < playerCount; ++i)
-	{
-		times[i] = 0;
-		diffs[i] = 0;
-		steps[i] = 0;
-	}
 	QVarLengthArray<int, MAX_PLAYERS> playerAt(playerCount);
 	for (int offset = 0; offset < playerCount; ++offset)
 	{
-		qDebug() << "round" << offset;
-		for (int i = 0; i < N; ++i)
+		size_t from = threadId * N / threadCount + offset * N;
+		size_t to = (threadId+1) * N / threadCount + offset * N;
+		for (size_t j = from; j < to; ++j)
 		{
 			game.clearPlayers();
 			for (int i = 0; i < playerCount; ++i)
@@ -171,33 +142,41 @@ int main(int argc, char *argv[])
 				game.addPlayer(players[p]);
 			}
 
-			game.newGame(Tile::BaseGame, tileFactory);
-			for (bool cont = true; cont; )
+			Result result(playerCount);
+			for (int i = 0; i < playerCount; ++i)
 			{
+				result.times[i] = 0;
+				result.timeDiffs[i] = 0;
+				result.plys[i] = 0;
+			}
+			game.newGame(Tile::BaseGame, tileFactory);
+			int i = 0;
+			for (bool cont = true; cont; ++i)
+			{
+				qint64 elapsed;
 				int player = game.getNextPlayer();
 
 				timer.start();
 				cont = game.step();
-				qint64 elapsed = timer.nsecsElapsed();
+				elapsed = timer.nsecsElapsed();
 
 				if (!game.getMoveHistory().back().move.tileMove.isNull())
 				{
-					times[playerAt[player]] += elapsed;
+					result.times[playerAt[player]] += elapsed;
 #ifdef TIMEOUT
 					qint64 d = elapsed - qint64(1000000)*qint64(TIMEOUT);
 #else
 					qint64 d = elapsed;
 #endif
-					diffs[playerAt[player]] += d;
-					++steps[playerAt[player]];
+					result.timeDiffs[playerAt[player]] += d;
+					++result.plys[playerAt[player]];
 				}
 				else
 				{
-					qDebug("skipped tile");
+					qDebug() << i << "skipped tile";
 				}
 			}
 
-			Result result(playerCount);
 			auto scores = game.getScores();
 			auto utilities = utility.utilities(scores, playerCount);
 			for (int i = 0; i < playerCount; ++i)
@@ -205,17 +184,51 @@ int main(int argc, char *argv[])
 				result.scores[playerAt[i]] = scores[i];
 				result.utilities[playerAt[i]] = utilities[i];
 				result.playouts[i] = players[i]->playouts;
+				players[i]->playouts = 0;
 			}
 
-			results.push_back(std::move(result));
+			results[j] = result;
 
-			printResults(results, playerCount);
-			printTimes(times, diffs, steps, players);
-
-			for (Player * p : players)
-				p->playouts = 0;
-			qDebug();
+			printResult(results, playerCount, j);
 		}
+	}
+}
+
+int main(int /*argc*/, char */*argv*/[])
+{
+	jcz::TileFactory * tileFactory = new jcz::TileFactory(false);
+
+	int const N = 50;
+	int const THREADS = 4;
+
+	std::vector<Player *> players;
+	players.push_back(new MCTSPlayer<Utilities::ComplexUtilityNormalized, Playouts::EarlyCutoff<10>>(tileFactory));
+	players.push_back(new MCTSPlayer<Utilities::ComplexUtilityNormalizedEC, Playouts::EarlyCutoff<10>>(tileFactory));
+
+#ifdef TIMEOUT
+	qDebug() << "TIMEOUT" << TIMEOUT;
+#endif
+	for (Player * p : players)
+		qDebug() << p->getTypeName();
+
+	{
+		std::vector<Result> results;
+		results.resize(N * players.size());
+
+		if (THREADS == 1)
+		{
+			run(players, tileFactory, std::ref(results), N, 0, THREADS);
+		}
+		else
+		{
+			std::thread * threads[THREADS];
+			for (int i = 0; i < THREADS; ++i)
+				threads[i] = new std::thread(run, players, tileFactory, std::ref(results), N, i, THREADS);
+			for (int i = 0; i < THREADS; ++i)
+				threads[i]->join();
+		}
+		printResults(results, (int)players.size());
+		qDebug("\n");
 	}
 
 	delete tileFactory;

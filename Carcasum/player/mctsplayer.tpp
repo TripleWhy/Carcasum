@@ -119,6 +119,18 @@ void MCTSPlayer MCTS_TU::endGame()
 }
 
 MCTS_T
+QString MCTSPlayer MCTS_TU::getTypeName()
+{
+	return typeName;
+}
+
+MCTS_T
+Player * MCTSPlayer MCTS_TU::clone() const
+{
+	return new MCTSPlayer(tileFactory, M, useTimeout);
+}
+
+MCTS_T
 typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::treePolicy(MCTSNode * v)
 {
 	while (!simGame.isFinished())
@@ -480,10 +492,4 @@ void MCTSPlayer MCTS_TU::newGame(int player, Game const * g)
 		simGame.addPlayer(&RandomPlayer::instance);
 	simGame.newGame(g->getTileSets(), tileFactory, g->getMoveHistory());
 	utilityProvider.newGame(player, g);
-}
-
-MCTS_T
-QString MCTSPlayer<UtilityProvider, Playout>::getTypeName()
-{
-	return typeName;
 }

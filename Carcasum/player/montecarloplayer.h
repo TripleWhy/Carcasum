@@ -44,6 +44,7 @@ public:
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	virtual void endGame();
 	virtual QString getTypeName() { return typeName; }
+	virtual Player * clone() const;
 	
 private:
 	inline RewardType utility(int const * scores, int const playerCount, int const myIndex)

@@ -54,6 +54,7 @@ public:
 	virtual void playerMoved(int player, Tile const * const tile, MoveHistoryEntry const & move);
 	virtual void endGame();
 	virtual QString getTypeName() { return "BoardGraphicsScene"; }
+	virtual Player * clone() const;
 	void quit() { _quit = true; }
 
 protected:

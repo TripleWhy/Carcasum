@@ -51,6 +51,7 @@ public:
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	virtual void endGame();
 	virtual QString getTypeName() { return typeName; }
+	virtual Player * clone() const;
 
 private:
 	int playout();

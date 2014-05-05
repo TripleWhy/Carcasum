@@ -183,3 +183,9 @@ void MonteCarloPlayer MC_TU::endGame()
 	delete simGame;
 	simGame = 0;
 }
+
+MC_T
+Player * MonteCarloPlayer MC_TU::clone() const
+{
+	return new MonteCarloPlayer(tileFactory);
+}

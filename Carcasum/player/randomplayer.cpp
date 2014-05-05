@@ -1,4 +1,4 @@
 #include "randomplayer.h"
 
-RandomPlayer RandomPlayer::instance = RandomPlayer();
+RandomPlayer RandomPlayer::instance;
 

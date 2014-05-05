@@ -3,17 +3,19 @@
 
 #include <QFile>
 
-//#include <QDebug>
 jcz::TileFactory::TileFactory(bool printUnsupportedNodeTypes)
-    : printUnsupportedNodeTypes(printUnsupportedNodeTypes)
+    : lock(QReadWriteLock::Recursive),
+      printUnsupportedNodeTypes(printUnsupportedNodeTypes)
 {
 }
 
 jcz::TileFactory::~TileFactory()
 {
+	QWriteLocker locker(&lock);
 	for (auto it = tileTemplates.constBegin(); it != tileTemplates.constEnd(); ++it)
 		qDeleteAll(it.value());
 	tileTemplates.clear();
+	locker.unlock();
 }
 
 QList<Tile *> jcz::TileFactory::createPack(Tile::TileSets tileSets, Game const * g)
@@ -26,8 +28,16 @@ QList<Tile *> jcz::TileFactory::createPack(Tile::TileSets tileSets, Game const *
 
 void jcz::TileFactory::createPack(Tile::TileSet tileSet, QList<Tile *> & pack, Game const * g)
 {
+	QReadLocker locker(&lock);
 	if (!tileTemplates.contains(tileSet))
-		readXMLPack(tileSet, g);
+	{
+		locker.unlock();
+		QWriteLocker writeLocker (&lock);
+		if (!tileTemplates.contains(tileSet))
+			readXMLPack(tileSet, g);
+		writeLocker.unlock();
+		locker.relock();
+	}
 #if DEBUG_IDS
 	uint tileId = 0;
 	uint nodeId = 0;
@@ -58,6 +68,7 @@ void jcz::TileFactory::createPack(Tile::TileSet tileSet, QList<Tile *> & pack, G
 #endif
 		}
 	}
+	locker.unlock();
 }
 
 void jcz::TileFactory::readXMLPack(Tile::TileSet set, Game const * g)

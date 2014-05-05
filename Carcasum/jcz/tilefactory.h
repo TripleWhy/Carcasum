@@ -8,6 +8,7 @@
 #include <QXmlStreamReader>
 #include <QHash>
 #include <QPoint>
+#include <QReadWriteLock>
 #pragma GCC diagnostic pop
 
 class Tile;
@@ -25,6 +26,7 @@ private:
 		QPoint position;
 	};
 
+	QReadWriteLock lock;
 	QHash<Tile::TileSet, QStringList> tileIdentifiers;
 	QHash<Tile::TileSet, QList<Tile *>> tileTemplates;
 	QHash<Tile *, TileMetaData> tileMetaData;

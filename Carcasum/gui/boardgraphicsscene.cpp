@@ -332,6 +332,11 @@ void BoardGraphicsScene::endGame()
 	displayEndGame();
 }
 
+Player *BoardGraphicsScene::clone()
+{
+	return 0;
+}
+
 void BoardGraphicsScene::displayPlayerMoved(void * data, int callDepth)
 {
 	DPMData * d = static_cast<DPMData *>(data);

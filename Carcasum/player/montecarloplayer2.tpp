@@ -139,6 +139,12 @@ void MonteCarloPlayer2 MC2_TU::endGame()
 }
 
 MC2_T
+Player * MonteCarloPlayer2 MC2_TU::clone() const
+{
+	return new MonteCarloPlayer2(tileFactory);
+}
+
+MC2_T
 int MonteCarloPlayer2 MC2_TU::playout()
 {
 	return playoutPolicy.playout(*simGame);

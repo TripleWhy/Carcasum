@@ -216,6 +216,11 @@ void MainWindow::endGame()
 	settings.endGroup();
 }
 
+Player *MainWindow::clone() const
+{
+	return 0;
+}
+
 void MainWindow::closeEvent(QCloseEvent * event)
 {
 	requestEndGame();
