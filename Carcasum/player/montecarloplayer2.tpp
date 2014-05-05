@@ -44,7 +44,7 @@ TileMove MonteCarloPlayer2 MC2_TU::getTileMove(int player, const Tile * /*tile*/
 	auto rewards = QVarLengthArray<QVarLengthArray<RewardType, 16>, 128>(possibleSize);	//VarLengthArrayWrapper does not work?!
 	auto playoutCount = VarLengthArrayWrapper<VarLengthArrayWrapper<int, 16>::type, 128>::type(possibleSize);
 	{
-		simGame->simPartStepChance(move.tile);
+		simGame->simPartStepChance(move.tileIndex);
 		Tile * simTile = simGame->simTile;
 		for (int i = 0; i < possibleSize; ++i)
 		{

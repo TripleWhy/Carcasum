@@ -63,7 +63,7 @@ TileMove MonteCarloPlayer MC_TU::getTileMove(int player, const Tile * /*tile*/, 
 #else
 //			simGame->simStep(move.tile, tileMove, player, &RandomPlayer::instance);
 			// Hm, this looks a bit ugly.
-			simGame->simPartStepChance(move.tile);
+			simGame->simPartStepChance(move.tileIndex);
 			simGame->simPartStepTile(tileMove);
 			MeepleMove meepleMove;
 			if (simGame->getPlayerMeeples(player) > 0)

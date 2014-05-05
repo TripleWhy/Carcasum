@@ -189,8 +189,9 @@ bool Game::step()
 #endif
 
 	MoveHistoryEntry entry;
-	entry.tile = nextTile();
-	Tile * tile = tiles[entry.tile];
+	entry.tileIndex = nextTile();
+	Tile * tile = tiles[entry.tileIndex];
+	entry.tileType = tile->tileType;
 	TileMovesType && placements = board->getPossibleTilePlacements(tile);
 	if (placements.size() == 0)
 	{
@@ -203,7 +204,7 @@ bool Game::step()
  #endif
 #endif
 		moveHistory.push_back(entry);
-		tiles.removeAt(entry.tile);
+		tiles.removeAt(entry.tileIndex);
 		--tileCount[tile->tileType];
 		assertTileCount();
 		
@@ -295,7 +296,7 @@ bool Game::step()
 	for (Player * p : allPlayers)
 		p->playerMoved(playerIndex, tile, entry);
 
-	tiles.removeAt(entry.tile);
+	tiles.removeAt(entry.tileIndex);
 	--tileCount[tile->tileType];
 	assertTileCount();
 	if (tiles.isEmpty())
@@ -320,8 +321,9 @@ bool Game::simStep(Player * player)
 #endif
 	{
 		MoveHistoryEntry entry;
-		entry.tile = simNextTile();
-		Tile * tile = tiles[entry.tile];
+		entry.tileIndex = simNextTile();
+		Tile * tile = tiles[entry.tileIndex];
+		entry.tileType = tile->tileType;
 		TileMovesType && placements = board->getPossibleTilePlacements(tile);
 		if (placements.size() == 0)
 		{
@@ -347,7 +349,7 @@ bool Game::simStep(Player * player)
 			}
 			setNextPlayer();
 		}
-		tiles.removeAt(entry.tile);
+		tiles.removeAt(entry.tileIndex);
 		--tileCount[tile->tileType];
 		assertTileCount();
 		moveHistory.push_back(std::move(entry));
@@ -383,8 +385,9 @@ bool Game::simStep(int tileIndex, const TileMove & tileMove, int playerIndex, Pl
 #endif
 	{
 		MoveHistoryEntry entry;
-		entry.tile = tileIndex;
-		Tile * tile = tiles[entry.tile];
+		entry.tileIndex = tileIndex;
+		Tile * tile = tiles[entry.tileIndex];
+		entry.tileType = tile->tileType;
 
 		Move & move = entry.move;
 		move.tileMove = tileMove;
@@ -402,7 +405,7 @@ bool Game::simStep(int tileIndex, const TileMove & tileMove, int playerIndex, Pl
 		}
 		setNextPlayer();
 
-		tiles.removeAt(entry.tile);
+		tiles.removeAt(entry.tileIndex);
 		--tileCount[tile->tileType];
 		assertTileCount();
 		moveHistory.push_back(std::move(entry));
@@ -428,7 +431,7 @@ bool Game::simStep(const MoveHistoryEntry & entry)
 		oldScores.push_back(playerScores[i]);
 #endif
 	
-	Tile * tile = tiles[entry.tile];
+	Tile * tile = tiles[entry.tileIndex];
 	if (entry.move.tileMove.isNull())
 	{
 		discardedTiles.push_back(tile);
@@ -441,7 +444,7 @@ bool Game::simStep(const MoveHistoryEntry & entry)
 		setNextPlayer();
 	}
 	moveHistory.push_back(entry);
-	tiles.removeAt(entry.tile);
+	tiles.removeAt(entry.tileIndex);
 	--tileCount[tile->tileType];
 	assertTileCount();
 
@@ -459,8 +462,9 @@ void Game::simPartStepChance(int index)
 	Q_ASSERT(simState++ == 0);
 #endif
 
-	simEntry.tile = index;
 	simTile = tiles[index];
+	simEntry.tileIndex = index;
+	simEntry.tileType = simTile->tileType;
 }
 
 void Game::simPartStepTile(TileMove const & tileMove)
@@ -505,7 +509,7 @@ void Game::simPartStepMeeple(const MeepleMove & meepleMove)
 		setNextPlayer();
 	}
 
-	tiles.removeAt(simEntry.tile);
+	tiles.removeAt(simEntry.tileIndex);
 	--tileCount[simTile->tileType];
 	moveHistory.push_back(std::move(simEntry));
 	simEntry = MoveHistoryEntry();
@@ -545,7 +549,7 @@ void Game::undo()
 		{
 			Tile * t = discardedTiles.back();
 			discardedTiles.pop_back();
-			tiles.insert(entry.tile, t);
+			tiles.insert(entry.tileIndex, t);
 			++tileCount[t->tileType];
 			assertTileCount();
 
@@ -577,7 +581,7 @@ void Game::undo()
 
 		board->removeTile(tileMove);
 
-		tiles.insert(entry.tile, tile);
+		tiles.insert(entry.tileIndex, tile);
 		++tileCount[tile->tileType];
 		assertTileCount();
 	}
@@ -616,7 +620,8 @@ void Game::simPartUndoChance()
 	Q_ASSERT(simState-- == 1);
 #endif
 
-	simEntry.tile = -1;
+	simEntry.tileIndex = -1;
+	simEntry.tileType = -1;
 #ifndef QT_NO_DEBUG
 	simTile = 0;
 #endif
@@ -684,7 +689,7 @@ void Game::simPartUndoMeeple()
 	}
 	simTile = tile;
 
-	tiles.insert(simEntry.tile, tile);
+	tiles.insert(simEntry.tileIndex, tile);
 	++tileCount[tile->tileType];
 	assertTileCount();
 	assertMeepleCount();
@@ -705,7 +710,8 @@ void Game::storeToFile(const QString & path, const std::vector<MoveHistoryEntry>
 
 	for (MoveHistoryEntry const & e : history)
 	{
-		out << (qint32)e.tile;
+		out << (qint32)e.tileIndex;
+		out << (qint32)e.tileType;
 
 		Move const & move = e.move;
 		TileMove const & tileMove = move.tileMove;
@@ -749,7 +755,9 @@ std::vector<MoveHistoryEntry> Game::loadFromFile(const QString & path)
 
 		MoveHistoryEntry &e = history[i];
 		in >> i32;
-		e.tile = (int)i32;
+		e.tileIndex = (int)i32;
+		in >> i32;
+		e.tileType = (TileTypeType)i32;
 
 		Move & move = e.move;
 		TileMove & tileMove = move.tileMove;
@@ -1037,7 +1045,7 @@ void Game::applyHistory(const std::vector<MoveHistoryEntry> & history, bool info
 		for (MoveHistoryEntry const & e : history)
 		{
 			int playerIndex = nextPlayer;
-			Tile const * tile = tiles[e.tile];
+			Tile const * tile = tiles[e.tileIndex];
 			simStep(e);
 			returnMeeplesToPlayers();
 			for (Player * p : allPlayers)

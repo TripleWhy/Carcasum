@@ -52,6 +52,16 @@ private:
 			for (MCTSMeepleNode * c : *castChildren())
 				delete c;
 		}
+		void deleteExcept(MCTSNode * n)
+		{
+			for (auto *& c : *castChildren())
+			{
+				if (c != 0 && c != n)
+					c->deleteExcept(n);
+				c = 0;
+			}
+			delete this;
+		}
 
 		inline std::vector<MCTSMeepleNode *> * castChildren() { return reinterpret_cast<std::vector<MCTSMeepleNode *> *>(&(MCTSNode::children)); }
 		inline MCTSChanceNode * castParent() { return static_cast<MCTSChanceNode *>(MCTSNode::parent); }
@@ -68,6 +78,16 @@ private:
 		{
 			for (MCTSChanceNode * c : *castChildren())
 				delete c;
+		}
+		void deleteExcept(MCTSNode * n)
+		{
+			for (auto *& c : *castChildren())
+			{
+				if (c != 0 && c != n)
+					c->deleteExcept(n);
+				c = 0;
+			}
+			delete this;
 		}
 
 		inline std::vector<MCTSChanceNode *> * castChildren() { return reinterpret_cast<std::vector<MCTSChanceNode *> *>(&(MCTSNode::children)); }
@@ -86,6 +106,16 @@ private:
 			for (MCTSTileNode * c : *castChildren())
 				delete c;
 		}
+		void deleteExcept(MCTSNode * n)
+		{
+			for (auto *& c : *castChildren())
+			{
+				if (c != 0 && c != n)
+					c->deleteExcept(n);
+				c = 0;
+			}
+			delete this;
+		}
 
 		inline std::vector<MCTSTileNode *> * castChildren() { return reinterpret_cast<std::vector<MCTSTileNode *> *>(&(MCTSNode::children)); }
 		inline MCTSMeepleNode * castParent() { return static_cast<MCTSMeepleNode *>(MCTSNode::parent); }
@@ -97,6 +127,7 @@ private:
 	jcz::TileFactory * tileFactory;
 	RandomTable r;
 	MeepleMove meepleMove;
+	MCTSChanceNode * rootNode = 0;
 	static Util::Math const & math;
 
 	QString typeName;

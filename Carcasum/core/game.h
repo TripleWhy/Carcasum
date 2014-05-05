@@ -19,7 +19,7 @@ struct TileMove
 	uint x, y;
 	Tile::Side orientation;
 
-	TileMove() noexcept : x(-1) {}
+	TileMove() noexcept : x(-1), y(-1), orientation(Tile::Side()) {}
 	TileMove(uint x, uint y, Tile::Side orientation) noexcept : x(x), y(y), orientation(orientation) {}
 
 	inline bool isNull() const
@@ -44,7 +44,8 @@ struct Move
 
 struct MoveHistoryEntry
 {
-	int tile;
+	int tileIndex;
+	TileTypeType tileType = -1;
 	Move move;
 };
 
@@ -253,7 +254,7 @@ inline bool operator==(MeepleMove const& lhs, MeepleMove const& rhs) { return (l
 inline bool operator!=(MeepleMove const& lhs, MeepleMove const& rhs) { return !(lhs == rhs); }
 inline bool operator==(Move const& lhs, Move const& rhs) { return (lhs.tileMove == rhs.tileMove) && (lhs.meepleMove == rhs.meepleMove); }
 inline bool operator!=(Move const& lhs, Move const& rhs) { return !(lhs == rhs); }
-inline bool operator==(MoveHistoryEntry const& lhs, MoveHistoryEntry const& rhs) { return (lhs.tile == rhs.tile) && (lhs.move == rhs.move); }
+inline bool operator==(MoveHistoryEntry const& lhs, MoveHistoryEntry const& rhs) { return (lhs.tileIndex == rhs.tileIndex) && (lhs.tileType == rhs.tileType) && (lhs.move == rhs.move); }
 inline bool operator!=(MoveHistoryEntry const& lhs, MoveHistoryEntry const& rhs) { return !(lhs == rhs); }
 
 
