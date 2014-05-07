@@ -31,10 +31,9 @@ void MonteCarloPlayerUCT MCU_TU::playerMoved(int /*player*/, const Tile * /*tile
 MCU_T
 TileMove MonteCarloPlayerUCT MCU_TU::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & possible)
 {
-#ifdef TIMEOUT
 	QElapsedTimer timer;
-	timer.start();
-#endif
+	if (useTimeout)
+		timer.start();
 
 	Util::syncGamesFast(*game, *simGame);
 
@@ -74,7 +73,7 @@ TileMove MonteCarloPlayerUCT MCU_TU::getTileMove(int player, const Tile * /*tile
 				simGame->simPartStepMeeple(mm[j]);
 
 				int steps = playout();
-				RewardType const u = utility(simGame->getScores(), playerCount, player);
+				RewardType const u = utility(simGame->getScores(), playerCount, player, simGame);
 //				rewards0 += u;
 				++playoutCount0;
 				rewards1[i] += u;
@@ -94,11 +93,8 @@ TileMove MonteCarloPlayerUCT MCU_TU::getTileMove(int player, const Tile * /*tile
 	Q_ASSERT(game->equals(*simGame));
 
 	MoveHistoryEntry simMove = move;
-#ifdef TIMEOUT
-	while (!timer.hasExpired(TIMEOUT))
-#else
-	for (int j = 0; j < N; ++j)
-#endif
+	int i = 0;
+	do
 	{
 		int const tmIndex = chooseTileMove(possible, playoutCount0, rewards1, playoutCount1);
 		int const mmIndex = chooseMeepleMove(meepleMoves[tmIndex], playoutCount1[tmIndex], rewards2[tmIndex], playoutCount2[tmIndex]);
@@ -107,7 +103,7 @@ TileMove MonteCarloPlayerUCT MCU_TU::getTileMove(int player, const Tile * /*tile
 		simGame->simStep(simMove);
 
 		int steps = playout();
-		RewardType const u = utility(simGame->getScores(), playerCount, player);
+		RewardType const u = utility(simGame->getScores(), playerCount, player, simGame);
 		rewards1[tmIndex] += u;
 		rewards2[tmIndex][mmIndex] += u;
 		++playoutCount0;
@@ -115,7 +111,7 @@ TileMove MonteCarloPlayerUCT MCU_TU::getTileMove(int player, const Tile * /*tile
 		++playoutCount2[tmIndex][mmIndex];
 		unplayout(steps+1);
 		Q_ASSERT(game->equals(*simGame));
-	}
+	} while (useTimeout ? !timer.hasExpired(M) : i < M);
 #if COUNT_PLAYOUTS
 	playouts += playoutCount0;
 #endif

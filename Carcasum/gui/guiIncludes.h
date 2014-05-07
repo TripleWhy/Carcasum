@@ -1,8 +1,7 @@
 #ifndef GUIINCLUDES_H
 #define GUIINCLUDES_H
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC system_header
 #include <QWidget>
 #include <QTimer>
 #include <QSet>
@@ -15,7 +14,5 @@
 #include <QGraphicsScene>
 #include <QGraphicsColorizeEffect>
 #include <QDialog>
-#pragma GCC diagnostic pop
-
 
 #endif // GUIINCLUDES_H

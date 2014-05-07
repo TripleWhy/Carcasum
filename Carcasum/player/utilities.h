@@ -4,42 +4,43 @@
 #include "static.h"
 #include "core/util.h"
 #include "core/game.h"
+#include <string>
 
 namespace Utilities
 {
 
 // Careful with these, they do not work for all utilities.
 template<typename UtilityType>
-static inline typename UtilityType::RewardType utilityUpperBound(int const playerCount, int const upperScoreBound)
+static inline typename UtilityType::RewardType utilityUpperBound(int const playerCount, int const upperScoreBound, Game const * g)
 {
 	constexpr UtilityType u;
 	int scores[MAX_PLAYERS] = { upperScoreBound };
-	return u.utility(scores, playerCount, 0);
+	return u.utility(scores, playerCount, 0, g);
 }
 
 template<typename UtilityType>
-static inline typename UtilityType::RewardType utilityLowerBound(int const playerCount, int const upperScoreBound)
+static inline typename UtilityType::RewardType utilityLowerBound(int const playerCount, int const upperScoreBound, Game const * g)
 {
 	constexpr UtilityType u;
 	int scores[MAX_PLAYERS] = { };
 	for (int i = 1; i < playerCount; ++i)
 		scores[i] = upperScoreBound;
-	return u.utility(scores, playerCount, 0);
+	return u.utility(scores, playerCount, 0, g);
 }
 template<typename UtilityType>
-static inline typename UtilityType::RewardType utilityUpperBound(UtilityType const & u, int const playerCount, int const upperScoreBound)
+static inline typename UtilityType::RewardType utilityUpperBound(UtilityType const & u, int const playerCount, int const upperScoreBound, Game const * g)
 {
 	int scores[MAX_PLAYERS] = { upperScoreBound };
-	return u.utility(scores, playerCount, 0);
+	return u.utility(scores, playerCount, 0, g);
 }
 
 template<typename UtilityType>
-static inline typename UtilityType::RewardType utilityLowerBound(UtilityType const & u, int const playerCount, int const upperScoreBound)
+static inline typename UtilityType::RewardType utilityLowerBound(UtilityType const & u, int const playerCount, int const upperScoreBound, Game const * g)
 {
 	int scores[MAX_PLAYERS] = { };
 	for (int i = 1; i < playerCount; ++i)
 		scores[i] = upperScoreBound;
-	return u.utility(scores, playerCount, 0);
+	return u.utility(scores, playerCount, 0, g);
 }
 
 class SimpleUtility
@@ -49,7 +50,7 @@ public:
 	typedef int RewardType;
 	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
 	inline void newGame(int /*player*/, Game const * /*g*/) {}
-	RewardType utility(int const * scores, int const playerCount, int const myIndex) const
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * /*g*/) const
 	{
 		int best = std::numeric_limits<int>::min();
 		int winner = -1;
@@ -73,7 +74,7 @@ public:
 		else
 			return -1;
 	}
-	RewardListType utilities(const int * scores, const int playerCount) const
+	RewardListType utilities(const int * scores, const int playerCount, Game const * /*g*/) const
 	{
 		RewardListType reward(playerCount);
 		int max = std::numeric_limits<int>::min();
@@ -112,7 +113,7 @@ public:
 	typedef qreal RewardType;
 	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
 	inline void newGame(int /*player*/, Game const * /*g*/) {}
-	RewardType utility(int const * scores, int const playerCount, int const myIndex) const
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * /*g*/) const
 	{
 		int best = std::numeric_limits<int>::min();
 		int winner = -1;
@@ -136,7 +137,7 @@ public:
 		else
 			return -1;
 	}
-	RewardListType utilities(const int * scores, const int playerCount) const
+	RewardListType utilities(const int * scores, const int playerCount, Game const * /*g*/) const
 	{
 		RewardListType reward(playerCount);
 		int max = std::numeric_limits<int>::min();
@@ -175,7 +176,7 @@ public:
 	typedef qreal RewardType;
 	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
 	inline void newGame(int /*player*/, Game const * /*g*/) {}
-	RewardType utility(int const * scores, int const playerCount, int const myIndex) const
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * /*g*/) const
 	{
 		int best = std::numeric_limits<int>::min();
 		int winner = -1;
@@ -199,7 +200,7 @@ public:
 		else
 			return 0;
 	}
-	RewardListType utilities(const int * scores, const int playerCount) const
+	RewardListType utilities(const int * scores, const int playerCount, Game const * /*g*/) const
 	{
 		RewardListType reward(playerCount);
 		int max = std::numeric_limits<int>::min();
@@ -243,7 +244,7 @@ public:
 
 	inline void newGame(int /*player*/, Game const * /*g*/) {}
 
-	RewardType utility(int const * scores, int const playerCount, int const myIndex) const
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * /*g*/) const
 	{
 		std::multimap<int, int> map;
 		for (int i = 0; i < playerCount; ++i)
@@ -276,7 +277,7 @@ public:
 		return u;
 	}
 
-	RewardListType utilities(const int * scores, const int playerCount) const
+	RewardListType utilities(const int * scores, const int playerCount, Game const * /*g*/) const
 	{
 		RewardListType reward(playerCount);
 
@@ -354,8 +355,8 @@ public:
 		complex.newGame(player, g);
 		const int upperScoreBound = g->getUpperScoreBound();
 		const int playerCount = g->getPlayerCount();
-		int ub = utilityUpperBound(complex, playerCount, upperScoreBound);
-		int lb = utilityLowerBound(complex, playerCount, upperScoreBound);
+		int ub = utilityUpperBound(complex, playerCount, upperScoreBound, g);
+		int lb = utilityLowerBound(complex, playerCount, upperScoreBound, g);
 		if (uBound != ub || lBound != lb)
 		{
 			uBound = ub;
@@ -367,9 +368,9 @@ public:
 		}
 	}
 
-	RewardType utility(int const * scores, int const playerCount, int const myIndex) const
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * g) const
 	{
-		int const u = complex.utility(scores, playerCount, myIndex);
+		int const u = complex.utility(scores, playerCount, myIndex, g);
 
 		qreal const A = (range * playerCount) / 300.0;
 		qreal const B = (6 * playerCount) / qreal(range);
@@ -377,15 +378,123 @@ public:
 		return tanh(((u+A) * B) + 1) / 2;
 	}
 
-	RewardListType utilities(const int * scores, const int playerCount) const
+	RewardListType utilities(const int * scores, const int playerCount, Game const * g) const
 	{
-		auto const & u = complex.utilities(scores, playerCount);
+		auto const & u = complex.utilities(scores, playerCount, g);
 		RewardListType r(u.size());
 		for (int i = 0; i < u.size(); ++i)
 			r[i] = utilityMap[u[i]];
 		return r;
 	}
 };
+
+class HeydensUtility
+{
+public:
+	constexpr static char const * name = "HeydensUtility";
+	typedef int RewardType;
+	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
+	inline void newGame(int /*player*/, Game const * /*g*/) {}
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * /*g*/) const
+	{
+		int u = 0;
+		for (int i = 0; i < playerCount; ++i)
+			if (i == myIndex)
+				u += scores[i];
+			else
+				u -= scores[i];
+		return u;
+	}
+	RewardListType utilities(const int * scores, const int playerCount, Game const * /*g*/) const
+	{
+		RewardListType reward(playerCount);
+		int u = 0;
+		for (int i = 0; i < playerCount; ++i)
+				u += scores[i];
+		for (int i = 0; i < playerCount; ++i)
+			reward[i] = 2*scores[i] - u;
+		return reward;
+	}
+};
+
+
+template<typename Utility>
+class EC
+{
+public:
+	static QString const name;
+	typedef typename Utility::RewardType RewardType;
+	typedef typename Utility::RewardListType RewardListType;
+
+private:
+	Utility util;
+	SimpleUtility simple;
+	RewardType uBound = -1;
+	RewardType lBound = 0;
+
+public:
+	inline void newGame(int player, Game const * g)
+	{
+		util.newGame(player, g);
+		simple.newGame(player, g);
+
+		const int upperScoreBound = g->getUpperScoreBound();
+		const int playerCount = g->getPlayerCount();
+		uBound = utilityUpperBound(util, playerCount, upperScoreBound, g);
+		lBound = utilityLowerBound(util, playerCount, upperScoreBound, g);
+	}
+
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * g) const
+	{
+		if (g->isTerminal())
+		{
+			switch (simple.utility(scores, playerCount, myIndex, g))
+			{
+				case -1:
+					return lBound;
+				case 0:
+					return 0;
+				case 1:
+					return uBound;
+			}
+			Q_UNREACHABLE();
+			return 0;
+		}
+		else
+			return util.utility(scores, playerCount, myIndex, g);
+	}
+
+	RewardListType utilities(const int * scores, const int playerCount, Game const * g) const
+	{
+		if (g->isTerminal())
+		{
+			RewardListType reward(playerCount);
+			auto const & r = simple.utilities(scores, playerCount, g);
+			for (int i = 0; i < playerCount; ++i)
+			{
+				switch (r[i])
+				{
+					case -1:
+						reward[i] = lBound;
+						break;
+					case 0:
+						reward[i] = 0;
+						break;
+					case 1:
+						reward[i] = uBound;
+						break;
+				}
+			}
+			return reward;
+		}
+		else
+			return util.utilities(scores, playerCount, g);
+	}
+};
+template<typename Utility>
+QString const Utilities::EC<Utility>::name = QString("EC<%1>").arg(Utility::name);
+typedef EC<ComplexUtility> ComplexUtilityEC;
+typedef EC<HeydensUtility> HeydensUtilityEC;
 
 class ComplexUtilityNormalizedEC
 {
@@ -397,58 +506,27 @@ public:
 private:
 	ComplexUtilityNormalized complex;
 	SimpleUtilityNormalized simple;
-	Game const * game;
 
 public:
 	inline void newGame(int player, Game const * g)
 	{
-		game = g;
 		complex.newGame(player, g);
 		simple.newGame(player, g);
 	}
 
-	RewardType utility(int const * scores, int const playerCount, int const myIndex) const
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * g) const
 	{
-		if (game->isTerminal())
-			return simple.utility(scores, playerCount, myIndex);
+		if (g->isTerminal())
+			return simple.utility(scores, playerCount, myIndex, g);
 		else
-			return complex.utility(scores, playerCount, myIndex);
+			return complex.utility(scores, playerCount, myIndex, g);
 	}
-	RewardListType utilities(const int * scores, const int playerCount) const
+	RewardListType utilities(const int * scores, const int playerCount, Game const * g) const
 	{
-		if (game->isTerminal())
-			return simple.utilities(scores, playerCount);
+		if (g->isTerminal())
+			return simple.utilities(scores, playerCount, g);
 		else
-			return complex.utilities(scores, playerCount);
-	}
-};
-
-class HeydensUtility
-{
-public:
-	constexpr static char const * name = "HeydensUtility";
-	typedef int RewardType;
-	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
-	inline void newGame(int /*player*/, Game const * /*g*/) {}
-	RewardType utility(int const * scores, int const playerCount, int const myIndex) const
-	{
-		int u = 0;
-		for (int i = 0; i < playerCount; ++i)
-			if (i == myIndex)
-				u += scores[i];
-			else
-				u -= scores[i];
-		return u;
-	}
-	RewardListType utilities(const int * scores, const int playerCount) const
-	{
-		RewardListType reward(playerCount);
-		int u = 0;
-		for (int i = 0; i < playerCount; ++i)
-				u += scores[i];
-		for (int i = 0; i < playerCount; ++i)
-			reward[i] = 2*scores[i] - u;
-		return reward;
+			return complex.utilities(scores, playerCount, g);
 	}
 };
 

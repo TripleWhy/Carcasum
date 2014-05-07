@@ -9,7 +9,7 @@ MC2_T
 RandomTable MonteCarloPlayer2 MC2_TU::r = RandomTable();
 
 MC2_T
-void MonteCarloPlayer2 MC2_TU::newGame(int /*player*/, const Game * g)
+void MonteCarloPlayer2 MC2_TU::newGame(int player, const Game * g)
 {
 	if (simGame == 0)
 		simGame = new Game(0);
@@ -18,6 +18,7 @@ void MonteCarloPlayer2 MC2_TU::newGame(int /*player*/, const Game * g)
 	for (uint i = 0; i < g->getPlayerCount(); ++i)
 		simGame->addPlayer(&RandomPlayer::instance);
 	simGame->newGame(game->getTileSets(), tileFactory, g->getMoveHistory());
+	utilityProvider.newGame(player, g);
 }
 
 MC2_T
@@ -29,10 +30,9 @@ void MonteCarloPlayer2 MC2_TU::playerMoved(int /*player*/, const Tile * /*tile*/
 MC2_T
 TileMove MonteCarloPlayer2 MC2_TU::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & possible)
 {
-#ifdef TIMEOUT
 	QElapsedTimer timer;
-	timer.start();
-#endif
+	if (useTimeout)
+		timer.start();
 
 	Util::syncGamesFast(*game, *simGame);
 
@@ -66,7 +66,7 @@ TileMove MonteCarloPlayer2 MC2_TU::getTileMove(int player, const Tile * /*tile*/
 				simGame->simPartStepMeeple(mm[j]);
 
 				int steps = playout();
-				rewards[i][j] = utility(simGame->getScores(), playerCount, player);
+				rewards[i][j] = utility(simGame->getScores(), playerCount, player, simGame);
 				playoutCount[i][j] = 1;
 				unplayout(steps);
 
@@ -81,11 +81,8 @@ TileMove MonteCarloPlayer2 MC2_TU::getTileMove(int player, const Tile * /*tile*/
 	Q_ASSERT(game->equals(*simGame));
 
 	MoveHistoryEntry simMove = move;
-#ifdef TIMEOUT
-	while (!timer.hasExpired(TIMEOUT))
-#else
-	for (int j = 0; j < N; ++j)
-#endif
+	int i = 0;
+	do
 	{
 		int const tmIndex = chooseTileMove(possible);
 		int const mmIndex = chooseMeepleMove(meepleMoves[tmIndex]);
@@ -94,11 +91,11 @@ TileMove MonteCarloPlayer2 MC2_TU::getTileMove(int player, const Tile * /*tile*/
 		simGame->simStep(simMove);
 
 		int steps = playout();
-		rewards[tmIndex][mmIndex] += utility(simGame->getScores(), playerCount, player);
+		rewards[tmIndex][mmIndex] += utility(simGame->getScores(), playerCount, player, simGame);
 		++playoutCount[tmIndex][mmIndex];
 		unplayout(steps+1);
 		Q_ASSERT(game->equals(*simGame));
-	}
+	} while (useTimeout ? !timer.hasExpired(M) : i < M);
 
 	TileMove const * bestMove = 0;
 	qreal bestUtility = -std::numeric_limits<qreal>::infinity();

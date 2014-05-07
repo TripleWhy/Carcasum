@@ -66,6 +66,10 @@ void MCTSPlayer MCTS_TU::playerMoved(int /*player*/, const Tile * /*tile*/, cons
 MCTS_T
 TileMove MCTSPlayer MCTS_TU::getTileMove(int player, const Tile * tile, const MoveHistoryEntry & /*move*/, const TileMovesType & /*placements*/)
 {
+	QElapsedTimer t;
+	if (useTimeout)
+		t.start();
+
 	syncGame();
 
 	//TODO use provided placements
@@ -76,9 +80,6 @@ TileMove MCTSPlayer MCTS_TU::getTileMove(int player, const Tile * tile, const Mo
 	MCTSTileNode * v0 = generateTileNode(0, tile->tileType, simGame);
 
 	{
-		QElapsedTimer t;
-		if (useTimeout)
-			t.start();
 		int i = 0;
 		do
 		{
@@ -91,8 +92,7 @@ TileMove MCTSPlayer MCTS_TU::getTileMove(int player, const Tile * tile, const Mo
 			Q_ASSERT(game->equals(simGame));
 			if (!useTimeout)
 				++i;
-		}
-		while (useTimeout ? !t.hasExpired(M) : i < M);
+		} while (useTimeout ? !t.hasExpired(M) : i < M);
 	}
 	unapplyNode(v0, simGame);
 
@@ -332,7 +332,7 @@ typename MCTSPlayer MCTS_TU::RewardListType MCTSPlayer MCTS_TU::defaultPolicy(MC
 	++playouts;
 #endif
 
-	RewardListType && reward = utilities(simGame.getScores(), simGame.getPlayerCount());
+	RewardListType && reward = utilities(simGame.getScores(), simGame.getPlayerCount(), &simGame);
 
 	playoutPolicy.undoPlayout(simGame, steps);
 
@@ -478,9 +478,9 @@ void MCTSPlayer MCTS_TU::unapplyNode(MCTSPlayer::MCTSNode * node, Game & g)
 }
 
 MCTS_T
-typename MCTSPlayer MCTS_TU::RewardListType MCTSPlayer MCTS_TU::utilities(const int * scores, const int playerCount)
+typename MCTSPlayer MCTS_TU::RewardListType MCTSPlayer MCTS_TU::utilities(const int * scores, const int playerCount, Game const * g)
 {
-	return utilityProvider.utilities(scores, playerCount);
+	return utilityProvider.utilities(scores, playerCount, g);
 }
 
 MCTS_T

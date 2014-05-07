@@ -6,7 +6,7 @@
 #define MC_TU <UtilityProvider, Playout>
 
 MC_T
-void MonteCarloPlayer MC_TU::newGame(int /*player*/, const Game * g)
+void MonteCarloPlayer MC_TU::newGame(int player, const Game * g)
 {
 	if (simGame == 0)
 		simGame = new Game(0);
@@ -15,6 +15,7 @@ void MonteCarloPlayer MC_TU::newGame(int /*player*/, const Game * g)
 	for (uint i = 0; i < g->getPlayerCount(); ++i)
 		simGame->addPlayer(&RandomPlayer::instance);
 	simGame->newGame(game->getTileSets(), tileFactory, g->getMoveHistory());
+	utilityProvider.newGame(player, g);
 }
 
 MC_T
@@ -26,10 +27,9 @@ void MonteCarloPlayer MC_TU::playerMoved(int /*player*/, const Tile * /*tile*/, 
 MC_T
 TileMove MonteCarloPlayer MC_TU::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & possible)
 {
-#ifdef TIMEOUT
 	QElapsedTimer timer;
-	timer.start();
-#endif
+	if (useTimeout)
+		timer.start();
 
 	Util::syncGamesFast(*game, *simGame);
 
@@ -41,11 +41,8 @@ TileMove MonteCarloPlayer MC_TU::getTileMove(int player, const Tile * /*tile*/, 
 
 	Q_ASSERT(game->equals(*simGame));
 	
-#ifdef TIMEOUT
-	while (!timer.hasExpired((2*TIMEOUT)/3))
-#else
-	for (int j = 0; j < N; ++j)
-#endif
+	int i = 0;
+	do
 	{
 		int moveIndex = 0;
 		for (TileMove const & tileMove : possible)
@@ -71,19 +68,25 @@ TileMove MonteCarloPlayer MC_TU::getTileMove(int player, const Tile * /*tile*/, 
 			simGame->simPartStepMeeple(meepleMove);
 			int steps = 1 + playoutPolicy.playout(*simGame);
 			
-			utilities[moveIndex] += utility(simGame->getScores(), playerCount, player);
+			utilities[moveIndex] += utility(simGame->getScores(), playerCount, player, simGame);
 			
 			playoutPolicy.undoPlayout(*simGame, steps);
 			Q_ASSERT(game->equals(*simGame));
 #endif
 			++moveIndex;
 		}
-#if defined(TIMEOUT) && COUNT_PLAYOUTS
-		playouts += possibleSize;
+
+		if (!useTimeout)
+			i += possibleSize;
+#if COUNT_PLAYOUTS
+		else
+			playouts += possibleSize;
 #endif
-	}
-#if !defined(TIMEOUT) && COUNT_PLAYOUTS
-	playouts += N * possibleSize;
+	} while (useTimeout ? !timer.hasExpired((2*M)/3) : i < M);
+
+#if COUNT_PLAYOUTS
+	if (!useTimeout)
+		playouts += i;
 #endif
 	
 	TileMove const * bestMove = 0;
@@ -105,10 +108,9 @@ TileMove MonteCarloPlayer MC_TU::getTileMove(int player, const Tile * /*tile*/, 
 MC_T
 MeepleMove MonteCarloPlayer MC_TU::getMeepleMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const MeepleMovesType & possible)
 {
-#ifdef TIMEOUT
 	QElapsedTimer timer;
-	timer.start();
-#endif
+	if (useTimeout)
+		timer.start();
 
 	int const playerCount = game->getPlayerCount();
 	int const possibleSize = possible.size();
@@ -119,11 +121,8 @@ MeepleMove MonteCarloPlayer MC_TU::getMeepleMove(int player, const Tile * /*tile
 //	Q_ASSERT(game->equals(g));	//Does not equal, since game as the tile already placed, while g doesn't
 	
 	MoveHistoryEntry m = move;
-#ifdef TIMEOUT
-	while (!timer.hasExpired((1*TIMEOUT)/3))
-#else
-	for (int j = 0; j < N; ++j)
-#endif
+	int i = 0;
+	do
 	{
 		int moveIndex = 0;
 		for (MeepleMove const & meepleMove : possible)
@@ -145,7 +144,7 @@ MeepleMove MonteCarloPlayer MC_TU::getMeepleMove(int player, const Tile * /*tile
 				while (simGame->simStep(&RandomPlayer::instance));
 			}
 			
-			utilities[moveIndex] += utility(simGame->getScores(), playerCount, player);
+			utilities[moveIndex] += utility(simGame->getScores(), playerCount, player, simGame);
 			
 			for (int i = 0; i < steps; ++i)
 				simGame->undo();
@@ -153,12 +152,17 @@ MeepleMove MonteCarloPlayer MC_TU::getMeepleMove(int player, const Tile * /*tile
 #endif
 			++moveIndex;
 		}
-#if defined(TIMEOUT) && COUNT_PLAYOUTS
-		playouts += possibleSize;
+		if (!useTimeout)
+			i += possibleSize;
+#if COUNT_PLAYOUTS
+		else
+			playouts += possibleSize;
 #endif
-	}
-#if !defined(TIMEOUT) && COUNT_PLAYOUTS
-	playouts += N * possibleSize;
+	} while (useTimeout ? !timer.hasExpired((1*M)/3) : i < M);
+
+#if COUNT_PLAYOUTS
+	if (!useTimeout)
+		playouts += i;
 #endif
 	
 	RewardType bestUtility = std::numeric_limits<RewardType>::has_infinity ? (-std::numeric_limits<RewardType>::infinity()) : std::numeric_limits<RewardType>::lowest();

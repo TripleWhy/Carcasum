@@ -332,7 +332,7 @@ void BoardGraphicsScene::endGame()
 	displayEndGame();
 }
 
-Player *BoardGraphicsScene::clone()
+Player *BoardGraphicsScene::clone() const
 {
 	return 0;
 }

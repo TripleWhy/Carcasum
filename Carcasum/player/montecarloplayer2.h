@@ -33,15 +33,23 @@ private:
 	QString typeName;
 	STATICCONSTEXPR Playout playoutPolicy = Playout();
 	UtilityProvider utilityProvider = UtilityProvider();
+	const int M;
+	const bool useTimeout;
 
 //public:
 //	int min = std::numeric_limits<int>::max();
 //	int max = std::numeric_limits<int>::min();
 
 public:
-	constexpr MonteCarloPlayer2(jcz::TileFactory * tileFactory)
+#ifdef TIMEOUT
+	constexpr MonteCarloPlayer2(jcz::TileFactory * tileFactory, int m = TIMEOUT, bool mIsTimeout = true)
+#else
+	constexpr MonteCarloPlayer2(jcz::TileFactory * tileFactory, int m = 5000, bool mIsTimeout = true)
+#endif
 	    : tileFactory(tileFactory),
-	      typeName(QString("MonteCarloPlayer2<%1, %2>").arg(UtilityProvider::name).arg(Playout::name))
+	      typeName(QString("MonteCarloPlayer2<%1, %2>").arg(UtilityProvider::name).arg(Playout::name)),
+	      M(m),
+		  useTimeout(mIsTimeout)
 	{
 	}
 
@@ -57,9 +65,9 @@ private:
 	int playout();
 	void unplayout(int steps);
 
-	inline RewardType utility(int const * scores, int const playerCount, int const myIndex)
+	inline RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * g)
 	{
-		return utilityProvider.utility(scores, playerCount, myIndex);
+		return utilityProvider.utility(scores, playerCount, myIndex, g);
 	}
 
 	inline int chooseTileMove(TileMovesType const & possible)

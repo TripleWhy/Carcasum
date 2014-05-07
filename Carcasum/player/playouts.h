@@ -39,7 +39,7 @@ public:
 	}
 };
 
-template<int Cutoff>
+template<int Cutoff = 16>
 class EarlyCutoff : public RandomPlayout
 {
 private:

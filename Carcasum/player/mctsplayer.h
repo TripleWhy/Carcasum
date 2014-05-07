@@ -153,7 +153,7 @@ private:
 	MCTSMeepleNode * generateMeepleNode(MCTSNode * parent, TileMove * parentAction, const Tile * t, Game & g);
 	MCTSChanceNode * generateChanceNode(MCTSNode * parent, MeepleMove * parentAction, Game & g);
 
-	RewardListType utilities(int const * scores, int const playerCount);
+	RewardListType utilities(int const * scores, int const playerCount, Game const * g);
 
 	inline MeepleMovesType getPossibleMeeples(int player, TileMove * parentAction, Tile const * t, Game & g)
 	{
