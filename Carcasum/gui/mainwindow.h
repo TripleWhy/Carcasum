@@ -80,12 +80,13 @@ private:
 	void readSettings();
 	void requestEndGame();
 	void forceEndGame();
-	void logEvent(QString const & msg);
 
 signals:
+	void gameEvent(QString const & msg);
 	void updateNeeded();
 
 private slots:
+	void displayGameEvent(QString const & msg);
 	void timeout();
 	void recenter(QRectF rect);
 	void colorBoxChanged(int index);
