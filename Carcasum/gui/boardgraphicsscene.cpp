@@ -27,7 +27,7 @@ BoardGraphicsScene::BoardGraphicsScene(jcz::TileFactory * tileFactory, TileImage
 	addItem(placementLayer);
 	addItem(meeplePlacementLayer);
 
-	openLayer->setOpacity(0.2);
+	openLayer->setOpacity(0.1);
 	placementLayer->setOpacity(0.7);
 	
 #if DRAW_TILE_POSITION_TEXT
@@ -133,7 +133,7 @@ void BoardGraphicsScene::displayGetTileMove(void * data, int callDepth)
 		QGraphicsRectItem * rect = *it;
 		uint const x = rect->data(0).toUInt();
 		uint const y = rect->data(1).toUInt();
-		rect->setBrush(Qt::black);
+		rect->setBrush(Qt::darkGray);
 		
 		bool possible = false;
 		for (TileMove const & p : d->placements)
@@ -674,7 +674,7 @@ void BoardGraphicsScene::placeOpen()
 
 		QGraphicsRectItem * rect = new QGraphicsRectItem(-BOARD_TILE_SIZE / 2.0, -BOARD_TILE_SIZE / 2.0, BOARD_TILE_SIZE, BOARD_TILE_SIZE);
 		rect->setPos(x * BOARD_TILE_SIZE, y * BOARD_TILE_SIZE);
-		rect->setBrush(Qt::gray);
+		rect->setBrush(Qt::lightGray);
 		rect->setData(0, x);
 		rect->setData(1, y);
 
