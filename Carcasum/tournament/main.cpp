@@ -178,13 +178,15 @@ void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory,
 			}
 
 			auto scores = game.getScores();
-			auto utilities = utility.utilities(scores, playerCount);
+			auto utilities = utility.utilities(scores, playerCount, &game);
 			for (int i = 0; i < playerCount; ++i)
 			{
 				result.scores[playerAt[i]] = scores[i];
 				result.utilities[playerAt[i]] = utilities[i];
+#if COUNT_PLAYOUTS
 				result.playouts[i] = players[i]->playouts;
 				players[i]->playouts = 0;
+#endif
 			}
 
 			results[j] = result;
@@ -198,8 +200,8 @@ int main(int /*argc*/, char */*argv*/[])
 {
 	jcz::TileFactory * tileFactory = new jcz::TileFactory(false);
 
-	int const N = 50;
-	int const THREADS = 4;
+	int const N = 100;
+	int const THREADS = 8;
 
 	std::vector<Player *> players;
 	players.push_back(new MCTSPlayer<Utilities::ComplexUtilityNormalized, Playouts::EarlyCutoff<10>>(tileFactory));
