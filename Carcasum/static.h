@@ -20,7 +20,7 @@
 // GUI
 #define BOARD_TILE_SIZE             300
 #define BOARD_MEEPLE_SIZE            75
-#define BOARDVIEW_INITIAL_TILE_SIZE  50
+#define BOARDVIEW_INITIAL_TILE_SIZE 100
 #define PINFO_ICON_SIZE              40
 #define PINFO_MEEPLE_SIZE            10
 #define RTILE_TILE_SIZE              40
@@ -43,7 +43,7 @@
 // Game
 #define PRINT_STEPS                0
 #define WATCH_SCORES               !defined(QT_NO_DEBUG)
-#define CHECK_SIM_STATE            1
+#define CHECK_SIM_STATE            0
 // Tile
 #define PRINT_CONNECTIONS          0
 #define DEBUG_IDS                  0
@@ -52,7 +52,7 @@
 // BoardGraphicsScene
 #define DRAW_TILE_POSITION_TEXT    0
 // MonteCarloPlayer
-#define COUNT_PLAYOUTS             1
+#define COUNT_PLAYOUTS             0
 // MCTSPlayer
 #define MCTS_COUNT_EXPAND_HITS     0
 #define MCTS_PRINT_UTILITIES       0
