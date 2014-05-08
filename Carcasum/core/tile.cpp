@@ -74,9 +74,6 @@ void Node::connect(Node * n, Game * g)
 				d->maxMeples = *tm;
 		}
 		
-		if (isOccupied())
-			checkClose(g);
-		
 		d->nodes.insert(n->d->nodes.begin(), n->d->nodes.end());
 #if PRINT_CONNECTIONS
 //		qDebug() << "  connect:" << n->id() << "->" << id();
@@ -95,6 +92,9 @@ void Node::connect(Node * n, Game * g)
 //	for (Tile const * t : n->d->tiles)
 //		qDebug() << "    " << n->id() << t->id;
 #endif
+
+	if (isOccupied())
+		checkClose(g);
 	
 //	Q_ASSERT(n->d == &n->data);
 
@@ -117,6 +117,9 @@ void Node::disconnect(Node * n, Game * g)	//only works in reverse order of conne
 		Q_ASSERT(o->ds.size() > 0);
 		o->d = o->ds.back();
 	}
+
+	if (isOccupied())
+		checkUnclose(g);
 	
 #if PRINT_CONNECTIONS
 	qDebug() << "  disconnect:" << n->id() << "->" << id() << "   BEFORE";
@@ -134,9 +137,6 @@ void Node::disconnect(Node * n, Game * g)	//only works in reverse order of conne
 			Q_ASSERT(i != d->nodes.end());
 			d->nodes.erase(i);
 		}
-		
-		if (isOccupied())
-			checkUnclose(g);
 		
 		d->maxMeples = 0;
 		for (uchar * tm = d->meeples, * end = d->meeples + (g->getPlayerCount()), * nm = n->d->meeples;
