@@ -18,7 +18,9 @@ class RemainingTilesView : public QWidget, public NextTileProvider
 
 private:
 	QVarLengthArray<RemainingTileView *, TILE_COUNT_ARRAY_LENGTH> views;
+	QList<RemainingTileView *> discardedViews;
 	Game const * game;
+	TileImageFactory * imgFactory;
 
 	bool running = false;
 	bool ready = false;

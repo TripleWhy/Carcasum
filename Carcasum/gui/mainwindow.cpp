@@ -156,7 +156,10 @@ void MainWindow::playerMoved(int player, const Tile * tile, const MoveHistoryEnt
 	emit updateNeeded();
 	boardUi->playerMoved(player, tile, move);
 
-	logEvent(tr("Player %1 moved.").arg(player));
+	if (move.move.tileMove.isNull())
+		logEvent(tr("An impossible tile was drawn and discarded."));
+	else
+		logEvent(tr("Player %1 moved.").arg(player));
 
 	QSettings settings;
 	settings.beginGroup("games");

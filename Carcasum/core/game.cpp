@@ -203,15 +203,18 @@ bool Game::step()
 		discardedTiles.push_back(tile);
 #if PRINT_STEPS
  #if DEBUG_IDS
-		qDebug() << (moveHistory.size() + 1) << "discarged Tile" << tile->id << "total:" << discardedTiles.size();
+		qDebug() << (moveHistory.size() + 1) << "discarded Tile" << tile->id << "total:" << discardedTiles.size();
  #else
-		qDebug() << (moveHistory.size() + 1) << "discarged Tile  type" << tile->tileType << "total:" << discardedTiles.size();
+		qDebug() << (moveHistory.size() + 1) << "discarded Tile  type" << tile->tileType << "total:" << discardedTiles.size();
  #endif
 #endif
 		moveHistory.push_back(entry);
 		tiles.removeAt(entry.tile);
 		--tileCount[tile->tileType];
 		assertTileCount();
+
+		for (Player * p : allPlayers)
+			p->playerMoved(-1, tile, entry);
 		
 		if (tiles.isEmpty())
 		{
@@ -555,7 +558,7 @@ void Game::undo()
 		assertTileCount();
 
 #if PRINT_STEPS
-		qDebug() << (moveHistory.size() + 1) << "discarged Tile" << t->tileType << "total:" << discardedTiles.size();
+		qDebug() << (moveHistory.size() + 1) << "discarded Tile" << t->tileType << "total:" << discardedTiles.size();
 #endif
 
 		moveHistory.pop_back();

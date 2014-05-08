@@ -163,7 +163,7 @@ public:
 	inline int getTileCount() const { return tiles.size(); }
 	inline TileCountType const & getTileCounts() const { return tileCount; }
 	inline QList<Tile *> const & getTiles() const { return tiles; }
-	inline std::vector<Tile *> const & getDiscargedTiles() const { return discardedTiles; }
+	inline std::vector<Tile *> const & getDiscardedTiles() const { return discardedTiles; }
 	inline void setNextTileProvider(NextTileProvider * n) { ntp = n; }
 	inline std::vector<Player *> const & getPlayers() const { return players; }
 	inline int getNextPlayer() const { return nextPlayer; }

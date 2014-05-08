@@ -36,7 +36,11 @@ void RemainingTileView::setCount(int count)
 		ui->tileLabel->setGraphicsEffect(&effect);
 	else
 		ui->tileLabel->setGraphicsEffect(0);
-	ui->countLabel->setText(QString("%1x").arg(count));
+
+	if (count < 0)
+		ui->countLabel->setText(QString(""));
+	else
+		ui->countLabel->setText(QString("%1x").arg(count));
 	this->count = count;
 }
 

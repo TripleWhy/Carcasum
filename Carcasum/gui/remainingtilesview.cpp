@@ -24,13 +24,20 @@ void RemainingTilesView::clear()
 		delete item->widget();
 		delete item;
 	}
+	for (QLayoutItem * item; (item = ui->discardedLayout->takeAt(0)) != 0; )
+	{
+		delete item->widget();
+		delete item;
+	}
 	views.clear();
+	discardedViews.clear();
 }
 
 void RemainingTilesView::setUp(const Game * g, TileImageFactory * imgFactory)
 {
 	clear();
 	game = g;
+	this->imgFactory = imgFactory;
 
 	Tile::TileSets const & sets = g->getTileSets();
 	Tile::TileSets handled;
@@ -63,7 +70,7 @@ void RemainingTilesView::setUp(const Game * g, TileImageFactory * imgFactory)
 		views[i] = rtv;
 		rtv->setAttribute(Qt::WA_TransparentForMouseEvents);
 	}
-	ui->discargedWidget->setVisible(false);
+	ui->discardedWidget->setVisible(false);
 }
 
 int RemainingTilesView::nextTile(const Game * game)
@@ -165,11 +172,21 @@ void RemainingTilesView::updateView()
 		if (views[i] != 0)
 			views[i]->setCount(tileCounts[i]);
 	}
-	std::vector<Tile *> const & discargedTiles = game->getDiscargedTiles();
-	if (discargedTiles.size() > 0)
+	std::vector<Tile *> const & discardedTiles = game->getDiscardedTiles();
+	if (discardedTiles.size() > 0)
 	{
-		//TODO
-		ui->discargedWidget->setVisible(true);
+		ui->discardedWidget->setVisible(true);
+
+		for (size_t i = discardedViews.size(), s = discardedTiles.size(); i < s; ++i)
+		{
+			Tile const * tile = discardedTiles[i];
+			TileTypeType type = tile->tileType;
+			auto * rtv = new RemainingTileView(type, -1, imgFactory);
+			ui->discardedLayout->addWidget(rtv, (int)(i / REMAINING_TILES_COLUMNS), (int)(i % REMAINING_TILES_COLUMNS));
+
+			rtv->setAttribute(Qt::WA_TransparentForMouseEvents);
+			discardedViews.append(rtv);
+		}
 	}
 }
 

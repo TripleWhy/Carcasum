@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="c" stretch="0,0,0">
    <item>
-    <widget class="QWidget" name="discargedWidget" native="true">
+    <widget class="QWidget" name="discardedWidget" native="true">
      <layout class="QVBoxLayout" name="verticalLayout">
       <property name="leftMargin">
        <number>0</number>
@@ -32,12 +32,12 @@
       <item>
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>Discarged Tiles:</string>
+         <string>Discarded Tiles</string>
         </property>
        </widget>
       </item>
       <item>
-       <layout class="QGridLayout" name="discargedLayout"/>
+       <layout class="QGridLayout" name="discardedLayout"/>
       </item>
      </layout>
     </widget>
@@ -47,7 +47,7 @@
      <item>
       <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>Base Game:</string>
+        <string>Base Game</string>
        </property>
       </widget>
      </item>
