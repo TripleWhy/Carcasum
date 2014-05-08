@@ -191,6 +191,8 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 		}
 		else if (xml.name() == "farm")
 		{
+			QString const & city = xml.attributes().value("city").toString();
+
 			FieldNode * field = newFieldNode(tile, g);
 			xml.readNext();
 			for (QString const & str : xml.text().toString().split(' ', QString::SkipEmptyParts))
@@ -212,8 +214,6 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 					edges[side] = Field;
 			}
 
-			//TODO
-			QString const & city = xml.attributes().value("city").toString();
 			for (QString const & str : city.split(' ', QString::SkipEmptyParts))
 			{
 				int side;

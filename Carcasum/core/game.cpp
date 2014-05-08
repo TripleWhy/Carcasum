@@ -1041,7 +1041,9 @@ void Game::applyHistory(const std::vector<MoveHistoryEntry> & history, bool info
 	{
 		for (MoveHistoryEntry const & e : history)
 		{
-//			Util::processEventsIfGUIThread();	//jft
+#if DISPLAY_WHILE_LOADING
+			Util::processEventsIfGUIThread();
+#endif
 
 			int playerIndex = nextPlayer;
 			Tile const * tile = tiles[e.tile];

@@ -59,6 +59,7 @@
 // Util
 #define OFFSET_ARRAY_ENABLE_CHECKS 0
 
+#define DISPLAY_WHILE_LOADING      0
 #define REPLACE_VARLENGTH_ARRAY    0
 
 
