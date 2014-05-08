@@ -53,6 +53,7 @@ private:
 #if DEBUG_IDS
 public:
 	inline int id() const { return d-> id; }
+	inline int realId() const { return data.id; }
 #endif
 protected:
 	NodeData * d = &data;

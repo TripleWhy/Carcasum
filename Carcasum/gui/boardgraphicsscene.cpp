@@ -33,7 +33,7 @@ BoardGraphicsScene::BoardGraphicsScene(jcz::TileFactory * tileFactory, TileImage
 #if DRAW_TILE_POSITION_TEXT
 	textOverlayLayer = new QGraphicsItemGroup();
 	addItem(textOverlayLayer);
-	textOverlayLayer->setOpacity(0.2);
+	textOverlayLayer->setOpacity(0.8);
 #endif
 
 	placementTile = new QGraphicsPixmapItem();
@@ -293,17 +293,39 @@ void BoardGraphicsScene::displayNewGame(int callDepth)
 			Tile const * t = board->getTile(x, y);
 			
 #if DRAW_TILE_POSITION_TEXT
-			QGraphicsTextItem * text = new QGraphicsTextItem(QString("%1|%2").arg(x).arg(y));
-			text->setFont(QFont("sans", 50));
-			text->setDefaultTextColor(Qt::red);
-//			text->setPos(-TILE_SIZE / 2.0, -90 / 2.0);
-			text->setPos(x * BOARD_TILE_SIZE -BOARD_TILE_SIZE / 2.0, y * BOARD_TILE_SIZE -BOARD_TILE_SIZE / 2.0);
-			textOverlayLayer->addToGroup(text);
+			{
+				QGraphicsTextItem * text = new QGraphicsTextItem(QString("%1|%2").arg(x).arg(y));
+				text->setFont(QFont("sans", 50));
+				text->setDefaultTextColor(Qt::red);
+				//			text->setPos(-TILE_SIZE / 2.0, -90 / 2.0);
+				text->setPos(x * BOARD_TILE_SIZE -BOARD_TILE_SIZE / 2.0, y * BOARD_TILE_SIZE -BOARD_TILE_SIZE / 2.0);
+				textOverlayLayer->addToGroup(text);
+			}
 #endif
 			
 			if (t == 0)
 				continue;
 
+#if DRAW_TILE_POSITION_TEXT && DEBUG_IDS
+			{
+				QGraphicsTextItem * text = new QGraphicsTextItem(QString("%1").arg(t->id));
+				text->setFont(QFont("sans", 50));
+				text->setDefaultTextColor(Qt::yellow);
+				text->setPos(x * BOARD_TILE_SIZE -BOARD_TILE_SIZE / 2.0,
+							 y * BOARD_TILE_SIZE +BOARD_TILE_SIZE / 4.0);
+				textOverlayLayer->addToGroup(text);
+			}
+			for (uchar i = 0; i < t->getNodeCount(); ++i)
+			{
+				QPoint meeplePoint = imgFactory->getPoints(t)[i];
+				mapMeeplePoint(meeplePoint, TileMove(x, y, t->orientation));
+				QGraphicsTextItem * text = new QGraphicsTextItem(QString("%1(%2)").arg(t->getCNodes()[i]->id()).arg(t->getCNodes()[i]->realId()));
+				text->setFont(QFont("sans", 25));
+				text->setDefaultTextColor(Qt::blue);
+				text->setPos(meeplePoint.x(), meeplePoint.y());
+				textOverlayLayer->addToGroup(text);
+			}
+#endif
 			QPixmap const & img = imgFactory->getImage(t);
 			QGraphicsPixmapItem * item = new QGraphicsPixmapItem(img);
 			item->setTransformationMode(Qt::SmoothTransformation);
@@ -365,6 +387,26 @@ void BoardGraphicsScene::displayPlayerMoved(void * data, int callDepth)
 	TileMove const & tileMove = d->move.tileMove;
 	MeepleMove const & meepleMove = d->move.meepleMove;
 	
+#if DRAW_TILE_POSITION_TEXT && DEBUG_IDS
+	{
+		QGraphicsTextItem * text = new QGraphicsTextItem(QString("%1").arg(d->tile->id));
+		text->setFont(QFont("sans", 50));
+		text->setDefaultTextColor(Qt::yellow);
+		text->setPos(tileMove.x * BOARD_TILE_SIZE -BOARD_TILE_SIZE / 2.0,
+		             tileMove.y * BOARD_TILE_SIZE +BOARD_TILE_SIZE / 4.0);
+		textOverlayLayer->addToGroup(text);
+	}
+	for (uchar i = 0; i < d->tile->getNodeCount(); ++i)
+	{
+		QPoint meeplePoint = imgFactory->getPoints(d->tile)[i];
+		mapMeeplePoint(meeplePoint, d->move.tileMove);
+		QGraphicsTextItem * text = new QGraphicsTextItem(QString("%1(%2)").arg(d->tile->getCNodes()[i]->id()).arg(d->tile->getCNodes()[i]->realId()));
+		text->setFont(QFont("sans", 25));
+		text->setDefaultTextColor(Qt::blue);
+		text->setPos(meeplePoint.x(), meeplePoint.y());
+		textOverlayLayer->addToGroup(text);
+	}
+#endif
 	QPixmap const & img = imgFactory->getImage(d->tile);
 	QGraphicsPixmapItem * item = new QGraphicsPixmapItem(img);
 	item->setTransformationMode(Qt::SmoothTransformation);
@@ -582,7 +624,7 @@ QGraphicsItemGroup * BoardGraphicsScene::meepleAt(const QPointF & scenePos)
 		return 0;
 }
 
-QGraphicsItemGroup *BoardGraphicsScene::createMeeple(Node const * n, QPoint & point, TileMove const & tileMove, QColor const & color)
+void BoardGraphicsScene::mapMeeplePoint(QPoint & point, TileMove const & tileMove)
 {
 	QTransform t;
 	t.translate(BOARD_TILE_SIZE / 2.0, BOARD_TILE_SIZE / 2.0);
@@ -592,6 +634,11 @@ QGraphicsItemGroup *BoardGraphicsScene::createMeeple(Node const * n, QPoint & po
 
 	point.rx() += tileMove.x * BOARD_TILE_SIZE - BOARD_TILE_SIZE / 2;
 	point.ry() += tileMove.y * BOARD_TILE_SIZE - BOARD_TILE_SIZE / 2;
+}
+
+QGraphicsItemGroup *BoardGraphicsScene::createMeeple(Node const * n, QPoint & point, TileMove const & tileMove, QColor const & color)
+{
+	mapMeeplePoint(point, tileMove);
 
 	QGraphicsItemGroup * svg = new QGraphicsItemGroup();
 

@@ -468,6 +468,7 @@ void MainWindow::on_buttonBox_accepted()
 
 	if (game->getPlayerCount() < 1)
 		return;
+//	ui->stackedWidget->setCurrentWidget(ui->gameDisplayPage); //jft
 	game->newGame(Tile::BaseGame, &tileFactory, history, true);
 
 	ui->stackedWidget->setCurrentWidget(ui->gameDisplayPage);

@@ -64,6 +64,7 @@ protected:
 private:
 	static void indexAt(QPointF const & scenePos, uint & x, uint & y);
 	QGraphicsItemGroup * meepleAt(QPointF const & scenePos);
+	void mapMeeplePoint(QPoint & point, const TileMove & tileMove);
 	QGraphicsItemGroup * createMeeple(Node const * n, QPoint & point, const TileMove & tileMove, QColor const & color);
 	void placeOpen();
 

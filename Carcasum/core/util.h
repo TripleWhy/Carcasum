@@ -22,6 +22,17 @@ namespace Util
 		return QThread::currentThread() == QCoreApplication::instance()->thread();
 	}
 
+	inline void processEvents(QEventLoop::ProcessEventsFlags flags = QEventLoop::AllEvents)
+	{
+		QCoreApplication::processEvents(flags);
+	}
+
+	inline void processEventsIfGUIThread()
+	{
+		if (isGUIThread())
+			QCoreApplication::processEvents();
+	}
+
 	inline bool isNodeFree(Node const * n)
 	{
 //		return true;
