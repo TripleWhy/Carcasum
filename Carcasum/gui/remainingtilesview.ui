@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string notr="true"/>
   </property>
   <layout class="QVBoxLayout" name="c" stretch="0,0,0">
    <item>
@@ -47,7 +47,7 @@
      <item>
       <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>Base Game</string>
+        <string notr="true">Base Game</string>
        </property>
       </widget>
      </item>

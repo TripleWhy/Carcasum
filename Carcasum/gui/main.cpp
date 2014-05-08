@@ -9,12 +9,29 @@
 #include <QMessageBox>
 #include <QDir>
 #include <QStandardPaths>
+#include <QTranslator>
+#include <QLibraryInfo>
 
 int main(int argc, char *argv[])
 {
-	QApplication a(argc, argv);
+	QApplication app(argc, argv);
 	QCoreApplication::setOrganizationName(APP_ORGANIZATION);
 	QCoreApplication::setApplicationName(APP_NAME);
+
+	qDebug() << QLibraryInfo::location(QLibraryInfo::TranslationsPath);
+
+	QTranslator qtTranslator;
+	qtTranslator.load("qt_" + QLocale::system().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath));
+	app.installTranslator(&qtTranslator);
+
+	QTranslator enTranslator;
+	enTranslator.load("carcasum_en");
+	app.installTranslator(&enTranslator);
+
+	QTranslator appTranslator;
+	appTranslator.load("carcasum_" + QLocale::system().name());
+	app.installTranslator(&appTranslator);
+
 
 	qDebug() << "Qt build version:  " << QT_VERSION_STR;
 	qDebug() << "Qt runtime version:" << qVersion();
@@ -26,13 +43,13 @@ int main(int argc, char *argv[])
 	QByteArray data;
 	if (!fi.exists())
 	{
-		QMessageBox::StandardButton btn = QMessageBox::question(0, "Download File?", QString("%1 was not found in the program directory.\nThis file is needed for better looking tiles.\nDo you want me to download it for you now?").arg(TileImageFactory::zipFileName()));
+		QMessageBox::StandardButton btn = QMessageBox::question(0, QApplication::translate("ZipDownload", "Download File?"), QApplication::translate("ZipDownload", "%1 was not found in the program directory.\nThis file is needed for better looking tiles.\nDo you want me to download it for you now?").arg(TileImageFactory::zipFileName()));
 		if (btn == QMessageBox::Yes)
 		{
 			QString url = "http://jcloisterzone.com/builds/JCloisterZone-2.6.zip";
 
 			Downloader l;
-			l.download(url, "Progress...");
+			l.download(url, QApplication::translate("ZipDownload", "Progress..."));
 			data = l.downloadedData();
 
 			QFile file(fi.absoluteFilePath());
@@ -45,6 +62,6 @@ int main(int argc, char *argv[])
 	MainWindow w;
 	w.show();
 
-	return a.exec();
+	return app.exec();
 	return 0;
 }

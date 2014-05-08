@@ -214,7 +214,7 @@ bool Game::step()
 		assertTileCount();
 
 		for (Player * p : allPlayers)
-			p->playerMoved(-1, tile, entry);
+			p->playerMoved(nextPlayer, tile, entry);
 		
 		if (tiles.isEmpty())
 		{

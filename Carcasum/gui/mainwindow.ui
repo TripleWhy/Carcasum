@@ -254,6 +254,8 @@
     <addaction name="actionNew_Game"/>
     <addaction name="separator"/>
     <addaction name="actionStore_board"/>
+    <addaction name="separator"/>
+    <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuGame">
     <property name="title">
@@ -304,6 +306,11 @@
     <string>Store board...</string>
    </property>
   </action>
+  <action name="actionQuit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
@@ -334,6 +341,22 @@
     <hint type="destinationlabel">
      <x>41</x>
      <y>172</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionQuit</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>203</x>
+     <y>151</y>
     </hint>
    </hints>
   </connection>

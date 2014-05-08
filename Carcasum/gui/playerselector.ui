@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Select Player</string>
   </property>
   <layout class="QGridLayout" name="gridLayout" columnstretch="0,0">
    <item row="0" column="0">
@@ -84,7 +84,7 @@
          <item>
           <widget class="QLabel" name="label_6">
            <property name="text">
-            <string>Cp:</string>
+            <string notr="true">Cp:</string>
            </property>
           </widget>
          </item>
@@ -267,22 +267,22 @@
      </property>
      <item>
       <property name="text">
-       <string>Random</string>
+       <string notr="true">Random</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Monte Carlo</string>
+       <string notr="true">Monte Carlo</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Monte Carlo 2</string>
+       <string notr="true">Monte Carlo 2</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>MCTS</string>
+       <string notr="true">MCTS</string>
       </property>
      </item>
     </widget>

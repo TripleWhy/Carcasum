@@ -48,7 +48,7 @@ MainWindow::MainWindow(QWidget *parent) :
 		connect(colorBox, SIGNAL(currentIndexChanged(int)), this, SLOT(colorBoxChanged(int)));
 
 		QComboBox * typeBox = new QComboBox();
-		typeBox->addItems(QStringList{tr(""), tr("Human"), tr("Computer")});
+		typeBox->addItems(QStringList{tr("", "player selection: no player"), tr("Player"), tr("Computer")});
 		ui->ngPlayerLayout->addWidget(typeBox, i, 2);
 		connect(typeBox, SIGNAL(currentIndexChanged(int)), this, SLOT(typeBoxChanged(int)));
 
@@ -157,7 +157,7 @@ void MainWindow::playerMoved(int player, const Tile * tile, const MoveHistoryEnt
 	boardUi->playerMoved(player, tile, move);
 
 	if (move.move.tileMove.isNull())
-		logEvent(tr("An impossible tile was drawn and discarded."));
+		logEvent(tr("A non-suitable tile was drawn and discarded."));
 	else
 		logEvent(tr("Player %1 moved.").arg(player));
 
@@ -342,7 +342,7 @@ void MainWindow::forceEndGame()
 
 void MainWindow::logEvent(QString const & msg)
 {
-	ui->eventList->addItem(tr("%1: %2").arg(QTime::currentTime().toString(Qt::TextDate)).arg(msg));
+	ui->eventList->addItem(QString("%1: %2").arg(QTime::currentTime().toString(Qt::TextDate)).arg(msg));
 	ui->eventList->scrollToBottom();
 }
 

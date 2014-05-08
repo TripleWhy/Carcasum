@@ -10,7 +10,6 @@
 
 // Some numbers
 #define TIMEOUT                       5000
-//#define TIMEOUT                    1000
 // Game
 #define MAX_PLAYERS                   6
 #define MEEPLE_COUNT                  7

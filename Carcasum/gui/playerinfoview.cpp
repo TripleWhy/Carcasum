@@ -8,6 +8,11 @@ PlayerInfoView::PlayerInfoView(QWidget * parent)
 ui(new Ui::PlayerInfoView)
 {
 	ui->setupUi(this);
+	ui->meepleSpacer->changeSize(0, PINFO_MEEPLE_SIZE, QSizePolicy::Expanding, QSizePolicy::Fixed);
+	setAutoFillBackground(true);
+	normPalette = palette();
+	hlPalette = normPalette;
+	hlPalette.setColor(QPalette::Background, QColor::fromRgb(255, 255, 255, 96));
 	
 	for (int i = 0; i < MEEPLE_COUNT; ++i)
 	{
@@ -46,6 +51,11 @@ void PlayerInfoView::setPlayer(int player, Game const * g, TileImageFactory * ti
 		meepleLabels[i]->setMaximumSize(meeple.size());
 		meepleLabels[i]->setVisible(true);
 	}
+
+	if (g->getNextPlayer() == playerIndex)
+		setPalette(hlPalette);
+	else
+		setPalette(normPalette);
 }
 
 void PlayerInfoView::setPlayerName(const QString & name)
@@ -62,4 +72,9 @@ void PlayerInfoView::updateView()
 		meepleLabels[i]->setVisible(false);
 	ui->pointsLabel->setText(QString::number(game->getPlayerScore(playerIndex)));
 	ui->meeplesLabel->setText(QString::number(meeples));
+
+	if (game->getNextPlayer() == playerIndex)
+		setPalette(hlPalette);
+	else
+		setPalette(normPalette);
 }

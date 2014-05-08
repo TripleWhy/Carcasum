@@ -2,8 +2,16 @@
 <ui version="4.0">
  <class>RemainingTileView</class>
  <widget class="QWidget" name="RemainingTileView">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>20</width>
+    <height>36</height>
+   </rect>
+  </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string notr="true"/>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0">
    <property name="leftMargin">

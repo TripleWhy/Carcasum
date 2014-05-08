@@ -261,9 +261,9 @@ void PlayerSelector::on_typeList_currentRowChanged(int currentRow)
 void PlayerSelector::on_timeLimitRB_toggled(bool checked)
 {
 	if (checked)
-		ui->limitUnitLabel->setText("ms");
+		ui->limitUnitLabel->setText(tr("ms", "player resource limit: unit milliseconds"));
 	else
-		ui->limitUnitLabel->setText("playouts");
+		ui->limitUnitLabel->setText(tr("playouts", "player resource limit: unit playouts"));
 }
 
 void PlayerSelector::on_typeList_itemSelectionChanged()

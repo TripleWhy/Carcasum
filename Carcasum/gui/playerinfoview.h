@@ -19,6 +19,8 @@ private:
 	TileImageFactory * imgFactory = 0;
 	
 	QLabel * meepleLabels[MEEPLE_COUNT];
+	QPalette normPalette;
+	QPalette hlPalette;
 	
 public:
 	explicit PlayerInfoView(QWidget *parent = 0);

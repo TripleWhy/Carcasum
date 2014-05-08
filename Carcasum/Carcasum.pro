@@ -82,6 +82,9 @@ core {
 
 	INCLUDEPATH += $$PWD/../
 	DEPENDPATH += $$PWD/../quazip
+
+	TRANSLATIONS = carcasum_en.ts \
+		carcasum_de.ts \
 }
 
 SOURCES += core/tile.cpp \
