@@ -48,16 +48,26 @@ struct MoveHistoryEntry
 	Move move;
 };
 
+class ScoreListener
+{
+public:
+	virtual void nodeScored(Node const * n, const int score, Game const * game) = 0;
+	virtual void nodeUnscored(Node const * n, const int score, Game const * game) = 0;
+};
+
 typedef QVarLengthArray<int, TILE_COUNT_ARRAY_LENGTH> TileCountType;
 
 class Game
 {
+	friend class Board;
 private:
 //	int ply = -1;
 	int active = false;
 	int nextPlayer = -1;
 	std::vector<Player *> players;
 	std::vector<Player *> allPlayers;
+	std::vector<ScoreListener *> views;
+	bool const view;
 	Board * board = 0;
 	QList<Tile *> tiles;
 	TileCountType tileCount;
@@ -88,7 +98,7 @@ public:
 	Tile * simTile = 0;
 
 public:
-	Game(NextTileProvider * ntp);
+	Game(NextTileProvider * ntp, bool view = false);
 	~Game();
 
 	void newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory);
@@ -97,6 +107,7 @@ public:
 	void restartGame(std::vector<MoveHistoryEntry> const & history);
 	void addPlayer(Player * player);
 	void addWatchingPlayer(Player * player);
+	void addView(ScoreListener * view);
 //	void setPlayer(int index, Player * player);
 //	void setPlayers(QList<Player *> players);
 	void clearPlayers();
@@ -123,10 +134,10 @@ public:
 	void roadUnclosed(RoadNode * n);
 	void cloisterClosed(CloisterNode * n);
 	void cloisterUnclosed(CloisterNode * n);
+private:
 	void scoreNodeEndGame(Node * n);
 	void scoreNodeMidGame(Node * n, const int score);
 	void unscoreNodeEndGame(Node * n);
-private:
 	void scoreNode(Node * n, const int score);
 	void unscoreNode(Node * n, const int score);
 public:

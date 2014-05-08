@@ -62,7 +62,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	actionGroup->addAction(ui->actionChoose_Tiles);
 
 	boardUi = new BoardGraphicsScene(&tileFactory, &imgFactory, ui->boardView);
-	game = new Game(&rntp);
+	game = new Game(&rntp, true);
+	game->addView(this);
 	gameThread = new GameThread(game, this);
 
 	boardUi->setGame(game);
@@ -88,6 +89,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::newGame(int player, const Game * game)
 {
+	auto timestamp = QDateTime::currentMSecsSinceEpoch();
+
 	boardUi->newGame(player, game);
 
 	if (isSetUp)
@@ -116,6 +119,8 @@ void MainWindow::newGame(int player, const Game * game)
 		playerInfos.push_back(pi);
 	}
 
+	logEvent(tr("New game started"));
+
 	ui->remainingTiles->setUp(game, &imgFactory);
 	connect(this, SIGNAL(updateNeeded()), ui->remainingTiles, SLOT(updateView()));
 
@@ -131,6 +136,7 @@ void MainWindow::newGame(int player, const Game * game)
 	settings.setValue("appRevision", APP_REVISION_STR);
 	settings.setValue("qtCompileVersion", QT_VERSION_STR);
 	settings.setValue("qtRuntimeVersionn", qVersion());
+	settings.setValue("timestamp", timestamp);
 	settings.beginWriteArray("players");
 	auto const & players = game->getPlayers();
 	for (size_t i = 0; i < players.size(); ++i)
@@ -148,6 +154,8 @@ void MainWindow::playerMoved(int player, const Tile * tile, const MoveHistoryEnt
 {
 	emit updateNeeded();
 	boardUi->playerMoved(player, tile, move);
+
+	logEvent(tr("Player %1 moved.").arg(player));
 
 	QSettings settings;
 	settings.beginGroup("games");
@@ -194,6 +202,7 @@ void MainWindow::endGame()
 	emit updateNeeded();
 	boardUi->endGame();
 
+	logEvent(tr("Game ended."));
 
 	QSettings settings;
 	settings.beginGroup("games");
@@ -221,6 +230,46 @@ Player *MainWindow::clone() const
 	return 0;
 }
 
+void MainWindow::nodeScored(const Node * n, const int score, const Game * game)
+{
+	QStringList players;
+	uchar meepleCount = n->getMaxMeeples();
+	{
+		int player = 0;
+		for (uchar const * m = n->getMeeples(), * end = m + game->getPlayerCount(); m < end; ++m, ++player)
+		{
+			if (*m == meepleCount)
+				players.append(QString::number(player+1));
+		}
+	}
+	QString name;
+	switch (n->getTerrain())
+	{
+		case Field:
+			name = tr("Field");
+			break;
+		case City:
+			name = tr("City");
+			break;
+		case Road:
+			name = tr("Road");
+			break;
+		case Cloister:
+			name = tr("Cloister");
+			break;
+		case None:
+		default:
+			name = tr("[Unknown]");
+			break;
+	}
+
+	logEvent(tr("%1 scored %n point(s) for players: %2", "", score).arg(name).arg(players.join(", ")));
+}
+
+void MainWindow::nodeUnscored(const Node * /*n*/, const int /*score*/, const Game * /*game*/)
+{
+}
+
 void MainWindow::closeEvent(QCloseEvent * event)
 {
 	requestEndGame();
@@ -231,6 +280,8 @@ void MainWindow::closeEvent(QCloseEvent * event)
 	settings.beginGroup("mainWindow");
 	settings.setValue("geometry", saveGeometry());
 	settings.setValue("windowState", saveState());
+	settings.setValue("splitterState", ui->splitter->saveState());
+	settings.setValue("splitter2State", ui->splitter2->saveState());
 	settings.endGroup();
 
 	forceEndGame();
@@ -243,6 +294,8 @@ void MainWindow::readSettings()
 	settings.beginGroup("mainWindow");
 	restoreGeometry(settings.value("geometry").toByteArray());
 	restoreState(settings.value("windowState").toByteArray());
+	ui->splitter->restoreState(settings.value("splitterState").toByteArray());
+	ui->splitter2->restoreState(settings.value("splitter2State").toByteArray());
 
 	quint64 id = 0;
 	if (settings.contains("appId"))
@@ -276,6 +329,12 @@ void MainWindow::forceEndGame()
 	gameThread->wait(1000);
 	gameThread->terminate();
 	gameThread->wait(1000);
+}
+
+void MainWindow::logEvent(QString const & msg)
+{
+	ui->eventList->addItem(tr("%1: %2").arg(QTime::currentTime().toString(Qt::TextDate)).arg(msg));
+	ui->eventList->scrollToBottom();
 }
 
 void MainWindow::timeout()

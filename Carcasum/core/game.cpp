@@ -4,8 +4,9 @@
 #include "jcz/tilefactory.h"
 #include <QFile>
 
-Game::Game(NextTileProvider * ntp)
-    : ntp(ntp)
+Game::Game(NextTileProvider * ntp, bool const view)
+    : view(view),
+      ntp(ntp)
 {
 }
 
@@ -129,6 +130,11 @@ void Game::addWatchingPlayer(Player * player)
 {
 	if (std::find(allPlayers.begin(), allPlayers.end(), player) == allPlayers.end()) // player not already in vector
 		allPlayers.push_back(player);
+}
+
+void Game::addView(ScoreListener * view)
+{
+	views.push_back(view);
 }
 
 //void Game::setPlayer(int index, Player * player)

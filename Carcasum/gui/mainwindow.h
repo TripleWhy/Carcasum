@@ -17,7 +17,7 @@ class MainWindow;
 
 class PlayerInfoView;
 
-class MainWindow : public QMainWindow, public Player
+class MainWindow : public QMainWindow, public Player, public ScoreListener
 {
 	Q_OBJECT
 
@@ -69,6 +69,8 @@ public:
 	virtual void endGame();
 	virtual QString getTypeName() { return "MainWindow"; }
 	virtual Player * clone() const;
+	virtual void nodeScored(Node const * n, const int score, Game const * game);
+	virtual void nodeUnscored(Node const * n, const int score, Game const * game);
 
 protected:
 	virtual void closeEvent(QCloseEvent *event);
@@ -77,6 +79,7 @@ private:
 	void readSettings();
 	void requestEndGame();
 	void forceEndGame();
+	void logEvent(QString const & msg);
 
 signals:
 	void updateNeeded();

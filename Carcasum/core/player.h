@@ -2,6 +2,7 @@
 #define PLAYER_H
 
 #include "static.h"
+#include <QString>
 
 class Game;
 class Tile;
