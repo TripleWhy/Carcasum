@@ -4,13 +4,14 @@
 #include "jcz/tilefactory.h"
 #include <QSettings>
 #include <QFileDialog>
+#include <QStandardPaths>
 
 void MainWindow::GameThread::run()
 {
 	setTerminationEnabled(true);
 	while (!isInterruptionRequested() && !g->isFinished())
 	{
-		msleep(100);
+		msleep(PLAYER_GAP_TIMEOUT);
 		g->step();
 	}
 }
@@ -89,7 +90,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::newGame(int player, const Game * game)
 {
-	auto timestamp = QDateTime::currentMSecsSinceEpoch();
+	gameStartTimestamp = QDateTime::currentMSecsSinceEpoch();
 
 	boardUi->newGame(player, game);
 
@@ -136,7 +137,7 @@ void MainWindow::newGame(int player, const Game * game)
 	settings.setValue("appRevision", APP_REVISION_STR);
 	settings.setValue("qtCompileVersion", QT_VERSION_STR);
 	settings.setValue("qtRuntimeVersionn", qVersion());
-	settings.setValue("timestamp", timestamp);
+	settings.setValue("timestamp", gameStartTimestamp);
 	settings.beginWriteArray("players");
 	auto const & players = game->getPlayers();
 	for (size_t i = 0; i < players.size(); ++i)
@@ -165,25 +166,30 @@ void MainWindow::playerMoved(int player, const Tile * tile, const MoveHistoryEnt
 	settings.beginWriteArray("game");
 	settings.setArrayIndex(size-1);
 
-	int moveSize = settings.beginReadArray("moves");
-	settings.endArray(); //moves
+//	int moveSize = settings.beginReadArray("moves");
+//	settings.endArray(); //moves
 
-	auto const & history = game->getMoveHistory();
-	settings.beginWriteArray("moves");
-	for (size_t i = moveSize; i < history.size(); ++i)
-	{
-		settings.setArrayIndex((int)i);
-		MoveHistoryEntry const & m = history[i];
-		settings.setValue("tile", m.tile);
-		settings.setValue("x", m.move.tileMove.x);
-		settings.setValue("y", m.move.tileMove.x);
-		settings.setValue("orientation", m.move.tileMove.orientation);
-		settings.setValue("meeple", m.move.meepleMove.nodeIndex);
-	}
-	settings.endArray(); //moves
+//	auto const & history = game->getMoveHistory();
+//	settings.beginWriteArray("moves");
+//	for (size_t i = moveSize; i < history.size(); ++i)
+//	{
+//		settings.setArrayIndex((int)i);
+//		MoveHistoryEntry const & m = history[i];
+//		settings.setValue("tile", m.tile);
+//		settings.setValue("x", m.move.tileMove.x);
+//		settings.setValue("y", m.move.tileMove.y);
+//		settings.setValue("orientation", m.move.tileMove.orientation);
+//		settings.setValue("meeple", m.move.meepleMove.nodeIndex);
+//	}
+//	settings.endArray(); //moves
 
 	settings.endArray(); //game
 	settings.endGroup(); //games
+
+	QString const & dataLoc = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+	QDir dir = QDir(dataLoc).absoluteFilePath("games");
+	if (dir.mkpath(".") && gameStartTimestamp != -1)
+		game->storeToFile(dir.absoluteFilePath(QString::number(gameStartTimestamp)));
 }
 
 TileMove MainWindow::getTileMove(int player, const Tile * tile, const MoveHistoryEntry & move, const TileMovesType & placements)

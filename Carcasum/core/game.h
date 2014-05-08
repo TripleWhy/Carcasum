@@ -124,6 +124,7 @@ public:
 	void simPartUndoChance();
 	void simPartUndoTile();
 	void simPartUndoMeeple();
+	void storeToFile(QString const & path);
 	static void storeToFile(QString const & path, std::vector<MoveHistoryEntry> const & history);
 	static std::vector<MoveHistoryEntry> loadFromFile(QString const & path);
 

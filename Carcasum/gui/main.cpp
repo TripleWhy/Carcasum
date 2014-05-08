@@ -8,6 +8,7 @@
 #include "gui/downloader.h"
 #include <QMessageBox>
 #include <QDir>
+#include <QStandardPaths>
 
 int main(int argc, char *argv[])
 {
@@ -18,6 +19,7 @@ int main(int argc, char *argv[])
 	qDebug() << "Qt build version:  " << QT_VERSION_STR;
 	qDebug() << "Qt runtime version:" << qVersion();
 	qDebug() << "Git revision:" << APP_REVISION_STR;
+	qDebug() << "QStandardPaths::DataLocation:" << QStandardPaths::writableLocation(QStandardPaths::DataLocation);
 
 	QDir dir = QDir(QCoreApplication::applicationDirPath());
 	QFileInfo fi(dir, QString(TileImageFactory::zipFileName()));

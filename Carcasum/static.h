@@ -26,6 +26,7 @@
 #define PINFO_MEEPLE_SIZE            10
 #define RTILE_TILE_SIZE              40
 #define REMAINING_TILES_COLUMNS       4
+#define PLAYER_GAP_TIMEOUT          100
 // Util
 #define LN_TABLE_SIZE           1000000
 

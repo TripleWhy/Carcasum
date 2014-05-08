@@ -57,6 +57,7 @@ private:
 	std::array<NgPlayerEdit, MAX_PLAYERS> ngPlayerEdits;
 	PlayerSelector * playerSelector;
 	std::array<Player *, MAX_PLAYERS> selectedPlayers = {{}};
+	qint64 gameStartTimestamp = -1;
 
 public:
 	explicit MainWindow(QWidget *parent = 0);

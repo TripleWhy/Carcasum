@@ -695,6 +695,11 @@ void Game::simPartUndoMeeple()
 	assertMeepleCount();
 }
 
+void Game::storeToFile(const QString & path)
+{
+	storeToFile(path, moveHistory);
+}
+
 void Game::storeToFile(const QString & path, const std::vector<MoveHistoryEntry> & history)
 {
 	QFile file(path);
