@@ -11,10 +11,12 @@
 #include <QStandardPaths>
 #include <QTranslator>
 #include <QLibraryInfo>
+#include <QSettings>
 
 int main(int argc, char *argv[])
 {
 	QApplication app(argc, argv);
+	QSettings::setDefaultFormat(QSettings::IniFormat);
 	QCoreApplication::setOrganizationName(APP_ORGANIZATION);
 	QCoreApplication::setApplicationName(APP_NAME);
 
@@ -40,7 +42,6 @@ int main(int argc, char *argv[])
 
 	QDir dir = QDir(QCoreApplication::applicationDirPath());
 	QFileInfo fi(dir, QString(TileImageFactory::zipFileName()));
-	QByteArray data;
 	if (!fi.exists())
 	{
 		QMessageBox::StandardButton btn = QMessageBox::question(0, QApplication::translate("ZipDownload", "Download File?"), QApplication::translate("ZipDownload", "%1 was not found in the program directory.\nThis file is needed for better looking tiles.\nDo you want me to download it for you now?").arg(TileImageFactory::zipFileName()));
@@ -50,12 +51,14 @@ int main(int argc, char *argv[])
 
 			Downloader l;
 			l.download(url, QApplication::translate("ZipDownload", "Progress..."));
-			data = l.downloadedData();
-
-			QFile file(fi.absoluteFilePath());
-			file.open(QIODevice::WriteOnly);
-			file.write(data);
-			file.close();
+			QByteArray data = l.downloadedData();
+			if ((l.result() == QDialog::Accepted) && (data.size() > 0))
+			{
+				QFile file(fi.absoluteFilePath());
+				file.open(QIODevice::WriteOnly);
+				file.write(data);
+				file.close();
+			}
 		}
 	}
 

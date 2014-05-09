@@ -36,7 +36,7 @@ private:
 public:
 	DefaultRandom()
 #ifndef RANDOM_SEED
-		: generator(std::chrono::system_clock::now().time_since_epoch().count() + (++add))
+		: generator((std::default_random_engine::result_type)(std::chrono::system_clock::now().time_since_epoch().count() + (++add)))
 #else
 	    : generator(RANDOM_SEED + (++add))
 #endif
@@ -66,6 +66,7 @@ private:
 public:
 	RandomTable()
 	{
+		static_assert(TABLE_SIZE < std::numeric_limits<long>::max(), "TABLE_SIZE does not fit in offset");
 		++tableUse;
 		if (table == 0)
 		{
@@ -77,12 +78,12 @@ public:
 			}
 		}
 #ifndef RANDOM_SEED
-		long const seed = std::chrono::system_clock::now().time_since_epoch().count();
+		auto const seed = std::chrono::system_clock::now().time_since_epoch().count();
 #else
-		long const seed = RANDOM_SEED;
+		auto const seed = RANDOM_SEED;
 #endif
 		add = (add + 1) % TABLE_SIZE;
-		offset = (seed + (table[add] * ADD_MULTIPLIER));
+		offset = (long)(seed + (table[add] * ADD_MULTIPLIER));
 		offset = (offset % TABLE_SIZE + TABLE_SIZE) % TABLE_SIZE;
 	}
 

@@ -71,6 +71,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->boardView->setScene(boardUi);
 
 	connect(boardUi, SIGNAL(sceneRectChanged(QRectF)), this, SLOT(recenter(QRectF)));
+	connect(this, SIGNAL(gameEvent(QString)), this, SLOT(displayGameEvent(QString)));
 
 	readSettings();
 
@@ -120,7 +121,7 @@ void MainWindow::newGame(int player, const Game * game)
 		playerInfos.push_back(pi);
 	}
 
-	logEvent(tr("New game started"));
+	emit gameEvent(tr("New game started"));
 
 	ui->remainingTiles->setUp(game, &imgFactory);
 	connect(this, SIGNAL(updateNeeded()), ui->remainingTiles, SLOT(updateView()));
@@ -157,9 +158,9 @@ void MainWindow::playerMoved(int player, const Tile * tile, const MoveHistoryEnt
 	boardUi->playerMoved(player, tile, move);
 
 	if (move.move.tileMove.isNull())
-		logEvent(tr("A non-suitable tile was drawn and discarded."));
+		emit gameEvent(tr("A non-suitable tile was drawn and discarded."));
 	else
-		logEvent(tr("Player %1 moved.").arg(player));
+		emit gameEvent(tr("Player %1 moved.").arg(player));
 
 	QSettings settings;
 	settings.beginGroup("games");
@@ -211,7 +212,7 @@ void MainWindow::endGame()
 	emit updateNeeded();
 	boardUi->endGame();
 
-	logEvent(tr("Game ended."));
+	emit gameEvent(tr("Game ended."));
 
 	QSettings settings;
 	settings.beginGroup("games");
@@ -272,7 +273,7 @@ void MainWindow::nodeScored(const Node * n, const int score, const Game * game)
 			break;
 	}
 
-	logEvent(tr("%1 scored %n point(s) for players: %2", "", score).arg(name).arg(players.join(", ")));
+	emit gameEvent(tr("%1 scored %n point(s) for players: %2", "", score).arg(name).arg(players.join(", ")));
 }
 
 void MainWindow::nodeUnscored(const Node * /*n*/, const int /*score*/, const Game * /*game*/)
@@ -314,7 +315,7 @@ void MainWindow::readSettings()
 	else
 	{
 		std::uniform_int_distribution<quint64> distribution;
-		std::default_random_engine generator(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count());
+		std::default_random_engine generator((std::default_random_engine::result_type)std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count());
 		for (int i = 0; i < 5000; ++i)
 			distribution(generator);
 		for (quint64 i = 0, end = distribution(generator) % 1000000; i < end; ++i)
@@ -340,7 +341,7 @@ void MainWindow::forceEndGame()
 	gameThread->wait(1000);
 }
 
-void MainWindow::logEvent(QString const & msg)
+void MainWindow::displayGameEvent(const QString & msg)
 {
 	ui->eventList->addItem(QString("%1: %2").arg(QTime::currentTime().toString(Qt::TextDate)).arg(msg));
 	ui->eventList->scrollToBottom();
