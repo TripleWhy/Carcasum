@@ -11,10 +11,12 @@
 #include <QStandardPaths>
 #include <QTranslator>
 #include <QLibraryInfo>
+#include <QSettings>
 
 int main(int argc, char *argv[])
 {
 	QApplication app(argc, argv);
+	QSettings::setDefaultFormat(QSettings::IniFormat);
 	QCoreApplication::setOrganizationName(APP_ORGANIZATION);
 	QCoreApplication::setApplicationName(APP_NAME);
 

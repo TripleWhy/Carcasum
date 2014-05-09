@@ -315,7 +315,7 @@ void MainWindow::readSettings()
 	else
 	{
 		std::uniform_int_distribution<quint64> distribution;
-		std::default_random_engine generator(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count());
+		std::default_random_engine generator((std::default_random_engine::result_type)std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count());
 		for (int i = 0; i < 5000; ++i)
 			distribution(generator);
 		for (quint64 i = 0, end = distribution(generator) % 1000000; i < end; ++i)
