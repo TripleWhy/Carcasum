@@ -20,8 +20,6 @@ int main(int argc, char *argv[])
 	QCoreApplication::setOrganizationName(APP_ORGANIZATION);
 	QCoreApplication::setApplicationName(APP_NAME);
 
-	qDebug() << QLibraryInfo::location(QLibraryInfo::TranslationsPath);
-
 	QTranslator qtTranslator;
 	qtTranslator.load("qt_" + QLocale::system().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath));
 	app.installTranslator(&qtTranslator);
