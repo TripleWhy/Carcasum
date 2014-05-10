@@ -9,7 +9,7 @@
 #define APP_ORGANIZATION "YMSolutions"
 
 // Some numbers
-#define TIMEOUT                       5000
+#define TIMEOUT                       2500
 // Game
 #define MAX_PLAYERS                   6
 #define MEEPLE_COUNT                  7
