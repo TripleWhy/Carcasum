@@ -184,12 +184,16 @@ QByteArray TileImageFactory::getPluginData()
 	}
 	else
 	{
-		return QByteArray();
+		return pluginData;
 	}
 
 	QBuffer buffer(&data);
 	QuaZip qz(&buffer);
-	qz.open(QuaZip::mdUnzip);
+	if (!qz.open(QuaZip::mdUnzip))
+	{
+		qDebug() << "qz.open error:" << qz.getZipError();
+		return pluginData;
+	}
 	bool found = false;
 	while (qz.goToNextFile())
 	{
