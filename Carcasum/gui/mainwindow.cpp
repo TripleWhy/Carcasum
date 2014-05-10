@@ -5,6 +5,7 @@
 #include <QSettings>
 #include <QFileDialog>
 #include <QStandardPaths>
+#include <QDateTime>
 
 void MainWindow::GameThread::run()
 {

@@ -123,9 +123,11 @@ QMap<uchar, QPoint> TileImageFactory::getPoints(Tile const * tile)
 		QFile file2(":/jcz/resources/plugins/classic/tiles/points.xml");
 		jcz::XmlParser::readPoints(&file2, tiles);
 
+#ifndef CLASSIC_TILES
 		PluginFileMgr mgr(zipData, "tiles/points.xml");
 		if (mgr.fileExists())
 			jcz::XmlParser::readPoints(mgr.getFile(), tiles);
+#endif
 		xmlTiles.insert(expansion, tiles);
 	}
 
@@ -171,6 +173,9 @@ QPixmap TileImageFactory::loadImage(Tile::TileSet tileSet, TileTypeType localTyp
 
 QByteArray TileImageFactory::getPluginData()
 {
+#ifdef CLASSIC_TILES
+	return QByteArray();
+#else
 	QDir dir = QDir(QCoreApplication::applicationDirPath());
 	QFileInfo fi(dir, QString(zipFileName()));
 	QByteArray data;
@@ -214,17 +219,20 @@ QByteArray TileImageFactory::getPluginData()
 	qz.close();
 
 	return pluginData;
+#endif
 }
 
 QPixmap TileImageFactory::loadPluginImage(QString const & path)
 {
 	QPixmap px;
 
+#ifndef CLASSIC_TILES
 	PluginFileMgr mgr(zipData, path, true);
 	if (!mgr.fileExists())
 		return px;
 
 	QuaZipFile * file = mgr.getFile();
 	px.loadFromData(file->readAll());
+#endif
 	return px;
 }
