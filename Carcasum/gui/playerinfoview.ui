@@ -29,29 +29,6 @@
    <property name="verticalSpacing">
     <number>0</number>
    </property>
-   <item row="1" column="1">
-    <layout class="QHBoxLayout" name="meepleLayout">
-     <property name="spacing">
-      <number>3</number>
-     </property>
-     <property name="topMargin">
-      <number>5</number>
-     </property>
-     <item>
-      <spacer name="meepleSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>0</width>
-         <height>0</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
-   </item>
    <item row="2" column="1">
     <layout class="QHBoxLayout" name="infoLayout">
      <item>
@@ -134,6 +111,32 @@
    </item>
    <item row="0" column="0" rowspan="3">
     <widget class="QLabel" name="iconLabel"/>
+   </item>
+   <item row="1" column="1">
+    <layout class="QHBoxLayout" name="meepleLayout">
+     <property name="spacing">
+      <number>3</number>
+     </property>
+     <property name="topMargin">
+      <number>5</number>
+     </property>
+     <item>
+      <spacer name="meepleSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item row="0" column="2" rowspan="3">
+    <widget class="QLabel" name="tileLabel"/>
    </item>
   </layout>
  </widget>

@@ -31,6 +31,7 @@ public:
 
 public slots:
 	void updateView();
+	void displayTile(int player, int tileType);
 
 private:
 	Ui::PlayerInfoView *ui;

@@ -26,6 +26,7 @@ private:
 	QGraphicsItemGroup * textOverlayLayer;
 #endif
 
+	QList<QGraphicsRectItem *> frames;
 	QList<QGraphicsRectItem *> openTiles;
 //	QList<QGraphicsSvgItem *> meepleOutlines;
 	QGraphicsPixmapItem * placementTile;
