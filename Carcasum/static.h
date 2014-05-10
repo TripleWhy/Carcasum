@@ -20,6 +20,7 @@
 // GUI
 #define BOARD_TILE_SIZE             300
 #define BOARD_MEEPLE_SIZE            75
+#define BOARD_TILE_FRAME_WIDTH       15
 #define BOARDVIEW_INITIAL_TILE_SIZE  50
 #define PINFO_ICON_SIZE              40
 #define PINFO_MEEPLE_SIZE            10
