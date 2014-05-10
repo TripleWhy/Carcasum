@@ -212,6 +212,36 @@ Place no meeple: right mouse button
 Move board: middle mouse button
 Zoom: mouse wheel</translation>
     </message>
+    <message>
+        <location filename="gui/mainwindow.h" line="57"/>
+        <source>Red</source>
+        <translation>Red</translation>
+    </message>
+    <message>
+        <location filename="gui/mainwindow.h" line="57"/>
+        <source>Blue</source>
+        <translation>Blue</translation>
+    </message>
+    <message>
+        <location filename="gui/mainwindow.h" line="57"/>
+        <source>Yellow</source>
+        <translation>Yellow</translation>
+    </message>
+    <message>
+        <location filename="gui/mainwindow.h" line="57"/>
+        <source>Green</source>
+        <translation>Green</translation>
+    </message>
+    <message>
+        <location filename="gui/mainwindow.h" line="57"/>
+        <source>Black</source>
+        <translation>Black</translation>
+    </message>
+    <message>
+        <location filename="gui/mainwindow.h" line="57"/>
+        <source>Gray</source>
+        <translation>Gray</translation>
+    </message>
 </context>
 <context>
     <name>PlayerInfoView</name>

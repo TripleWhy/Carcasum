@@ -212,6 +212,36 @@ Keinen Meeple setzen: rechte Maustaste
 Spielfeld bewegen: mittlere Maustaste
 Zoom: Mausrad</translation>
     </message>
+    <message>
+        <location filename="gui/mainwindow.h" line="57"/>
+        <source>Red</source>
+        <translation>Rot</translation>
+    </message>
+    <message>
+        <location filename="gui/mainwindow.h" line="57"/>
+        <source>Blue</source>
+        <translation>Blau</translation>
+    </message>
+    <message>
+        <location filename="gui/mainwindow.h" line="57"/>
+        <source>Yellow</source>
+        <translation>Gelb</translation>
+    </message>
+    <message>
+        <location filename="gui/mainwindow.h" line="57"/>
+        <source>Green</source>
+        <translation>Grün</translation>
+    </message>
+    <message>
+        <location filename="gui/mainwindow.h" line="57"/>
+        <source>Black</source>
+        <translation>Schwarz</translation>
+    </message>
+    <message>
+        <location filename="gui/mainwindow.h" line="57"/>
+        <source>Gray</source>
+        <translation>Grau</translation>
+    </message>
 </context>
 <context>
     <name>PlayerInfoView</name>

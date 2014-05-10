@@ -53,8 +53,8 @@ private:
 	RandomNextTileProvider rntp;
 	bool randomTiles = true;
 
-	const std::array<Qt::GlobalColor, MAX_PLAYERS> colors = {{Qt::red, Qt::blue, Qt::yellow, Qt::darkGreen, Qt::black, Qt::gray}};	//Double brackets not needed in .cpp ...
-	const std::array<char const *, MAX_PLAYERS> colorNames= {{   "Red",   "Blue",   "Yellow",       "Green",   "Black",   "Gray"}};
+	const std::array<Qt::GlobalColor, MAX_PLAYERS> colors = {{Qt::red,   Qt::blue,   Qt::yellow, Qt::darkGreen,   Qt::black,   Qt::gray}};	//Double brackets not needed in .cpp ...
+	const std::array<QString, MAX_PLAYERS> colorNames     = {{tr("Red"), tr("Blue"), tr("Yellow"),   tr("Green"), tr("Black"), tr("Gray")}};
 	std::array<NgPlayerEdit, MAX_PLAYERS> ngPlayerEdits;
 	PlayerSelector * playerSelector;
 	std::array<Player *, MAX_PLAYERS> selectedPlayers = {{}};
