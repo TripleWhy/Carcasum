@@ -38,6 +38,7 @@ int main(int argc, char *argv[])
 	qDebug() << "Git revision:" << APP_REVISION_STR;
 	qDebug() << "QStandardPaths::DataLocation:" << QStandardPaths::writableLocation(QStandardPaths::DataLocation);
 
+#ifndef CLASSIC_TILES
 	QDir dir = QDir(QCoreApplication::applicationDirPath());
 	QFileInfo fi(dir, QString(TileImageFactory::zipFileName()));
 	if (!fi.exists())
@@ -59,6 +60,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+#endif
 
 	MainWindow w;
 	w.show();

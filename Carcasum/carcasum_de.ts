@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="de_DE" sourcelanguage="en_US">
+<TS version="2.0" language="de_DE" sourcelanguage="en_US">
 <context>
     <name>Downloader</name>
     <message>
@@ -172,12 +172,12 @@
     <message>
         <location filename="gui/playerinfoview.ui" line="60"/>
         <source>Points:</source>
-        <translation>Punkte</translation>
+        <translation>Punkte:</translation>
     </message>
     <message>
         <location filename="gui/playerinfoview.ui" line="90"/>
         <source>Meeples:</source>
-        <translation>Meeples</translation>
+        <translation>Meeples:</translation>
     </message>
 </context>
 <context>

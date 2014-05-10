@@ -42,7 +42,7 @@ void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)
 	for (Tile * t : tiles)
 	{
 		while (tileCount.size() <= t->tileType)
-			tileCount.append(0);
+			tileCount.push_back(0);
 		++tileCount[t->tileType];
 	}
 	assertTileCount();
@@ -300,13 +300,14 @@ bool Game::step()
 		Q_ASSERT(playerScores[i] >= oldScores[i]);
 #endif
 
-	moveHistory.push_back(entry);
-	for (Player * p : allPlayers)
-		p->playerMoved(playerIndex, tile, entry);
-
 	tiles.removeAt(entry.tile);
 	--tileCount[tile->tileType];
 	assertTileCount();
+	moveHistory.push_back(entry);
+
+	for (Player * p : allPlayers)
+		p->playerMoved(playerIndex, tile, entry);
+
 	if (tiles.isEmpty())
 	{
 		endGame();

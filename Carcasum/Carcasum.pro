@@ -68,20 +68,21 @@ core {
 		gui/playerselector.ui
 
 	classicTiles {
+		DEFINES += CLASSIC_TILES
 		RESOURCES += jcz/jczTilesClassic.qrc
 	} else {
 		RESOURCES += gui/tilesJczf.qrc
+
+		win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../quazip/release/ -lquazip
+		else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../quazip/debug/ -lquazip
+		else:unix: LIBS += -L$$OUT_PWD/../quazip/ -lquazip
+
+		INCLUDEPATH += $$PWD/../
+		DEPENDPATH += $$PWD/../quazip
 	}
 
 	RESOURCES += \
 		gui/graphics.qrc
-
-	win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../quazip/release/ -lquazip
-	else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../quazip/debug/ -lquazip
-	else:unix: LIBS += -L$$OUT_PWD/../quazip/ -lquazip
-
-	INCLUDEPATH += $$PWD/../
-	DEPENDPATH += $$PWD/../quazip
 
 	TRANSLATIONS = carcasum_en.ts \
 		carcasum_de.ts \
