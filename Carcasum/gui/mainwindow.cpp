@@ -161,7 +161,7 @@ void MainWindow::playerMoved(int player, const Tile * tile, const MoveHistoryEnt
 	if (move.move.tileMove.isNull())
 		emit gameEvent(tr("A non-suitable tile was drawn and discarded."));
 	else
-		emit gameEvent(tr("Player %1 moved.").arg(player));
+		emit gameEvent(tr("Player %1 moved.").arg(player+1));
 
 	QSettings settings;
 	settings.beginGroup("games");

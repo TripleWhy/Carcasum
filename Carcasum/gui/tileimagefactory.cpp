@@ -226,7 +226,9 @@ QPixmap TileImageFactory::loadPluginImage(QString const & path)
 {
 	QPixmap px;
 
-#ifndef CLASSIC_TILES
+#ifdef CLASSIC_TILES
+	Q_UNUSED(path);
+#else
 	PluginFileMgr mgr(zipData, path, true);
 	if (!mgr.fileExists())
 		return px;
