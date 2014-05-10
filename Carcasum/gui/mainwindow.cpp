@@ -6,6 +6,7 @@
 #include <QFileDialog>
 #include <QStandardPaths>
 #include <QDateTime>
+#include <QMessageBox>
 
 void MainWindow::GameThread::run()
 {
@@ -502,6 +503,13 @@ void MainWindow::on_buttonBox_accepted()
 
 	ui->stackedWidget->setCurrentWidget(ui->gameDisplayPage);
 
+	QSettings settings;
+	if (settings.value("firstStart", true).toBool())
+	{
+		on_actionControls_triggered();
+		settings.setValue("firstStart", false);
+	}
+
 	gameThread->start();
 }
 
@@ -523,4 +531,16 @@ void MainWindow::on_boardFileButton_clicked()
 {
 	QString path = QFileDialog::getOpenFileName(this, tr("Board File"));
 	ui->boardFileEdit->setText(path);
+}
+
+void MainWindow::on_actionControls_triggered()
+{
+	QMessageBox::information(this, tr("Controls"),
+							 tr("Game Controls\n\n"
+							 "Place tile: left mouse button\n"
+							 "Rotate tile: right mouse button\n\n"
+							 "Place meeple: left mouse button\n"
+							 "Place no meeple: right mouse button\n\n"
+							 "Move board: middle mouse button\n"
+							 "Zoom: mouse wheel"));
 }
