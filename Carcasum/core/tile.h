@@ -196,10 +196,10 @@ public:
 #endif
 	inline virtual int getScore()
 	{
-		std::unordered_set<Node *> closedCities;
+		std::unordered_set<NodeData const *> closedCities;
 		for (CityNode * c : getFieldData()->cities)
 			if (c->isClosed())
-				closedCities.insert(c);
+				closedCities.insert(c->getData());
 		return (int)closedCities.size() * 3;
 	}
 	virtual Node * clone(Tile const * parent, Game const * g) const
