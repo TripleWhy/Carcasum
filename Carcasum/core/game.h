@@ -55,7 +55,7 @@ public:
 	virtual void nodeUnscored(Node const * n, const int score, Game const * game) = 0;
 };
 
-typedef QVarLengthArray<int, TILE_COUNT_ARRAY_LENGTH> TileCountType;
+typedef VarLengthArrayWrapper<int, TILE_COUNT_ARRAY_LENGTH>::type TileCountType;
 
 class Game
 {

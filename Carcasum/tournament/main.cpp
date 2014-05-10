@@ -196,16 +196,10 @@ void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory,
 	}
 }
 
-int main(int /*argc*/, char */*argv*/[])
+void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory)
 {
-	jcz::TileFactory * tileFactory = new jcz::TileFactory(false);
-
 	int const N = 100;
 	int const THREADS = 8;
-
-	std::vector<Player *> players;
-	players.push_back(new MCTSPlayer<Utilities::ComplexUtilityNormalized, Playouts::EarlyCutoff<10>>(tileFactory));
-	players.push_back(new MCTSPlayer<Utilities::ComplexUtilityNormalizedEC, Playouts::EarlyCutoff<10>>(tileFactory));
 
 #ifdef TIMEOUT
 	qDebug() << "TIMEOUT" << TIMEOUT;
@@ -213,6 +207,7 @@ int main(int /*argc*/, char */*argv*/[])
 	for (Player * p : players)
 		qDebug() << p->getTypeName();
 
+	if (true)
 	{
 		std::vector<Result> results;
 		results.resize(N * players.size());
@@ -231,6 +226,41 @@ int main(int /*argc*/, char */*argv*/[])
 		}
 		printResults(results, (int)players.size());
 		qDebug("\n");
+	}
+
+	qDeleteAll(players);
+	players.clear();
+}
+
+int main(int /*argc*/, char */*argv*/[])
+{
+	jcz::TileFactory * tileFactory = new jcz::TileFactory(false);
+	std::vector<Player *> players;
+
+	qDebug("\n\nTest 1, MC");
+	players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
+	players.push_back(new MonteCarloPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
+	doTest(players, tileFactory);
+
+	qDebug("\n\nTest 1, MC2");
+	players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
+	players.push_back(new MonteCarloPlayer2<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
+	doTest(players, tileFactory);
+
+	qDebug("\n\nTest 3, MC2");
+	players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::EarlyCutoff<14>>(tileFactory));
+	players.push_back(new MonteCarloPlayer2<Utilities::SimpleUtility, Playouts::EarlyCutoff<14>>(tileFactory));
+	doTest(players, tileFactory);
+
+	qDebug("Test 2");
+	for (int i = 0; i < 14; ++i)
+	{
+		int p1 = (1 << i);
+		int p2 = (2 << i);
+		qDebug() << "\n" << p1 << "vs" << p2;
+		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory, p1, false));
+		players.push_back(new MonteCarloPlayer2<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory, p2, false));
+		doTest(players, tileFactory);
 	}
 
 	delete tileFactory;

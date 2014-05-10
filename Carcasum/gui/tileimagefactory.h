@@ -8,8 +8,10 @@
 #include <QHash>
 #include <QPixmap>
 #include <QBuffer>
-#include <quazip/quazip.h>
-#include <quazip/quazipfile.h>
+#ifndef CLASSIC_TILES
+ #include <quazip/quazip.h>
+ #include <quazip/quazipfile.h>
+#endif
 
 class TileImageFactory
 {
@@ -44,6 +46,7 @@ private:
 	QByteArray getPluginData();
 	QPixmap loadPluginImage(QString const & path);
 
+#ifndef CLASSIC_TILES
 private:
 	class PluginFileMgr
 	{
@@ -87,6 +90,7 @@ private:
 			return file;
 		}
 	};
+#endif
 };
 
 #endif // TILEIMAGEFACTORY_H
