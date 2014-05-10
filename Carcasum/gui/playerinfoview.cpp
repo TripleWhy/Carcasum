@@ -78,3 +78,14 @@ void PlayerInfoView::updateView()
 	else
 		setPalette(normPalette);
 }
+
+void PlayerInfoView::displayTile(int player, int tileType)
+{
+	if (playerIndex == player)
+	{
+		QPixmap const & p = imgFactory->getImage((TileTypeType)tileType);
+		ui->tileLabel->setPixmap( p.scaled(RTILE_TILE_SIZE, RTILE_TILE_SIZE, Qt::KeepAspectRatio, Qt::SmoothTransformation) );
+	}
+	else
+		ui->tileLabel->clear();
+}

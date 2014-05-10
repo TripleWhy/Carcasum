@@ -17,7 +17,7 @@ class MainWindow;
 
 class PlayerInfoView;
 
-class MainWindow : public QMainWindow, public Player, public ScoreListener
+class MainWindow : public QMainWindow, public Player, public ScoreListener, public NextTileProvider
 {
 	Q_OBJECT
 
@@ -51,6 +51,7 @@ private:
 	jcz::TileFactory tileFactory;
 	TileImageFactory imgFactory = TileImageFactory(&tileFactory);
 	RandomNextTileProvider rntp;
+	bool randomTiles = true;
 
 	const std::array<Qt::GlobalColor, MAX_PLAYERS> colors = {{Qt::red, Qt::blue, Qt::yellow, Qt::darkGreen, Qt::black, Qt::gray}};	//Double brackets not needed in .cpp ...
 	const std::array<char const *, MAX_PLAYERS> colorNames= {{   "Red",   "Blue",   "Yellow",       "Green",   "Black",   "Gray"}};
@@ -72,6 +73,7 @@ public:
 	virtual Player * clone() const;
 	virtual void nodeScored(Node const * n, const int score, Game const * game);
 	virtual void nodeUnscored(Node const * n, const int score, Game const * game);
+	virtual int nextTile(Game const * game);
 
 protected:
 	virtual void closeEvent(QCloseEvent *event);
@@ -84,6 +86,7 @@ private:
 signals:
 	void gameEvent(QString const & msg);
 	void updateNeeded();
+	void tileDrawn(int player, int tileType);
 
 private slots:
 	void displayGameEvent(QString const & msg);

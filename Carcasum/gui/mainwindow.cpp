@@ -64,7 +64,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	actionGroup->addAction(ui->actionChoose_Tiles);
 
 	boardUi = new BoardGraphicsScene(&tileFactory, &imgFactory, ui->boardView);
-	game = new Game(&rntp, true);
+	game = new Game(this, true);
 	game->addView(this);
 	gameThread = new GameThread(game, this);
 
@@ -119,6 +119,7 @@ void MainWindow::newGame(int player, const Game * game)
 
 		l->insertWidget(i, pi);
 		connect(this, SIGNAL(updateNeeded()), pi, SLOT(updateView()));
+		connect(this, SIGNAL(tileDrawn(int,int)), pi, SLOT(displayTile(int,int)));
 		playerInfos.push_back(pi);
 	}
 
@@ -281,6 +282,21 @@ void MainWindow::nodeUnscored(const Node * /*n*/, const int /*score*/, const Gam
 {
 }
 
+int MainWindow::nextTile(const Game * game)
+{
+	int result;
+	if (randomTiles)
+		result = rntp.nextTile(game);
+	else
+		result = ui->remainingTiles->nextTile(game);
+
+	int player = game->getNextPlayer();
+	TileTypeType tileType = game->getTiles()[result]->tileType;
+	emit tileDrawn(player, tileType);
+
+	return result;
+}
+
 void MainWindow::closeEvent(QCloseEvent * event)
 {
 	requestEndGame();
@@ -440,13 +456,13 @@ void MainWindow::typeBoxChanged(int index)
 void MainWindow::on_actionRandom_Tiles_toggled(bool checked)
 {
 	if (checked)
-		game->setNextTileProvider(&rntp);
+		randomTiles = true;
 }
 
 void MainWindow::on_actionChoose_Tiles_toggled(bool checked)
 {
 	if (checked)
-		game->setNextTileProvider(ui->remainingTiles);
+		randomTiles = false;
 }
 
 void MainWindow::on_buttonBox_accepted()
