@@ -10,7 +10,7 @@ Some parts, mainly graphics and configuration files, are taken from JCloisterZon
 I will add more details later.
 
 # Windows Installation
-Download and extract https://github.com/TripleWhy/Carcasum/blob/bin/dist/Carcasum-win32-v0.1.zip?raw=true.
+Download and extract https://github.com/TripleWhy/Carcasum/blob/bin/dist/Carcasum-win32.zip?raw=true.
 Then run carcasum_gui.exe.
 
 # Building
