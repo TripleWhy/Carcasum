@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 	}
 	
 
-	if (true)
+	if (false)
 	{
 		Player * p1 = &RandomPlayer::instance;
 //		auto * p2 = new MonteCarloPlayer<>(tileFactory);
@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
 			std::cout << i << "   " << p2->hit << "hits / " << p2->miss << "misses = " << (p2->hit / qreal(p2->miss)) << std::endl;
 #endif
 		}
-		std::cout << (t.elapsed() / n) << std::endl;
+		std::cout << (qreal(t.elapsed()) / qreal(n)) << std::endl;
 		return 0;
 	}
 

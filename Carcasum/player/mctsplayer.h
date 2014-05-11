@@ -113,9 +113,9 @@ public:
 
 public:
 #ifdef TIMEOUT
-	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, int const m = TIMEOUT, bool const mIsTimeout = true, qreal const Cp = 1.0);
+	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, int const m = TIMEOUT, bool const mIsTimeout = true, qreal const Cp = 0.5);
 #else
-	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, int const m = 5000, bool const mIsTimeout = true, qreal const Cp = 1.0);
+	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, int const m = 5000, bool const mIsTimeout = true, qreal const Cp = 0.5);
 #endif
 
 	void applyChance(int action, Game & g);

@@ -135,6 +135,15 @@ DEFINES += APP_REVISION=$$REVISION
 
 CONFIG += c++11
 QMAKE_CXXFLAGS_WARN_ON += -Wextra -Werror=switch -Werror=return-type -Werror=delete-non-virtual-dtor -Wconversion
+QMAKE_CFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops
+QMAKE_CXXFLAGS_RELEASE += -O3 -march=native -mtune=native -funroll-loops
+QMAKE_LFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops
+#QMAKE_CFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops -fprofile-generate
+#QMAKE_CXXFLAGS_RELEASE += -O3 -march=native -mtune=native -funroll-loops -fprofile-generate
+#QMAKE_LFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops -fprofile-generate
+#QMAKE_CFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops -fprofile-use
+#QMAKE_CXXFLAGS_RELEASE += -O3 -march=native -mtune=native -funroll-loops -fprofile-use
+#QMAKE_LFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops -fprofile-use
 
 #DEFINES += QT_FORCE_ASSERTS
 #QMAKE_CXXFLAGS_RELEASE += -g
