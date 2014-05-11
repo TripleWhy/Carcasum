@@ -12,8 +12,6 @@
 template<class UtilityProvider = Utilities::ComplexUtilityNormalized, class Playout = Playouts::RandomPlayout>
 class MCTSPlayer : public Player
 {
-	constexpr static qreal Cp = 1;
-
 	typedef typename UtilityProvider::RewardType RewardType;
 	typedef typename UtilityProvider::RewardListType RewardListType;
 
@@ -104,6 +102,7 @@ private:
 	UtilityProvider utilityProvider = UtilityProvider();
 	const int M;
 	const bool useTimeout;
+	const qreal Cp;
 
 
 #if MCTS_COUNT_EXPAND_HITS
@@ -114,9 +113,9 @@ public:
 
 public:
 #ifdef TIMEOUT
-	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, int m = TIMEOUT, bool mIsTimeout = true);
+	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, int const m = TIMEOUT, bool const mIsTimeout = true, qreal const Cp = 1.0);
 #else
-	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, int m = 5000, bool mIsTimeout = true);
+	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, int const m = 5000, bool const mIsTimeout = true, qreal const Cp = 1.0);
 #endif
 
 	void applyChance(int action, Game & g);

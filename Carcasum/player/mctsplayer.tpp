@@ -49,11 +49,12 @@ MCTSPlayer MCTS_TU::MCTSChanceNode::MCTSChanceNode(uchar player, TileCountType c
 
 
 MCTS_T
-constexpr MCTSPlayer MCTS_TU::MCTSPlayer(jcz::TileFactory * tileFactory, int m, bool mIsTimeout)
+constexpr MCTSPlayer MCTS_TU::MCTSPlayer(jcz::TileFactory * tileFactory, const int m, const bool mIsTimeout, qreal const Cp)
 	: tileFactory(tileFactory),
 	  typeName(QString("MCTSPlayer<%1, %2>").arg(UtilityProvider::name).arg(Playout::name)),
 	  M(m),
-	  useTimeout(mIsTimeout)
+	  useTimeout(mIsTimeout),
+	  Cp(Cp)
 {
 }
 
