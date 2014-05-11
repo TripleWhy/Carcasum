@@ -139,3 +139,20 @@ QMAKE_CXXFLAGS_WARN_ON += -Wextra -Werror=switch -Werror=return-type -Werror=del
 #DEFINES += QT_FORCE_ASSERTS
 #QMAKE_CXXFLAGS_RELEASE += -g
 #QMAKE_CFLAGS_RELEASE += -g
+
+
+##This builds qm files. TODO: It also deletes them again on make clean.
+#isEmpty(QMAKE_LRELEASE) {
+#	win32:QMAKE_LRELEASE = $$[QT_INSTALL_BINS]\lrelease.exe
+#	else:QMAKE_LRELEASE = $$[QT_INSTALL_BINS]/lrelease
+##	else:QMAKE_LRELEASE = lrelease-qt4 # Yaay, fedora!
+#}
+#updateqm.input = TRANSLATIONS
+##updateqm.output = $$OUT_PWD/${QMAKE_FILE_BASE}.qm
+##updateqm.commands = $$QMAKE_LRELEASE ${QMAKE_FILE_IN} -qm $$OUT_PWD/${QMAKE_FILE_BASE}.qm
+#updateqm.output = ${QMAKE_FILE_PATH}/${QMAKE_FILE_BASE}.qm
+#updateqm.commands = $$QMAKE_LRELEASE ${QMAKE_FILE_IN} -qm ${QMAKE_FILE_PATH}/${QMAKE_FILE_BASE}.qm
+#updateqm.CONFIG += no_link
+#
+#QMAKE_EXTRA_COMPILERS += updateqm
+#PRE_TARGETDEPS += compiler_updateqm_make_all

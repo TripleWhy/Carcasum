@@ -17,7 +17,7 @@ class MainWindow;
 
 class PlayerInfoView;
 
-class MainWindow : public QMainWindow, public Player, public ScoreListener
+class MainWindow : public QMainWindow, public Player, public ScoreListener, public NextTileProvider
 {
 	Q_OBJECT
 
@@ -51,9 +51,10 @@ private:
 	jcz::TileFactory tileFactory;
 	TileImageFactory imgFactory = TileImageFactory(&tileFactory);
 	RandomNextTileProvider rntp;
+	bool randomTiles = true;
 
-	const std::array<Qt::GlobalColor, MAX_PLAYERS> colors = {{Qt::red, Qt::blue, Qt::yellow, Qt::darkGreen, Qt::black, Qt::gray}};	//Double brackets not needed in .cpp ...
-	const std::array<char const *, MAX_PLAYERS> colorNames= {{   "Red",   "Blue",   "Yellow",       "Green",   "Black",   "Gray"}};
+	const std::array<Qt::GlobalColor, MAX_PLAYERS> colors = {{Qt::red,   Qt::blue,   Qt::yellow, Qt::darkGreen,   Qt::black,   Qt::gray}};	//Double brackets not needed in .cpp ...
+	const std::array<QString, MAX_PLAYERS> colorNames     = {{tr("Red"), tr("Blue"), tr("Yellow"),   tr("Green"), tr("Black"), tr("Gray")}};
 	std::array<NgPlayerEdit, MAX_PLAYERS> ngPlayerEdits;
 	PlayerSelector * playerSelector;
 	std::array<Player *, MAX_PLAYERS> selectedPlayers = {{}};
@@ -72,6 +73,7 @@ public:
 	virtual Player * clone() const;
 	virtual void nodeScored(Node const * n, const int score, Game const * game);
 	virtual void nodeUnscored(Node const * n, const int score, Game const * game);
+	virtual int nextTile(Game const * game);
 
 protected:
 	virtual void closeEvent(QCloseEvent *event);
@@ -84,6 +86,7 @@ private:
 signals:
 	void gameEvent(QString const & msg);
 	void updateNeeded();
+	void tileDrawn(int player, int tileType);
 
 private slots:
 	void displayGameEvent(QString const & msg);
@@ -96,10 +99,9 @@ private slots:
 	void on_actionChoose_Tiles_toggled(bool arg1);
 	void on_buttonBox_accepted();
 	void on_actionNew_Game_triggered();
-
 	void on_actionStore_board_triggered();
-
 	void on_boardFileButton_clicked();
+	void on_actionControls_triggered();
 
 private:
 	Ui::MainWindow *ui;

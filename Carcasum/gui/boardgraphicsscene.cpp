@@ -271,6 +271,11 @@ void BoardGraphicsScene::displayNewGame(int callDepth)
 		}
 		return;
 	}
+
+	for (QGraphicsRectItem * frame : frames)
+		delete frame;
+	frames.clear();
+
 	qDeleteAll(tileLayer->childItems());
 	qDeleteAll(openLayer->childItems());
 	qDeleteAll(meepleLayer->childItems());
@@ -280,11 +285,21 @@ void BoardGraphicsScene::displayNewGame(int callDepth)
 #endif
 
 	openTiles.clear();
-	removeItem(placementTile);
+	if (placementTile->parentItem() != 0)
+		removeItem(placementTile);
 
 	const Board * board = game->getBoard();
 	uint arraySize = board->getInternalSize();
 	setSceneRect(-BOARD_TILE_SIZE / 2.0, -BOARD_TILE_SIZE / 2.0, arraySize * BOARD_TILE_SIZE, arraySize * BOARD_TILE_SIZE);
+
+	for (uint i = 0; i < game->getPlayerCount(); ++i)
+	{
+		QGraphicsRectItem * rect = new QGraphicsRectItem(-BOARD_TILE_SIZE / 2.0, -BOARD_TILE_SIZE / 2.0, BOARD_TILE_SIZE, BOARD_TILE_SIZE);
+		rect->setBrush(QBrush());
+		rect->setPen(QPen(imgFactory->getPlayerColor(i), BOARD_TILE_FRAME_WIDTH, Qt::SolidLine, Qt::FlatCap, Qt::RoundJoin));
+		rect->setOpacity(0.5);
+		frames.push_back(rect);
+	}
 
 	for (uint y = 0; y < arraySize; ++y)
 	{
@@ -415,6 +430,11 @@ void BoardGraphicsScene::displayPlayerMoved(void * data, int callDepth)
 	item->setPos(tileMove.x * BOARD_TILE_SIZE, tileMove.y * BOARD_TILE_SIZE);
 	item->setRotation(tileMove.orientation * 90);
 	tileLayer->addToGroup(item);
+
+	QGraphicsRectItem * frame = frames[d->player];
+	frame->setPos(item->pos());
+	tileLayer->removeFromGroup(frame);
+	tileLayer->addToGroup(frame);
 
 	if (!meepleMove.isNull())
 	{
