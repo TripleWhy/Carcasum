@@ -432,7 +432,10 @@ public:
 		for (int i = 0; i < playerCount; ++i)
 			sum += scores[i];
 
-		return qreal(scores[myIndex]) / qreal(sum);
+		if (sum == 0)
+			return 1.0 / qreal(playerCount);
+		else
+			return qreal(scores[myIndex]) / qreal(sum);
 	}
 
 	RewardListType utilities(const int * scores, const int playerCount, Game const * /*g*/) const
@@ -443,9 +446,16 @@ public:
 		for (int i = 0; i < playerCount; ++i)
 			sum += scores[i];
 
-		for (int i = 0; i < playerCount; ++i)
-			reward[i] = qreal(scores[i]) / qreal(sum);
-
+		if (sum == 0)
+		{
+			for (int i = 0; i < playerCount; ++i)
+				reward[i] = 1.0 / qreal(playerCount);
+		}
+		else
+		{
+			for (int i = 0; i < playerCount; ++i)
+				reward[i] = qreal(scores[i]) / qreal(sum);
+		}
 		return reward;
 	}
 };
