@@ -9,7 +9,7 @@
 #include "core/random.h"
 #include "core/tile.h"
 
-template<class UtilityProvider = Utilities::ComplexUtilityNormalized, class Playout = Playouts::RandomPlayout>
+template<class UtilityProvider = Utilities::PortionUtility, class Playout = Playouts::RandomPlayout>
 class MCTSPlayer : public Player
 {
 	typedef typename UtilityProvider::RewardType RewardType;
@@ -134,6 +134,7 @@ private:
 	const int M;
 	const bool useTimeout;
 	const qreal Cp;
+	const bool reuseTree;
 
 
 #if MCTS_COUNT_EXPAND_HITS
@@ -144,9 +145,9 @@ public:
 
 public:
 #ifdef TIMEOUT
-	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, int const m = TIMEOUT, bool const mIsTimeout = true, qreal const Cp = 0.5);
+	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = true, int const m = TIMEOUT, bool const mIsTimeout = true, qreal const Cp = 0.5);
 #else
-	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, int const m = 5000, bool const mIsTimeout = true, qreal const Cp = 0.5);
+	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = true, int const m = 5000, bool const mIsTimeout = true, qreal const Cp = 0.5);
 #endif
 
 	void applyChance(int action, Game & g);

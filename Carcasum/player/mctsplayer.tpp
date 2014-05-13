@@ -50,12 +50,13 @@ MCTSPlayer MCTS_TU::MCTSChanceNode::MCTSChanceNode(uchar player, TileCountType c
 
 
 MCTS_T
-constexpr MCTSPlayer MCTS_TU::MCTSPlayer(jcz::TileFactory * tileFactory, const int m, const bool mIsTimeout, qreal const Cp)
+constexpr MCTSPlayer MCTS_TU::MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree, const int m, const bool mIsTimeout, qreal const Cp)
 	: tileFactory(tileFactory),
-	  typeName(QString("MCTSPlayer<%1, %2>(%3, %4, %5)").arg(UtilityProvider::name).arg(Playout::name).arg(m).arg(mIsTimeout).arg(Cp)),
+	  typeName(QString("MCTSPlayer<%1, %2>(reuseTree=%3, m=%4, mIsTimeout=%5, Cp=%6)").arg(UtilityProvider::name).arg(Playout::name).arg(reuseTree).arg(m).arg(mIsTimeout).arg(Cp)),
 	  M(m),
 	  useTimeout(mIsTimeout),
-	  Cp(Cp)
+	  Cp(Cp),
+      reuseTree(reuseTree)
 {
 }
 
@@ -80,18 +81,24 @@ TileMove MCTSPlayer MCTS_TU::getTileMove(int player, const Tile * tile, const Mo
 	Q_ASSERT(simGame.getNextPlayer() == player);
 	Q_UNUSED(player);
 
-	MCTSTileNode * v0 = 0;
-	if (rootNode != 0)
-		v0 = (*rootNode->castChildren())[tile->tileType];
-
-	if (v0 != 0)
-		applyNode(v0, simGame);
+	MCTSTileNode * v0;
+	if (!reuseTree)
+		v0 = generateTileNode(0, tile->tileType, simGame);
 	else
 	{
-		rootNode = new MCTSChanceNode((uchar)player, simGame.getTileCounts(), 0, 0);
+		v0 = 0;
+		if (rootNode != 0)
+			v0 = (*rootNode->castChildren())[tile->tileType];
 
-		v0 = generateTileNode(rootNode, tile->tileType, simGame);
-		rootNode->children[tile->tileType] = v0;
+		if (v0 != 0)
+			applyNode(v0, simGame);
+		else
+		{
+			rootNode = new MCTSChanceNode((uchar)player, simGame.getTileCounts(), 0, 0);
+
+			v0 = generateTileNode(rootNode, tile->tileType, simGame);
+			rootNode->children[tile->tileType] = v0;
+		}
 	}
 
 	{
@@ -118,6 +125,9 @@ TileMove MCTSPlayer MCTS_TU::getTileMove(int player, const Tile * tile, const Mo
 	b = bestChild0(meepleNode);
 	meepleMove = meepleNode->possible[b];
 
+	if (!reuseTree)
+		delete v0;
+
 	return a;
 }
 
@@ -130,8 +140,11 @@ MeepleMove MCTSPlayer MCTS_TU::getMeepleMove(int /*player*/, const Tile * /*tile
 MCTS_T
 void MCTSPlayer MCTS_TU::endGame()
 {
-	delete rootNode;
-	rootNode = 0;
+	if (!reuseTree)
+	{
+		delete rootNode;
+		rootNode = 0;
+	}
 }
 
 MCTS_T
@@ -386,67 +399,71 @@ void MCTSPlayer MCTS_TU::backup(MCTSNode * v, RewardListType const & delta)
 MCTS_T
 void MCTSPlayer MCTS_TU::syncGame()
 {
-//	Util::syncGamesFast(*game, simGame);
-	auto const & history = game->getMoveHistory();
-	for (size_t i = simGame.getMoveHistory().size(), s = history.size(); i < s; ++i)
+	if (!reuseTree)
+		Util::syncGamesFast(*game, simGame);
+	else
 	{
-		MoveHistoryEntry const & e = history[i];
-		simGame.simStep(e);
-
-		if (rootNode != 0)
+		auto const & history = game->getMoveHistory();
+		for (size_t i = simGame.getMoveHistory().size(), s = history.size(); i < s; ++i)
 		{
-			MCTSChanceNode * cn = 0;
+			MoveHistoryEntry const & e = history[i];
+			simGame.simStep(e);
 
-			MCTSTileNode * tn = (*rootNode->castChildren())[ e.tileType ];
-			if (tn != 0)
+			if (rootNode != 0)
 			{
-				int mIndex = -1;
-				for (int i = 0; i < tn->possible.size(); ++i)
-					if (tn->possible[i] == e.move.tileMove)
-					{
-						mIndex = i;
-						break;
-					}
-				Q_ASSERT(mIndex != -1);
-				if (mIndex != -1)
-				{
-					MCTSMeepleNode * mn = (*tn->castChildren())[mIndex];
-					if (mn != 0)
-					{
-						int cIndex = -1;
-						for (int i = 0; i < mn->possible.size(); ++i)
-							if (mn->possible[i] == e.move.meepleMove)
-							{
-								cIndex = i;
-								break;
-							}
-						Q_ASSERT(cIndex != -1);
-						if (cIndex != -1)
-						{
-							cn = (*mn->castChildren())[cIndex];
-							if (cn != 0)
-								cn->parent = 0;
-						}
-						else
-						{
-							qWarning("cIndex == -1");
-						}
-					}
-				}
-				else
-				{
-					qWarning("mIndex == -1");
-					qDebug() << "tn->possible.size():" << tn->possible.size();
-					for (TileMove const & p : tn->possible)
-						qDebug() << p.x << p.y << p.orientation;
-					qDebug() << "history entry:";
-					qDebug() << e.move.tileMove.x << e.move.tileMove.y << e.move.tileMove.orientation;
-					qDebug();
-				}
-			}
+				MCTSChanceNode * cn = 0;
 
-			rootNode->deleteExcept(cn);
-			rootNode = cn;
+				MCTSTileNode * tn = (*rootNode->castChildren())[ e.tileType ];
+				if (tn != 0)
+				{
+					int mIndex = -1;
+					for (int i = 0; i < tn->possible.size(); ++i)
+						if (tn->possible[i] == e.move.tileMove)
+						{
+							mIndex = i;
+							break;
+						}
+					Q_ASSERT(mIndex != -1);
+					if (mIndex != -1)
+					{
+						MCTSMeepleNode * mn = (*tn->castChildren())[mIndex];
+						if (mn != 0)
+						{
+							int cIndex = -1;
+							for (int i = 0; i < mn->possible.size(); ++i)
+								if (mn->possible[i] == e.move.meepleMove)
+								{
+									cIndex = i;
+									break;
+								}
+							Q_ASSERT(cIndex != -1);
+							if (cIndex != -1)
+							{
+								cn = (*mn->castChildren())[cIndex];
+								if (cn != 0)
+									cn->parent = 0;
+							}
+							else
+							{
+								qWarning("cIndex == -1");
+							}
+						}
+					}
+					else
+					{
+						qWarning("mIndex == -1");
+						qDebug() << "tn->possible.size():" << tn->possible.size();
+						for (TileMove const & p : tn->possible)
+							qDebug() << p.x << p.y << p.orientation;
+						qDebug() << "history entry:";
+						qDebug() << e.move.tileMove.x << e.move.tileMove.y << e.move.tileMove.orientation;
+						qDebug();
+					}
+				}
+
+				rootNode->deleteExcept(cn);
+				rootNode = cn;
+			}
 		}
 	}
 }

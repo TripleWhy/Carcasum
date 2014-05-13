@@ -207,7 +207,7 @@ void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory)
 	for (Player * p : players)
 		qDebug() << p->getTypeName();
 
-	if (true)
+	if (false)
 	{
 		std::vector<Result> results;
 		results.resize(N * players.size());
@@ -296,7 +296,7 @@ int main(int /*argc*/, char */*argv*/[])
 			doTest(players, tileFactory);
 		}
 	}
-	if (true)
+	if (false)
 	{
 		qDebug("\n\nMonteCarloPlayer vs MCTSPlayer");
 		players.push_back(new MonteCarloPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
@@ -311,6 +311,13 @@ int main(int /*argc*/, char */*argv*/[])
 		qDebug("MonteCarloPlayerUCT vs MCTSPlayer");
 		players.push_back(new MonteCarloPlayerUCT<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
+		doTest(players, tileFactory);
+	}
+	if (true)
+	{
+		qDebug("MCTSPlayer plain vs MCTSPlayer reuseTree");
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, true));
 		doTest(players, tileFactory);
 	}
 
