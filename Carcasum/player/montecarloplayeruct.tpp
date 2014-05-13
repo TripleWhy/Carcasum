@@ -49,8 +49,8 @@ TileMove MonteCarloPlayerUCT MCU_TU::getTileMove(int player, const Tile * /*tile
 	auto rewards2 = typename VarLengthArrayWrapper<typename VarLengthArrayWrapper<RewardType, 16>::type, 128>::type(possibleSize);
 	auto playoutCount2 = VarLengthArrayWrapper<VarLengthArrayWrapper<uint, 16>::type, 128>::type(possibleSize);
 	{
-		Tile * simTile = simGame->getTiles()[move.tile];
-		simGame->simPartStepChance(move.tile);
+		simGame->simPartStepChance(move.tileIndex);
+		Tile * simTile = simGame->simTile;
 		for (int i = 0; i < possibleSize; ++i)
 		{
 			TileMove const & tm = possible[i];

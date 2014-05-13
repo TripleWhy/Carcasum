@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 				MoveHistoryEntry const & e = g1.getMoveHistory().back();
 				g4.simStep(e);
 
-				g5.simPartStepChance(e.tile);
+				g5.simPartStepChance(e.tileIndex);
 				g5.simPartStepTile(e.move.tileMove);
 				g5.simPartStepMeeple(e.move.meepleMove);
 
