@@ -234,32 +234,83 @@ void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory)
 
 int main(int /*argc*/, char */*argv*/[])
 {
+	qDebug() << "Qt build version:  " << QT_VERSION_STR;
+	qDebug() << "Qt runtime version:" << qVersion();
+	qDebug() << "Git revision:" << APP_REVISION_STR;
+
 	jcz::TileFactory * tileFactory = new jcz::TileFactory(false);
 	std::vector<Player *> players;
 
-	qDebug("\n\nTest 1, MC");
-	players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-	players.push_back(new MonteCarloPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-	doTest(players, tileFactory);
-
-	qDebug("\n\nTest 1, MC2");
-	players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-	players.push_back(new MonteCarloPlayer2<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-	doTest(players, tileFactory);
-
-	qDebug("\n\nTest 3, MC2");
-	players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::EarlyCutoff<14>>(tileFactory));
-	players.push_back(new MonteCarloPlayer2<Utilities::SimpleUtility, Playouts::EarlyCutoff<14>>(tileFactory));
-	doTest(players, tileFactory);
-
-	qDebug("Test 2");
-	for (int i = 0; i < 14; ++i)
+	if (false)
 	{
-		int p1 = (1 << i);
-		int p2 = (2 << i);
-		qDebug() << "\n" << p1 << "vs" << p2;
-		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory, p1, false));
-		players.push_back(new MonteCarloPlayer2<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory, p2, false));
+		qDebug("\n\nComplexUtility vs SimpleUtility");
+		players.push_back(new MCTSPlayer<Utilities::ComplexUtility, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
+		doTest(players, tileFactory);
+
+		qDebug("\n\nComplexUtilityNormalized vs SimpleUtility");
+		players.push_back(new MCTSPlayer<Utilities::ComplexUtilityNormalized, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
+		doTest(players, tileFactory);
+
+		qDebug("\n\nNormalized<ComplexUtility> vs SimpleUtility");
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::ComplexUtility>, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
+		doTest(players, tileFactory);
+
+		qDebug("\n\nHeydensUtility vs SimpleUtility");
+		players.push_back(new MCTSPlayer<Utilities::HeydensUtility, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
+		doTest(players, tileFactory);
+
+		qDebug("\n\nNormalized<HeydensUtility> vs SimpleUtility");
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensUtility>, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
+		doTest(players, tileFactory);
+
+		qDebug("\n\nPortionUtility vs SimpleUtility");
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
+		doTest(players, tileFactory);
+
+		qDebug("\n\nBonus<PortionUtility, 100> vs SimpleUtility");
+		players.push_back(new MCTSPlayer<Utilities::Bonus<Utilities::PortionUtility, 100>, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
+		doTest(players, tileFactory);
+
+		qDebug("\n\nBonus<ComplexUtility, 1> vs SimpleUtility");
+		players.push_back(new MCTSPlayer<Utilities::Bonus<Utilities::ComplexUtility, 1>, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
+		doTest(players, tileFactory);
+	}
+	if (false)
+	{
+		qDebug("\n\nTest 2");
+		for (int i = 14; i < 15; ++i)
+		{
+			int p1 = (1 << i);
+			int p2 = (2 << i);
+			qDebug() << "\n" << p1 << "vs" << p2;
+			players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory, p1, false, 1.0));
+			players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory, p2, false, 1.0));
+			doTest(players, tileFactory);
+		}
+	}
+	if (true)
+	{
+		qDebug("\n\nMonteCarloPlayer vs MCTSPlayer");
+		players.push_back(new MonteCarloPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
+		doTest(players, tileFactory);
+
+		qDebug("MonteCarloPlayer2 vs MCTSPlayer");
+		players.push_back(new MonteCarloPlayer2<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
+		doTest(players, tileFactory);
+
+		qDebug("MonteCarloPlayerUCT vs MCTSPlayer");
+		players.push_back(new MonteCarloPlayerUCT<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
 		doTest(players, tileFactory);
 	}
 
