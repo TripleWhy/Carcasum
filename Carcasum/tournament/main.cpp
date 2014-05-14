@@ -5,7 +5,6 @@
 #include "player/montecarloplayer2.h"
 #include "player/montecarloplayeruct.h"
 #include "player/mctsplayer.h"
-#include "player/mctsplayer1.h"
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QVarLengthArray>

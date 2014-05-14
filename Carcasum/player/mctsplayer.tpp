@@ -275,7 +275,7 @@ typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::bestChild(MCTSNode *
 		int level = 0;
 		for (MCTSNode * n = v; n->parent != 0; n = n->parent)
 			++level;
-		qWarning() << getTypeName() << "::bestChild: best == 0";
+		qWarning().nospace() << getTypeName() << "::bestChild: best == 0";
 		qWarning() << "\tlevel:" << level << "  children:" << v->children.size() << "  N:" << N(v);
 		for (auto * vPrime : v->children)
 			qWarning() << "\tchild: " << vPrime << "  Q:" << Q(vPrime) << "  N:" << N(vPrime) << "  value:" << ((qreal(Q(vPrime)) / qreal(N(vPrime))) + Cp * (MCTSPlayer MCTS_TU::math).sqrt( math.ln( N(v) ) / N(vPrime) ));
