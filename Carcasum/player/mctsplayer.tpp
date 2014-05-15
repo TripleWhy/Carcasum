@@ -140,7 +140,7 @@ MeepleMove MCTSPlayer MCTS_TU::getMeepleMove(int /*player*/, const Tile * /*tile
 MCTS_T
 void MCTSPlayer MCTS_TU::endGame()
 {
-	if (!reuseTree)
+	if (reuseTree)
 	{
 		delete rootNode;
 		rootNode = 0;
@@ -156,7 +156,7 @@ QString MCTSPlayer MCTS_TU::getTypeName()
 MCTS_T
 Player * MCTSPlayer MCTS_TU::clone() const
 {
-	return new MCTSPlayer(tileFactory, M, useTimeout);
+	return new MCTSPlayer(tileFactory, reuseTree, M, useTimeout, Cp);
 }
 
 MCTS_T

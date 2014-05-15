@@ -191,5 +191,5 @@ void MonteCarloPlayer MC_TU::endGame()
 MC_T
 Player * MonteCarloPlayer MC_TU::clone() const
 {
-	return new MonteCarloPlayer(tileFactory);
+	return new MonteCarloPlayer(tileFactory, M, useTimeout);
 }

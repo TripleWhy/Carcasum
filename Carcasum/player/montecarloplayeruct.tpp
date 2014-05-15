@@ -162,7 +162,7 @@ void MonteCarloPlayerUCT MCU_TU::endGame()
 MCU_T
 Player * MonteCarloPlayerUCT MCU_TU::clone() const
 {
-	return new MonteCarloPlayerUCT(tileFactory);
+	return new MonteCarloPlayerUCT(tileFactory, M, useTimeout);
 }
 
 MCU_T

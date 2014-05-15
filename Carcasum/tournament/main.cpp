@@ -193,6 +193,8 @@ void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory,
 			printResult(results, playerCount, j);
 		}
 	}
+
+	qDeleteAll(players);
 }
 
 void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory)
@@ -203,10 +205,15 @@ void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory)
 #ifdef TIMEOUT
 	qDebug() << "TIMEOUT" << TIMEOUT;
 #endif
+	// feedback in case clone() does not work correctly:
 	for (Player * p : players)
-		qDebug() << p->getTypeName();
+	{
+		auto clone = p->clone();
+		qDebug() << clone->getTypeName();
+		delete clone;
+	}
 
-	if (false)
+	if (true)
 	{
 		std::vector<Result> results;
 		results.resize(N * players.size());
@@ -299,22 +306,22 @@ int main(int /*argc*/, char */*argv*/[])
 	{
 		qDebug("\n\nMonteCarloPlayer vs MCTSPlayer");
 		players.push_back(new MonteCarloPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
-		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
 		doTest(players, tileFactory);
 
-		qDebug("MonteCarloPlayer2 vs MCTSPlayer");
+		qDebug("\n\nMonteCarloPlayer2 vs MCTSPlayer");
 		players.push_back(new MonteCarloPlayer2<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
-		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
 		doTest(players, tileFactory);
 
-		qDebug("MonteCarloPlayerUCT vs MCTSPlayer");
+		qDebug("\n\nMonteCarloPlayerUCT vs MCTSPlayer");
 		players.push_back(new MonteCarloPlayerUCT<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
-		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
 		doTest(players, tileFactory);
 	}
 	if (true)
 	{
-		qDebug("MCTSPlayer plain vs MCTSPlayer reuseTree");
+		qDebug("\n\nMCTSPlayer plain vs MCTSPlayer reuseTree");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, true));
 		doTest(players, tileFactory);
