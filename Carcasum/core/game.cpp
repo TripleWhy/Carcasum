@@ -791,6 +791,45 @@ std::vector<MoveHistoryEntry> Game::loadFromFile(const QString & path)
 	return history;
 }
 
+uint Game::getPossibleTileCount(const EdgeMask & mask) const
+{
+	uint fitCount = 0;
+	TileTypeType lastType = -1;
+	bool lastFit = false;
+	for (Tile const * t : tiles) //TODO In theory I don't need to iterate over all tiles, tileCounts should be enough.
+	{
+		if (lastType == t->tileType)
+		{
+			if (lastFit)
+				++fitCount;
+		}
+		else
+		{
+			lastType = t->tileType;
+			for (int orientation = 0; orientation < 4; ++orientation)
+			{
+				lastFit = true;
+				for (int i = 0; i < 4; ++i)
+				{
+					if (mask.t[i] == None)
+						continue;
+					if (mask.t[i] != t->getEdge((Tile::Side)i, (Tile::Side)orientation))
+					{
+						lastFit = false;
+						break;
+					}
+				}
+				if (lastFit)
+				{
+					++fitCount;
+					break;
+				}
+			}
+		}
+	}
+	return fitCount;
+}
+
 void Game::cityClosed(CityNode * n)
 {
 	int score = n->getScore();

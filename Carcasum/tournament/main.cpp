@@ -197,7 +197,7 @@ void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory,
 	qDeleteAll(players);
 }
 
-void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory)
+void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory, bool const doIt = true)
 {
 	int const N = 100;
 	int const THREADS = 8;
@@ -205,6 +205,9 @@ void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory)
 #ifdef TIMEOUT
 	qDebug() << "TIMEOUT" << TIMEOUT;
 #endif
+	qDebug() << "N" << N;
+	qDebug() << "THREADS" << THREADS;
+
 	// feedback in case clone() does not work correctly:
 	for (Player * p : players)
 	{
@@ -213,7 +216,7 @@ void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory)
 		delete clone;
 	}
 
-	if (true)
+	if (doIt)
 	{
 		std::vector<Result> results;
 		results.resize(N * players.size());
@@ -319,12 +322,23 @@ int main(int /*argc*/, char */*argv*/[])
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
 		doTest(players, tileFactory);
 	}
-	if (true)
+	if (false)
 	{
 		qDebug("\n\nMCTSPlayer plain vs MCTSPlayer reuseTree");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, true));
 		doTest(players, tileFactory);
+	}
+	if (true)
+	{
+		qreal const Cps[] = {0.0, 0.25, 0.50, 0.75, 1.0, 2.0, 3.0};
+		for (qreal const Cp : Cps)
+		{
+			qDebug() << "\n\nCp" << Cp;
+			players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false, TIMEOUT, true, Cp));
+			players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
+			doTest(players, tileFactory);
+		}
 	}
 
 	delete tileFactory;

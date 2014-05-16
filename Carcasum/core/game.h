@@ -13,6 +13,7 @@ class Player;
 class Tile;
 class Node;
 class Board;
+struct EdgeMask;
 
 struct TileMove
 {
@@ -129,6 +130,7 @@ public:
 	static void storeToFile(QString const & path, std::vector<MoveHistoryEntry> const & history);
 	static std::vector<MoveHistoryEntry> loadFromFile(QString const & path);
 
+	uint getPossibleTileCount(EdgeMask const & mask) const;
 
 	void cityClosed(CityNode * n);
 	void cityUnclosed(CityNode * n);

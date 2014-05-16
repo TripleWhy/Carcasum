@@ -1,5 +1,4 @@
 #include "board.h"
-#include "game.h"
 
 Board::Board(Game * game, const uint s)
 	: game(game),
@@ -29,10 +28,10 @@ void Board::setStartTile(Tile * tile)
 	int offset = size / 2;
 	board[offset][offset] = tile;
 
-	open.insert(QPoint(offset - 1, offset), TerrainWrapper(None, None, tile->getEdge(Tile::left), None));
-	open.insert(QPoint(offset + 1, offset), TerrainWrapper(tile->getEdge(Tile::right), None, None, None));
-	open.insert(QPoint(offset, offset - 1), TerrainWrapper(None, None, None, tile->getEdge(Tile::up)));
-	open.insert(QPoint(offset, offset + 1), TerrainWrapper(None, tile->getEdge(Tile::down), None, None));
+	open.insert(QPoint(offset - 1, offset), EdgeMask(None, None, tile->getEdge(Tile::left), None));
+	open.insert(QPoint(offset + 1, offset), EdgeMask(tile->getEdge(Tile::right), None, None, None));
+	open.insert(QPoint(offset, offset - 1), EdgeMask(None, None, None, tile->getEdge(Tile::up)));
+	open.insert(QPoint(offset, offset + 1), EdgeMask(None, tile->getEdge(Tile::down), None, None));
 //	open.insert(QPoint(-1,  0));
 //	open.insert(QPoint(+1,  0));
 //	open.insert(QPoint( 0, -1));
@@ -99,11 +98,11 @@ void Board::removeTile(const TileMove & move)
 		board[x - 1][y - 1]->disconnectDiagonal(tile, game);
 	
 	
-	TerrainWrapper & tw = open[QPoint(x, y)];
+	EdgeMask & tw = open[QPoint(x, y)];
 	if (board[x][y + 1] == 0)
 	{
 		QPoint const & p = QPoint(x,  y + 1);
-		TerrainWrapper & t = open[p];
+		EdgeMask & t = open[p];
 		t.t[Tile::up] = None;
 		if (t.t[0] == None && t.t[1] == None && t.t[2] == None && t.t[3] == None)
 			open.remove(p);
@@ -118,7 +117,7 @@ void Board::removeTile(const TileMove & move)
 	if (board[x][y - 1] == 0)
 	{
 		QPoint const & p = QPoint(x,  y - 1);
-		TerrainWrapper & t = open[p];
+		EdgeMask & t = open[p];
 		t.t[Tile::down] = None;
 		if (t.t[0] == None && t.t[1] == None && t.t[2] == None && t.t[3] == None)
 			open.remove(p);
@@ -133,7 +132,7 @@ void Board::removeTile(const TileMove & move)
 	if (board[x + 1][y] == 0)
 	{
 		QPoint const & p = QPoint(x + 1,  y);
-		TerrainWrapper & t = open[p];
+		EdgeMask & t = open[p];
 		t.t[Tile::left] = None;
 		if (t.t[0] == None && t.t[1] == None && t.t[2] == None && t.t[3] == None)
 			open.remove(p);
@@ -148,7 +147,7 @@ void Board::removeTile(const TileMove & move)
 	if (board[x - 1][y] == 0)
 	{
 		QPoint const & p = QPoint(x - 1,  y);
-		TerrainWrapper & t = open[p];
+		EdgeMask & t = open[p];
 		t.t[Tile::right] = None;
 		if (t.t[0] == None && t.t[1] == None && t.t[2] == None && t.t[3] == None)
 			open.remove(p);
@@ -212,7 +211,7 @@ TileMovesType Board::getPossibleTilePlacements(const Tile * tile) const
 			if (r == rotations[i])
 				goto hell2;
 
-		for (QHash<QPoint, TerrainWrapper>::const_iterator it = open.constBegin(); it != open.constEnd(); ++it)
+		for (QHash<QPoint, EdgeMask>::const_iterator it = open.constBegin(); it != open.constEnd(); ++it)
 		{
 			TerrainType const (&openTypes)[4] = it.value().t;
 			for (int i = 0; i < 4; ++i)
