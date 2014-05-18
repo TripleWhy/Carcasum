@@ -17,6 +17,7 @@ class TileFactory;
 class Tile;
 class Game;
 
+#define TERRAIN_TYPE_SIZE 5
 enum TerrainType { None = 0, Field, City, Road, Cloister };
 enum Scored { NotScored, ScoredMidGame, ScoredEndGame };
 typedef quint8 TileTypeType;
@@ -64,7 +65,6 @@ public:
 	Node(TerrainType t, Tile const * parent, Game const * g);
 	virtual ~Node();
 
-	inline void addMeeple(int player, Game * g) { if (++d->meeples[player] > d->maxMeples) d->maxMeples = d->meeples[player]; checkClose(g); }
 	void removeMeeple(int player, Game * g);
 	inline bool isOccupied() const { return d->maxMeples; }
 	inline uchar getMaxMeeples() const { return d->maxMeples; }
@@ -78,13 +78,19 @@ public:
 	virtual void disconnect(Node * n, Game * g);
 	virtual void checkClose(Game * g) = 0;
 	virtual void checkUnclose(Game * g) = 0;
-	virtual int getScore() = 0;
+	virtual int getScore() const = 0;
 	virtual Node * clone(Tile const * parent, Game const * g) const = 0;
 #if USE_RESET
 	virtual void reset(Tile const * parent, Game const * g);
 #endif
 	
-	inline int uniqueTileCount()
+	inline void addMeeple(int player, Game * g)
+	{
+		if (++d->meeples[player] > d->maxMeples)
+			d->maxMeples = d->meeples[player];
+		checkClose(g);
+	}
+	inline int uniqueTileCount() const
 	{
 		int uniqueTiles = 0;
 		Tile const * last = 0;
@@ -136,7 +142,7 @@ public:
 #if USE_RESET
 	virtual void reset(Tile const * parent, Game const * g);
 #endif
-	inline virtual int getScore()
+	inline virtual int getScore() const
 	{
 		return uniqueTileCount() + getCityData()->bonus;
 	}
@@ -194,7 +200,7 @@ public:
 #if USE_RESET
 	virtual void reset(Tile const * parent, Game const * g);
 #endif
-	inline virtual int getScore()
+	inline virtual int getScore() const
 	{
 		std::unordered_set<NodeData const *> closedCities;
 		for (CityNode * c : getFieldData()->cities)
@@ -246,7 +252,7 @@ public:
 	virtual void connect(Node * n, Game * g);
 	virtual void disconnect(Node * n, Game * g);
 	virtual void checkClose(Game * g);
-	inline virtual int getScore() { return uniqueTileCount(); }
+	inline virtual int getScore() const { return uniqueTileCount(); }
 	virtual void checkUnclose(Game * g);
 #if USE_RESET
 	virtual void reset(Tile const * parent, Game const * g);
@@ -281,7 +287,7 @@ public:
 	virtual void connect(Node * /*n*/, Game * /*g*/) { Q_ASSERT(false); }
 	virtual void disconnect(Node * /*n*/, Game * /*g*/) { Q_ASSERT(false); }
 	virtual void checkClose(Game * g);
-	inline virtual int getScore() { return surroundingTiles; }
+	inline virtual int getScore() const { return surroundingTiles; }
 	virtual void checkUnclose(Game * g);
 #if USE_RESET
 	virtual void reset(Tile const * parent, Game const * g);

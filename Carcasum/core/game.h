@@ -80,8 +80,11 @@ private:
 	DefaultRandom r;
 	NextTileProvider * ntp;
 	int * playerMeeples = 0;
+	int * playerMeeplesPlacedDetailCurrent[TERRAIN_TYPE_SIZE]{};
+	int * playerMeeplesPlacedDetailAll[TERRAIN_TYPE_SIZE]{};
 	int * returnMeeples = 0;
 	int * playerScores = 0;
+	int * playerScoresDetail[TERRAIN_TYPE_SIZE]{};
 	uint playerCount = 0;
 
 	uint upperScoreBound = 0;
@@ -171,6 +174,7 @@ public:
 	inline std::vector<Player *> const & getPlayers() const { return players; }
 	inline int getNextPlayer() const { return nextPlayer; }
 	inline uint getUpperScoreBound() const { return upperScoreBound; }
+	inline int getPlacedMeeples(int player) const { return MEEPLE_COUNT - getPlayerMeeples(player); }
 
 	inline MeepleMovesType getPossibleMeeplePlacements(Tile const * tile) const
 	{
@@ -211,6 +215,13 @@ private:
 	inline int simNextTile() { return r.nextInt(tiles.size()); }
 	inline int nextTile() { return ntp->nextTile(this); }
 
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+	void assertTileCount();
+	void assertDetails();
+#else
+#define assertTileCount()
+#define assertDetails()
+#endif
 	inline void returnMeeplesToPlayers()
 	{
 		for (int * r = returnMeeples, * end = r + getPlayerCount(), * m = playerMeeples; r < end; ++r, ++m)
@@ -218,14 +229,18 @@ private:
 			*m += *r;
 			*r = 0;
 		}
+		assertDetails();
 	}
 	inline void moveMeeple(Tile * tile, int playerIndex, MeepleMove const & meepleMove)
 	{
 		if (!meepleMove.isNull())
 		{
 			Node * n = tile->getNode(meepleMove.nodeIndex);
-			n->addMeeple(playerIndex, this);
 			--playerMeeples[playerIndex];
+			++playerMeeplesPlacedDetailCurrent[n->getTerrain()][playerIndex];
+			++playerMeeplesPlacedDetailAll[n->getTerrain()][playerIndex];
+			n->addMeeple(playerIndex, this);
+			assertDetails();
 		}
 	}
 	inline bool simCheckEndGame()
@@ -240,15 +255,6 @@ private:
 			returnMeeplesToPlayers();
 			return true;
 		}
-	}
-	inline void assertTileCount()
-	{
-#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
-		int sum = 0;
-		for (int c : tileCount)
-			sum += c;
-		Q_ASSERT(sum == tiles.size());
-#endif
 	}
 
 private:

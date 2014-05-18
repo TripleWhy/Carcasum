@@ -92,12 +92,8 @@ void Node::connect(Node * n, Game * g)
 //	for (Tile const * t : n->d->tiles)
 //		qDebug() << "    " << n->id() << t->id;
 #endif
-
-	if (isOccupied())
-		checkClose(g);
 	
 //	Q_ASSERT(n->d == &n->data);
-
 	for (Node * o : d->nodes)
 	{
 		if (o == this)
@@ -105,6 +101,9 @@ void Node::connect(Node * n, Game * g)
 		o->ds.push_back(d);
 		o->d = d;
 	}
+
+	if (isOccupied())
+		checkClose(g);
 }
 
 void Node::disconnect(Node * n, Game * g)	//only works in reverse order of connecting.
