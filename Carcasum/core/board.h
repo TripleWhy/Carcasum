@@ -40,8 +40,8 @@ private:
 	Game * game;
 	Tile *** board;
 	uint const size;
-//	uint const offset;
 	QHash<QPoint, EdgeMask> open; //TODO This is the only place in the core, where I use Qt data structures. Is unsorted_map faster? Should I maybe use a custom point type?
+	std::vector<Tile *> tiles;
 
 public:
 	Board(Game * game, uint const size);
