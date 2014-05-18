@@ -194,9 +194,9 @@ Player *PlayerSelector::createPlayer()
 					switch (playout)
 					{
 						case PlayoutTypeRandom:
-							return new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout, Cp);
+							return new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory, false, limit, useTimeout, Cp);
 						case PlayoutTypeEarlyCutoff:
-							return new MCTSPlayer<Utilities::SimpleUtility, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout, Cp);
+							return new MCTSPlayer<Utilities::SimpleUtility, Playouts::EarlyCutoff<>>(tileFactory, false, limit, useTimeout, Cp);
 					}
 				}
 				case UtilityTypeHeyden:
@@ -204,9 +204,9 @@ Player *PlayerSelector::createPlayer()
 					switch (playout)
 					{
 						case PlayoutTypeRandom:
-							return new MCTSPlayer<Utilities::HeydensUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout, Cp);
+							return new MCTSPlayer<Utilities::HeydensUtility, Playouts::RandomPlayout>(tileFactory, false, limit, useTimeout, Cp);
 						case PlayoutTypeEarlyCutoff:
-							return new MCTSPlayer<Utilities::HeydensUtilityEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout, Cp);
+							return new MCTSPlayer<Utilities::HeydensUtilityEC, Playouts::EarlyCutoff<>>(tileFactory, false, limit, useTimeout, Cp);
 					}
 				}
 				case UtilityTypeComplex:
@@ -214,9 +214,9 @@ Player *PlayerSelector::createPlayer()
 					switch (playout)
 					{
 						case PlayoutTypeRandom:
-							return new MCTSPlayer<Utilities::ComplexUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout, Cp);
+							return new MCTSPlayer<Utilities::ComplexUtility, Playouts::RandomPlayout>(tileFactory, false, limit, useTimeout, Cp);
 						case PlayoutTypeEarlyCutoff:
-							return new MCTSPlayer<Utilities::ComplexUtilityEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout, Cp);
+							return new MCTSPlayer<Utilities::ComplexUtilityEC, Playouts::EarlyCutoff<>>(tileFactory, false, limit, useTimeout, Cp);
 					}
 				}
 				case UtilityTypeComplexNormalized:
@@ -224,9 +224,9 @@ Player *PlayerSelector::createPlayer()
 					switch (playout)
 					{
 						case PlayoutTypeRandom:
-							return new MCTSPlayer<Utilities::ComplexUtilityNormalized, Playouts::RandomPlayout>(tileFactory, limit, useTimeout, Cp);
+							return new MCTSPlayer<Utilities::ComplexUtilityNormalized, Playouts::RandomPlayout>(tileFactory, false, limit, useTimeout, Cp);
 						case PlayoutTypeEarlyCutoff:
-							return new MCTSPlayer<Utilities::ComplexUtilityNormalizedEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout, Cp);
+							return new MCTSPlayer<Utilities::ComplexUtilityNormalizedEC, Playouts::EarlyCutoff<>>(tileFactory, false, limit, useTimeout, Cp);
 					}
 				}
 			}

@@ -2,7 +2,7 @@
 
 Board::Board(Game * game, const uint s)
 	: game(game),
-	  size(s * 2 - 1)
+	  size(s * 2 + 1)
 {
 	board = new Tile ** [size];
 	for (uint y = 0; y < size; ++y)

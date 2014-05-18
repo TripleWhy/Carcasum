@@ -739,7 +739,7 @@ void Game::storeToFile(const QString & path, const std::vector<MoveHistoryEntry>
 	QDataStream out(&file);
 
 	// file format version
-	out << (quint32)1;
+	out << (quint32)2;
 
 	// history size
 	out << (quint32)history.size();
@@ -774,7 +774,7 @@ std::vector<MoveHistoryEntry> Game::loadFromFile(const QString & path)
 	// file format version
 	quint32 version;
 	in >> version;
-	if (version != 1)
+	if (version > 2)
 		return history;
 
 	// history size
@@ -803,6 +803,12 @@ std::vector<MoveHistoryEntry> Game::loadFromFile(const QString & path)
 		tileMove.y = (uint)u32;
 		in >> u8;
 		tileMove.orientation = (Tile::Side)u8;
+
+		if (version < 2)
+		{
+			++tileMove.x;
+			++tileMove.y;
+		}
 
 		MeepleMove & meepleMove = move.meepleMove;
 		in >> u8;
