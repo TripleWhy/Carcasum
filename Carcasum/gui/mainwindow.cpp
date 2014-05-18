@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include "playerinfoview.h"
 #include "jcz/tilefactory.h"
+#include "player/randomplayer.h"
 #include <QSettings>
 #include <QFileDialog>
 #include <QStandardPaths>
@@ -315,6 +316,22 @@ void MainWindow::closeEvent(QCloseEvent * event)
 	forceEndGame();
 	QMainWindow::closeEvent(event);
 }
+
+#if MAINWINDOW_GAME_ON_STARTUP
+bool MainWindow::event(QEvent * event)
+{
+	if (event->type() == QEvent::UpdateRequest && !gameThread->isRunning() && !gameThread->isFinished())
+	{
+		game->addPlayer(&RandomPlayer::instance);
+		game->addPlayer(&RandomPlayer::instance);
+
+		game->newGame(Tile::BaseGame, &tileFactory);
+		ui->stackedWidget->setCurrentWidget(ui->gameDisplayPage);
+		gameThread->start();
+	}
+	return QMainWindow::event(event);
+}
+#endif
 
 void MainWindow::readSettings()
 {

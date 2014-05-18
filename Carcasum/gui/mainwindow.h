@@ -77,6 +77,9 @@ public:
 
 protected:
 	virtual void closeEvent(QCloseEvent *event);
+#if MAINWINDOW_GAME_ON_STARTUP
+	virtual bool event(QEvent * event);
+#endif
 
 private:
 	void readSettings();
