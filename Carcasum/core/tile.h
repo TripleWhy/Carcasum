@@ -320,6 +320,7 @@ public:
 	}
 };
 
+#define EDGE_NODE_COUNT 3
 class Tile
 {
 	friend class jcz::TileFactory;
@@ -335,11 +336,12 @@ public:
 	typedef Node * EdgeType;
 #endif
 
+
 private:
 	TerrainType edges[4];    // array of edge types
 	uchar nodeCount = 0;     // length of nodes
 	Node ** nodes = 0;       // array of node pointers
-	EdgeType * edgeNodes[4]; // 4 arrays of edge connectors
+	EdgeType edgeNodes[4][EDGE_NODE_COUNT] = {}; // 4 arrays of edge connectors
 	CloisterNode * cloister = 0;
 #if DEBUG_IDS
 public:
@@ -353,10 +355,13 @@ public:
 	TileTypeType tileType;
 
 private:
-	Tile(TileTypeType tileType);
-
+	constexpr Tile(TileTypeType tileType)
+	    : edges {None, None, None, None},
+	      tileType(tileType) {}
 public:
-	Tile(TileTypeType tileType, TerrainType const edges[4]);
+	constexpr Tile(TileTypeType tileType, TerrainType const edges[4])
+	    : edges { edges[0], edges[1], edges[2], edges[3] },
+	      tileType(tileType) {}
 	Tile(const Tile & t) = delete; // I don't want implicit copies. Use clone() instead.
 	Tile (Tile&& t) = delete; // I don't actually want this to happen.
 	~Tile();
@@ -376,23 +381,6 @@ public:
 private:
 	EdgeType * getEdgeNodes(Side side);
 	void setEdgeNode(Side side, int index, Node * n);
-	void createEdgeList(Side side);
-
-	static inline int edgeNodeCount(TerrainType t)
-	{
-		switch (t)
-		{
-			case Field:
-			case City:
-				return 1;
-			case Road:
-				return 3;
-			case None:
-			case Cloister:
-				break;
-		}
-		return 0;
-	}
 
 public:
 	inline uchar getNodeCount() const { return nodeCount; }

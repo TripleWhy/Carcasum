@@ -337,17 +337,16 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 	{
 		Tile::Side side = (Tile::Side)i;
 
-		tile->createEdgeList(side);
 		switch (edges[i])
 		{
 			case None:
 				qWarning() << "Not all sides specified";
 				break;
 			case Field:
-				tile->setEdgeNode(side, 0, edgeConnectors[i][0]);
+				tile->setEdgeNode(side, 1, edgeConnectors[i][0]);
 				break;
 			case City:
-				tile->setEdgeNode(side, 0, edgeConnectors[i][1]);
+				tile->setEdgeNode(side, 1, edgeConnectors[i][1]);
 				break;
 			case Road:
 				tile->setEdgeNode(side, 0, edgeConnectors[i][0]);

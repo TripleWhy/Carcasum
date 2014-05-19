@@ -383,32 +383,11 @@ void CloisterNode::reset(const Tile * parent, const Game * g)
 #endif
 
 
-
-Tile::Tile(TileTypeType tileType)
-    : edges {None, None, None, None},
-	  tileType(tileType)
-{
-}
-
-Tile::Tile(TileTypeType tileType, TerrainType const edges[4])
-    : edges { edges[0], edges[1], edges[2], edges[3] },
-	  tileType(tileType)
-{
-	createEdgeList(left);
-	createEdgeList(up);
-	createEdgeList(right);
-	createEdgeList(down);
-}
-
 Tile::~Tile()
 {
 	for (int i = 0; i < nodeCount; ++i)
 		delete nodes[i];
 	delete[] nodes;
-	delete[] edgeNodes[left];
-	delete[] edgeNodes[up];
-	delete[] edgeNodes[right];
-	delete[] edgeNodes[down];
 }
 
 const TerrainType &Tile::getEdge(Tile::Side side) const
@@ -427,19 +406,19 @@ void Tile::connect(Tile::Side side, Tile * other, Game * game)
 	qDebug() << "connect tile:" << id << "<->" << other->id;
 #endif
 	Tile::Side otherSide = (Tile::Side)((side + 2) % 4);
-	TerrainType t = getEdge(side);
 
-	Q_ASSERT_X(t == other->getEdge(otherSide), "Tile::connect", "edges don't match");
+	Q_ASSERT_X(getEdge(side) == other->getEdge(otherSide), "Tile::connect", "edges don't match");
 //	if (t != other->getEdge(otherSide))
 //		return false;
 
 	EdgeType * nodeList = getEdgeNodes(side);
 	EdgeType * otherNodeList = other->getEdgeNodes(otherSide);
-	int const nodeCount = edgeNodeCount(t);
-	for (int i = 0; i < nodeCount; ++i)
+	for (int i = 0; i < EDGE_NODE_COUNT; ++i)
 	{
+		EdgeType thisNode = nodeList[EDGE_NODE_COUNT - 1 - i];
+		if (thisNode == 0)
+			continue;
 		EdgeType otherNode = otherNodeList[i];
-		EdgeType thisNode = nodeList[nodeCount - i - 1];
 
 #if NODE_VARIANT
 		(*thisNode)->connect(*otherNode, game);
@@ -460,25 +439,23 @@ void Tile::disconnect(Tile::Side side, Tile * other, Game * game)
 	qDebug() << "disconnect tile:" << id << "<->" << other->id;
 #endif
 	Tile::Side otherSide = (Tile::Side)((side + 2) % 4);
-	TerrainType t = getEdge(side);
 
-	Q_ASSERT_X(t == other->getEdge(otherSide), "Tile::connect", "edges don't match");
+	Q_ASSERT_X(getEdge(side) == other->getEdge(otherSide), "Tile::connect", "edges don't match");
 	
 	if (other->cloister != 0)
 		other->cloister->removeSurroundingTile(game);
 	if (cloister != 0)
 		cloister->removeSurroundingTile(game);
-	
-	int const nodeCount = edgeNodeCount(t);
+
 	EdgeType * nodeList = getEdgeNodes(side);
 	EdgeType * otherNodeList = other->getEdgeNodes(otherSide);
-	for (int i = 0; i < nodeCount; ++i)
+	for (int i = 0; i < EDGE_NODE_COUNT; ++i)
 	{
-		EdgeType otherNode = otherNodeList[nodeCount - i - 1];
 		EdgeType thisNode = nodeList[i];
-//		EdgeType otherNode = otherNodeList[i];
-//		EdgeType thisNode = nodeList[nodeCount - i - 1];
-		
+		if (thisNode == 0)
+			continue;
+		EdgeType otherNode = otherNodeList[EDGE_NODE_COUNT - 1 - i];
+
 #if NODE_VARIANT
 		(*thisNode)->disconnect(*otherNode, game);
 #else
@@ -525,8 +502,7 @@ Tile * Tile::clone(const Game * g)	//TODO? This process only works on unconnecte
 	
 	for (int i = 0; i < 4; ++i)
 	{
-		int const enc = edgeNodeCount(edges[i]);
-		for (int j = 0; j < enc; ++j)
+		for (int j = 0; j < EDGE_NODE_COUNT; ++j)
 #if NODE_VARIANT
 			copy->edgeNodes[(Side)i][j] = nodeMap[edgeNodes[(Side)i][j]];
 #else
@@ -574,6 +550,8 @@ Tile::EdgeType * Tile::getEdgeNodes(Tile::Side side)
 void Tile::setEdgeNode(Tile::Side side, int index, Node * n)
 {
 #if NODE_VARIANT
+	if (n == 0)
+		edgeNodes[side][index] = 0;
 	for (int i = 0; i < nodeCount; ++i)
 	{
 		if (nodes[i] == n)
@@ -588,15 +566,10 @@ void Tile::setEdgeNode(Tile::Side side, int index, Node * n)
 #endif
 }
 
-void Tile::createEdgeList(Side side)
-{
-	edgeNodes[side] = new EdgeType[edgeNodeCount(edges[side])];
-}
-
 void Tile::printSides(Node * n)
 {
 	for (int i = 0; i < 4; ++i)
-		for (int j = 0; j < edgeNodeCount(getEdge((Side)i)); ++j)
+		for (int j = 0; j < EDGE_NODE_COUNT; ++j)
 			if (getEdgeNodes((Side)i)[j] == n)
 				qDebug() << "\t" << (Side)i << j;
 }
