@@ -35,6 +35,22 @@ void jcz::JCZPlayer::playerMoved(int /*player*/, const Tile * /*tile*/, const Mo
 	Util::syncGamesFast(*game, simGame);
 }
 
+#if JCZ_DEBUG_PRINTS
+#include <iostream>
+#include <iomanip>
+#include <boost/lexical_cast.hpp>
+void jcz::JCZPlayer::printRank(char const * prefix, TileMove const * tm, MeepleMove const & mm, double rank)
+{
+	std::locale::global(std::locale::classic());
+	int offset = game->getBoard()->getOffset();
+	char const * rotations[4] = {"R0", "R90", "R180", "R270"};
+
+	std::cout << prefix << "[NioProcessor-12] INFO com.jcloisterzone.ai.legacyplayer.LegacyAiPlayer - Rank BA.xxx > "
+	          << boost::lexical_cast<std::string>(rank) << " Pos: [x=" << ((int)tm->x - offset) << ",y=" << ((int)tm->y - offset) << "] Rot: " << rotations[tm->orientation]
+	          << " Meeple: SmallFollower APos: [x=" << ((int)tm->x - offset) << ",y=" << ((int)tm->y - offset) << "] ALoc: " << (int)mm.nodeIndex << std::endl;
+}
+#endif
+
 TileMove jcz::JCZPlayer::getTileMove(int p, const Tile * tile, const MoveHistoryEntry & move, const TileMovesType & placements)
 {
 	if (p != player)
@@ -62,18 +78,24 @@ TileMove jcz::JCZPlayer::getTileMove(int p, const Tile * tile, const MoveHistory
 			simGame.simPartStepMeeple(meepleMove);
 
 			double rnk = rank(&simGame, simTile, placement);
-			if (rnk > bestSoFarRank)
+			if (rnk > bestSoFarRank)	//TODO choose randomly between equal rankings?
 			{
 				bestSoFarRank = rnk;
 				bestSoFar = &tileMove;
 				bestSoFarMeeple = meepleMove;
 			}
 
+//			printRank("\t", &tileMove, meepleMove, rnk);
+
 			simGame.simPartUndoMeeple();
 		}
 		simGame.simPartUndoTile();
 	}
 	simGame.simPartUndoChance();
+
+#if JCZ_DEBUG_PRINTS
+	printRank("", bestSoFar, bestSoFarMeeple, bestSoFarRank);
+#endif
 
 	Q_ASSERT(game->equals(simGame));
 	Q_ASSERT(bestSoFar != 0);
@@ -118,13 +140,32 @@ double jcz::JCZPlayer::rank(const Game * game, const Tile * tile, const QPoint &
 
 	RankData data { game, packSize, myTurnsLeft, {0, 0, 0, 0}, tile, placement };
 
+#if !JCZ_DEBUG_PRINTS
 	ranking += meepleRating(data);
 	ranking += pointRating(data);
 	ranking += openObjectRating(data);
 
 	ranking += rankPossibleFeatureConnections(data);
 	ranking += rankConvexity(data);
-	//		ranking += rankFairy();
+//	ranking += rankFairy();
+#else
+	double mr = meepleRating(data);
+	double pr = pointRating(data);
+	double oor = openObjectRating(data);
+
+	double rpfc = rankPossibleFeatureConnections(data);
+	double rc = rankConvexity(data);
+	ranking = mr + pr + oor + rpfc + rc;
+
+	int offset = game->getBoard()->getOffset();
+	static char const * rotations[4] = {"R0", "R90", "R180", "R270"};
+	std::stringstream pos;
+	pos << "[x=" << (placement.x() - offset) << ",y=" << (placement.y() - offset) << "]";
+	std::cout << "\t\t" << std::setw(13) << pos.str() << std::setw(4) << rotations[tile->orientation] << " -> "
+	          << boost::lexical_cast<std::string>(ranking) << "  =  "
+	          << boost::lexical_cast<std::string>(mr) << " " << boost::lexical_cast<std::string>(pr) << " " << boost::lexical_cast<std::string>(oor) << " "
+	          << boost::lexical_cast<std::string>(rpfc) << " " << boost::lexical_cast<std::string>(rc) << " " << boost::lexical_cast<std::string>(0.0) << std::endl;
+#endif
 
 	return ranking;
 }
@@ -197,6 +238,8 @@ double jcz::JCZPlayer::scoreAllRanking(jcz::JCZPlayer::RankData & data)
 		for (Node const * const * np = tile->getCNodes(), * const * end = np + tile->getNodeCount(); np < end; ++np)
 		{
 			Node const * n = *np;
+			if (!n->isOccupied())
+				continue;
 			if (n->getScored() != NotScored)
 				continue;
 			if (scored.find(n->getData()) != scored.end())
@@ -215,9 +258,16 @@ double jcz::JCZPlayer::scoreAllRanking(jcz::JCZPlayer::RankData & data)
 
 void jcz::JCZPlayer::scoreCompletableFeature(jcz::JCZPlayer::RankData & data, const Node * n, double & rnk)
 {
+#if !JCZ_DEBUG_PRINTS
 	rnk += rankUnfishedCompletable(data, n);
 	rnk += rankTrappedMeeples(data, n);
 //	rnk += legacyAiRankSpecialFigures(n);
+#else
+	//No printing, but still useful for debugging.
+	double r1 = rankUnfishedCompletable(data, n);
+	double r2 = rankTrappedMeeples(data, n);
+	rnk += r1 + r2;
+#endif
 }
 
 void jcz::JCZPlayer::scoreFarm(jcz::JCZPlayer::RankData & data, const Node * n, double & rnk)
@@ -229,14 +279,14 @@ void jcz::JCZPlayer::scoreFarm(jcz::JCZPlayer::RankData & data, const Node * n, 
 	{
 		if (farm->getPlayerMeeples(p) != max)
 			continue;
-		double points = getFarmPoints(data.openCount, farm, p);
+		double points = getFarmPoints(data, farm, p);
 		rnk += reducePoints(points, p);
 	}
 }
 
-double jcz::JCZPlayer::getFarmPoints(int * openCount, const FieldNode * farm, int p) {
+double jcz::JCZPlayer::getFarmPoints(jcz::JCZPlayer::RankData & data, const FieldNode * farm, int p) {
 	if (p == player) {
-		openCount[OPEN_COUNT_FARM]++;
+		data.openCount[OPEN_COUNT_FARM]++;
 	}
 	return farm->getScore();
 }
@@ -335,7 +385,7 @@ double jcz::JCZPlayer::getUnfinishedCityPoints(jcz::JCZPlayer::RankData & data, 
 		return city->getScore() + 3.0*chanceToClose;
 	} else {
 		int points = city->getScore();
-		if (points > 2)	//TODO this should not be done here...
+		if (city->uniqueTileCount() > 2)	//TODO this should not be done here...
 			points *= 2;
 		return points - 3.0*(1.0-chanceToClose);
 	}
@@ -460,7 +510,7 @@ double jcz::JCZPlayer::futureConnectionRateConnection(jcz::JCZPlayer::RankData &
 
 	if (f1->getTerrain() != Field && f2->getTerrain() != Field) {
 		if (f1->getTerrain() == f2->getTerrain()) {
-			//            System.err.println("    " + tile1.getPosition() + " <-->" + f2Pos + " / " + f1 + " " + f2);
+//            System.err.println("    " + tile1.getPosition() + " <-->" + f2Pos + " / " + f1 + " " + f2);
 			rating +=  futureConnectionRateFeatures(data, toEmpty, toFeature, chance, f1, f2);
 		} else {
 			rating +=  futureConnectionRateCrossing(f1, f2);

@@ -3,6 +3,7 @@
 #include "player.h"
 #include "jcz/tilefactory.h"
 #include <QFile>
+#include <QFileInfo>
 
 Game::Game(NextTileProvider * ntp, bool const view)
     : view(view),
@@ -766,7 +767,13 @@ std::vector<MoveHistoryEntry> Game::loadFromFile(const QString & path)
 {
 	std::vector<MoveHistoryEntry> history;
 
-	QFile file(path);
+	QString abs = QFileInfo(path).absoluteFilePath();
+	QFile file(abs);
+	if (!file.exists())
+	{
+		qWarning() << "File" << abs << "does not exist.";
+		return history;
+	}
 	file.open(QIODevice::ReadOnly);
 
 	QDataStream in(&file);

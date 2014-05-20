@@ -319,15 +319,50 @@ void MainWindow::closeEvent(QCloseEvent * event)
 }
 
 #if MAINWINDOW_GAME_ON_STARTUP
+class TmpProvider : public NextTileProvider
+{
+private:
+	NextTileProvider * ntp;
+	std::vector<int> tiles;
+
+public:
+	TmpProvider(NextTileProvider * ntp, std::vector<int> tiles)
+	    : ntp(ntp), tiles(tiles)
+	{
+	}
+
+	virtual int nextTile(Game const * game)
+	{
+		if (tiles.size() == 0)
+			return ntp->nextTile(game);
+		int r = tiles.back();
+		tiles.pop_back();
+		return r;
+	}
+};
+
 bool MainWindow::event(QEvent * event)
 {
 	if (event->type() == QEvent::UpdateRequest && !gameThread->isRunning() && !gameThread->isFinished())
 	{
-		game->addPlayer(&RandomPlayer::instance);
+		ui->actionChoose_Tiles->setChecked(true);
+
+		std::vector<MoveHistoryEntry> history;
+//		history = Game::loadFromFile("../../Carcasum/badjcz");
+//		if (history.size() > 0)
+//		{
+//			//Remove last move.
+//			TmpProvider * tp = new TmpProvider(game->getNextTileProvider(), std::vector<int>{history.back().tileIndex});
+//			game->setNextTileProvider(tp);
+//			history.pop_back();
+//		}
+
 		game->addPlayer(new jcz::JCZPlayer(&tileFactory));
+		game->addPlayer(this);
+//		game->addPlayer(&RandomPlayer::instance);
 //		game->addPlayer(&RandomPlayer::instance);
 
-		game->newGame(Tile::BaseGame, &tileFactory);
+		game->newGame(Tile::BaseGame, &tileFactory, history, true);
 		ui->stackedWidget->setCurrentWidget(ui->gameDisplayPage);
 		gameThread->start();
 	}

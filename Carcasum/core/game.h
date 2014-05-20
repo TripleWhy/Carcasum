@@ -171,6 +171,7 @@ public:
 	inline QList<Tile *> const & getTiles() const { return tiles; }
 	inline std::vector<Tile *> const & getDiscardedTiles() const { return discardedTiles; }
 	inline void setNextTileProvider(NextTileProvider * n) { ntp = n; }
+	inline NextTileProvider * getNextTileProvider() { return ntp; }
 	inline std::vector<Player *> const & getPlayers() const { return players; }
 	inline int getNextPlayer() const { return nextPlayer; }
 	inline uint getUpperScoreBound() const { return upperScoreBound; }

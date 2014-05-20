@@ -8,6 +8,8 @@
 #include <unordered_set>
 #include <array>
 
+#define JCZ_DEBUG_PRINTS 0
+
 // Adaption of JCloisterZone's AI. Many parts where directly copied and adapted.
 // Some stuff is rewritten and does not include other stuff used for extensions.
 
@@ -28,6 +30,24 @@ private:
 	QHash<QPoint, double> chanceCachePos;
 	QHash<Node const *, double> chanceCacheNode;
 
+public:
+	JCZPlayer(jcz::TileFactory * tileFactory);
+	virtual ~JCZPlayer();
+
+	virtual void newGame(int player, Game const * game);
+	virtual void playerMoved(int player, Tile const * tile, MoveHistoryEntry const & move);
+	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
+	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
+	virtual void endGame();
+	virtual QString getTypeName();
+	virtual Player * clone() const;
+
+#if JCZ_DEBUG_PRINTS
+private:
+	void printRank(char const * prefix, const TileMove * tm, const MeepleMove & mm, double rank);
+#endif
+
+private:
 	static constexpr std::array<std::pair<Tile::Side, QPoint>, 4> ADJACENT = {{
 	                                                                             {Tile::left,  QPoint(-1,  0)},
 	                                                                             {Tile::up,    QPoint( 0, -1)},
@@ -45,20 +65,6 @@ private:
 	                                                                   {QPoint(-1, +1)}
 	                                                               }};
 
-public:
-	JCZPlayer(jcz::TileFactory * tileFactory);
-	virtual ~JCZPlayer();
-
-	virtual void newGame(int player, Game const * game);
-	virtual void playerMoved(int player, Tile const * tile, MoveHistoryEntry const & move);
-	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
-	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
-	virtual void endGame();
-	virtual QString getTypeName();
-	virtual Player * clone() const;
-
-
-private:
 	static constexpr double TRAPPED_MY_FIGURE_POINTS = -12.0;
 	static constexpr double TRAPPED_ENEMY_FIGURE_POINTS = 3.0;
 	static constexpr double SELF_MERGE_PENALTY = 6.0;
@@ -101,7 +107,7 @@ private:
 	double scoreAllRanking(RankData & data);
 	void scoreCompletableFeature(RankData & data, Node const * n, double & rnk);
 	void scoreFarm(RankData & data, Node const * n, double & rnk);
-	double getFarmPoints(int * openCount, FieldNode const * farm, int p);
+	double getFarmPoints(RankData & data, FieldNode const * farm, int p);
 	double rankUnfishedCompletable(RankData & data, Node const * n);
 	double getUnfinishedCompletablePoints(RankData & data, Node const * n);
 	double getCompletableChanceToClose(RankData & data, Node const * completable);

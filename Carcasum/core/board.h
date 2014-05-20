@@ -76,6 +76,8 @@ public:
 
 	EdgeMask getEdgeMask(QPoint const & position) const { return open[position]; }
 	EdgeMask getEdgeMask(uint x, uint y) const { return getEdgeMask(QPoint(x, y)); }
+
+	int getOffset() const { return size / 2; }
 };
 
 #endif // BOARD_H
