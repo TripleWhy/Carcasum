@@ -405,7 +405,7 @@ void Tile::connect(Tile::Side side, Tile * other, Game * game)
 #if PRINT_CONNECTIONS
 	qDebug() << "connect tile:" << id << "<->" << other->id;
 #endif
-	Tile::Side otherSide = (Tile::Side)((side + 2) % 4);
+	Tile::Side otherSide = sideOpposite(side);
 
 	Q_ASSERT_X(getEdge(side) == other->getEdge(otherSide), "Tile::connect", "edges don't match");
 //	if (t != other->getEdge(otherSide))
@@ -438,7 +438,7 @@ void Tile::disconnect(Tile::Side side, Tile * other, Game * game)
 #if PRINT_CONNECTIONS
 	qDebug() << "disconnect tile:" << id << "<->" << other->id;
 #endif
-	Tile::Side otherSide = (Tile::Side)((side + 2) % 4);
+	Tile::Side otherSide = sideOpposite(side);
 
 	Q_ASSERT_X(getEdge(side) == other->getEdge(otherSide), "Tile::connect", "edges don't match");
 	
@@ -543,6 +543,11 @@ void Tile::reset(Game const * g)
 #endif
 
 Tile::EdgeType * Tile::getEdgeNodes(Tile::Side side)
+{
+	return edgeNodes[(4 + side - orientation) % 4];
+}
+
+const Tile::EdgeType *Tile::getEdgeNodes(Tile::Side side) const
 {
 	return edgeNodes[(4 + side - orientation) % 4];
 }

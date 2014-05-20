@@ -242,7 +242,7 @@ QList<QPoint> Board::getOpenPlaces() const
 	return open.keys();
 }
 
-QPoint Board::positionOf(Tile * t) const
+QPoint Board::positionOf(Tile const * t) const
 {
 	for (uint y = 0; y < size; ++y)
 		for (uint x = 0; x < size; ++x)

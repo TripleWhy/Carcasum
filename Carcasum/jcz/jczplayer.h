@@ -5,13 +5,48 @@
 #include "core/player.h"
 #include "core/game.h"
 #include "core/board.h"
+#include <unordered_set>
+#include <array>
 
 // Adaption of JCloisterZone's AI. Many parts where directly copied and adapted.
+// Some stuff is rewritten and does not include other stuff used for extensions.
+
+namespace jcz
+{
 
 class JCZPlayer : public Player
 {
+private:
+	Game const * game;
+	Game simGame = Game(0);
+	jcz::TileFactory * tileFactory;
+	MeepleMove meepleMove;
+
+	int player = -1;
+	uint playerCount = 0;
+	int enemyPlayers = 0;
+	QHash<QPoint, double> chanceCachePos;
+	QHash<Node const *, double> chanceCacheNode;
+
+	static constexpr std::array<std::pair<Tile::Side, QPoint>, 4> ADJACENT = {{
+	                                                                             {Tile::left,  QPoint(-1,  0)},
+	                                                                             {Tile::up,    QPoint( 0, -1)},
+	                                                                             {Tile::right, QPoint(+1,  0)},
+	                                                                             {Tile::down,  QPoint( 0, +1)}
+	                                                                         }};
+	static constexpr std::array<QPoint, 8> ADJACENT_AND_DIAGONAL = {{
+	                                                                   {QPoint(-1, 0)},
+	                                                                   {QPoint(0, -1)},
+	                                                                   {QPoint(+1, 0)},
+	                                                                   {QPoint(0, +1)},
+	                                                                   {QPoint(-1, -1)},
+	                                                                   {QPoint(+1, -1)},
+	                                                                   {QPoint(+1, +1)},
+	                                                                   {QPoint(-1, +1)}
+	                                                               }};
+
 public:
-	JCZPlayer();
+	JCZPlayer(jcz::TileFactory * tileFactory);
 	virtual ~JCZPlayer();
 
 	virtual void newGame(int player, Game const * game);
@@ -24,106 +59,66 @@ public:
 
 
 private:
+	static constexpr double TRAPPED_MY_FIGURE_POINTS = -12.0;
+	static constexpr double TRAPPED_ENEMY_FIGURE_POINTS = 3.0;
+	static constexpr double SELF_MERGE_PENALTY = 6.0;
+
+	static constexpr double MIN_CHANCE = 0.4;
+
 	static constexpr int OPEN_COUNT_ROAD = 0;
 	static constexpr int OPEN_COUNT_CITY = 1;
 	static constexpr int OPEN_COUNT_FARM = 2;
 	static constexpr int OPEN_COUNT_CLOITSTER = 3;
 
+	static constexpr std::array<std::array<double, 9>, 4> OPEN_PENALTY = {{
+	    {{ 0.0, 1.0, 2.5, 4.5, 7.5, 10.5, 14.5, 19.0, 29.0 }}, //road
+	    {{ 0.0, 0.5, 1.5, 3.0, 5.0, 8.0, 12.0, 17.0, 27.0 }}, //city
+	    {{ 0.0, 5.0, 10.0, 19.0, 28.0, 37.0, 47.0, 57.0, 67.0 }}, //farm
+	    {{ 0.0, 0.0, 0.4, 0.8, 1.2, 2.0, 4.0, 7.0, 11.0 }} //cloister
+	}};
+
 protected:
-	double rank(Game const & game, int const myIndex) {
-		double ranking = 0;
-//		initVars();
-		int const packSize = game.getTileCount();
-		int const enemyPlayers = game.getPlayerCount() - 1;
-		int const myTurnsLeft = ((packSize-1) / (enemyPlayers+1)) + 1;
-		Q_ASSERT(myTurnsLeft > 0);
+	struct RankData
+	{
+		Game const * game;
+		int const packSize;
+		int const myTurnsLeft;
+		int openCount[4];
+		Tile const * tile;
+		const QPoint placement;
+	};
 
-//		//trigger score
-//		game.getPhase().next(ScorePhase.class);
-//		game.getPhase().enter();
+	double rank(Game const * game, Tile const * tile, QPoint const & placement);
+	double reducePoints(double const points, int const player);
+	double chanceToPlaceTile(RankData const & data, QPoint pos);
+	double meepleRating(RankData & data);
+	double pointRating(RankData & data);
+	double openObjectRating(RankData & data);
+	double rankPossibleFeatureConnections(RankData & data);
+	double rankConvexity(RankData const & data);
 
-		int openCount[4] = {};
+private:
+	double scoreAllRanking(RankData & data);
+	void scoreCompletableFeature(RankData & data, Node const * n, double & rnk);
+	void scoreFarm(RankData & data, Node const * n, double & rnk);
+	double getFarmPoints(int * openCount, FieldNode const * farm, int p);
+	double rankUnfishedCompletable(RankData & data, Node const * n);
+	double getUnfinishedCompletablePoints(RankData & data, Node const * n);
+	double getCompletableChanceToClose(RankData & data, Node const * completable);
+	double getCloisterChanceToClose(RankData const & data);
+	double getUnfinishedCityPoints(RankData & data, CityNode const * city);
+	double getUnfinishedRoadPoints(RankData & data, RoadNode const * road);
+	double getUnfinishedCloisterPoints(RankData & data, CloisterNode const * cloister);
+	double rankTrappedMeeples(RankData & data, Node const * n);
 
-		ranking += meepleRating(game, myIndex, enemyPlayers, myTurnsLeft);
-		ranking += pointRating(game, myIndex, enemyPlayers);
-//		ranking += openObjectRating();
-
-//		ranking += rankPossibleFeatureConnections();
-//		ranking += rankConvexity();
-//		ranking += rankFairy();
-
-		return ranking;
-	}
-
-	double reducePoints(double const points, int const player, int const myIndex, int const enemyPlayers) {
-		if (player == myIndex) return points;
-		return -points/enemyPlayers;
-	}
-
-	// I'm not sure, what this function actually computes, maybe it's an estimate of the chance value.
-	double chanceToPlaceTile(QPoint pos, Game const & game) {
-		EdgeMask pattern = game.getBoard()->getEdgeMask(pos);
-		int openEdges = 0;
-		for (TerrainType t : pattern.t)
-			if (t == None)
-				++openEdges;
-		if (openEdges < 2) {
-			uint remains = game.getPossibleTileCount(pattern);
-			if (remains == 0) return 0.0;
-			if (remains < game.getPlayerCount()) {
-//				if (remains == 0) return 0.0;	//Does not make sense in my opinion
-				return 1.0 - pow(1.0 - 1.0 / (game.getPlayerCount()), remains);
-			}
-		}
-		return 1.0;
-	}
-
-	double meepleRating(Game const & game, int const myIndex, int const enemyPlayers, int const myTurnsLeft) {
-		double rating = 0;
-
-		uint const playerCount = game.getPlayerCount();
-		for (int p = 0; p < playerCount; ++p) {
-//			double meeplePoints = 0;
-//			int limit = 0;
-
-//			for (Follower f : Iterables.filter(p.getFollowers(), MeeplePredicates.deployed())) {
-//				if (f instanceof SmallFollower) {
-//					meeplePoints += 0.15;
-//				} else if (f instanceof BigFollower) {
-//					meeplePoints += 0.25;
-//				}
-//				if (++limit == myTurnsLeft) break;
-//			}
-
-			//This version of the loop above only works as long as we only have what jcz calls "SmallFollowers".
-			//-->
-			int placed = game.getPlacedMeeples(p);
-			double meeplePoints;
-			if (placed >= myTurnsLeft)
-				meeplePoints = 0.15 * qMin(placed, myTurnsLeft);
-			//<--
-
-			rating += reducePoints(meeplePoints, p, myIndex, enemyPlayers);
-		}
-		return rating;
-	}
-
-	double pointRating(Game const & game, int const myIndex, int const enemyPlayers) {
-		double rating = 0;
-
-		int const playerCount = game.getPlayerCount();
-		for (int p = 0; p < playerCount; ++p) {
-			rating += reducePoints(game.getPlayerScore(p), p, myIndex, enemyPlayers);
-		}
-
-//		ScoreAllFeatureFinder scoreAll = new ScoreAllFeatureFinder();
-//		LegacyAiScoreAllCallback callback = new LegacyAiScoreAllCallback();
-//		scoreAll.scoreAll(game, callback);
-//		rating += callback.getRanking();
-
-		return rating;
-	}
+	double futureConnectionRateConnection(RankData & data, Tile::Side const & toEmpty, Tile::Side const & toFeature, Tile const * tile1, Tile const * tile2, double chance);
+	double futureConnectionRateFeatures(RankData & data, Tile::Side const & toEmpty, Tile::Side const & toFeature, double chance, Node const * f1, Node const * f2);
+	double futureConnectionGetFeaturePoints(RankData & data, Node const * feature);
+	void funtureConnectionSumPower(uchar & myPower, uchar & bestEnemy, Node const * f1, Node const * f2);
+	double futureConnectionRateCrossing(Node const * f1, Node const * f2);
 };
+
+}
 
 #endif // JCZPLAYER_H
 #endif

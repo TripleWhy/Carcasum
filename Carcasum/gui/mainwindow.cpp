@@ -3,6 +3,7 @@
 #include "playerinfoview.h"
 #include "jcz/tilefactory.h"
 #include "player/randomplayer.h"
+#include "jcz/jczplayer.h"
 #include <QSettings>
 #include <QFileDialog>
 #include <QStandardPaths>
@@ -323,7 +324,8 @@ bool MainWindow::event(QEvent * event)
 	if (event->type() == QEvent::UpdateRequest && !gameThread->isRunning() && !gameThread->isFinished())
 	{
 		game->addPlayer(&RandomPlayer::instance);
-		game->addPlayer(&RandomPlayer::instance);
+		game->addPlayer(new jcz::JCZPlayer(&tileFactory));
+//		game->addPlayer(&RandomPlayer::instance);
 
 		game->newGame(Tile::BaseGame, &tileFactory);
 		ui->stackedWidget->setCurrentWidget(ui->gameDisplayPage);
@@ -502,7 +504,10 @@ void MainWindow::on_buttonBox_accepted()
 	for (Player * p : selectedPlayers)
 	{
 		if (p != 0)
+		{
 			game->addPlayer(p);
+			qDebug() << p->getTypeName();
+		}
 	}
 	for (uint i = 0; i < ngPlayerEdits.size(); ++i)
 	{

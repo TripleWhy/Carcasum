@@ -69,6 +69,7 @@ public:
 	inline bool isOccupied() const { return d->maxMeples; }
 	inline uchar getMaxMeeples() const { return d->maxMeples; }
 	inline uchar const * getMeeples() const { return d->meeples; }
+	inline uchar getPlayerMeeples(int player) const { return d->meeples[player]; }
 	inline TerrainType getTerrain() const { return d->t; }
 	inline Scored getScored() const { return d->scored; }
 	inline void setScored(Scored s) { d->scored = s; }
@@ -90,9 +91,9 @@ public:
 			d->maxMeples = d->meeples[player];
 		checkClose(g);
 	}
-	inline int uniqueTileCount() const
+	inline uint uniqueTileCount() const
 	{
-		int uniqueTiles = 0;
+		uint uniqueTiles = 0;
 		Tile const * last = 0;
 		for (Tile const * t : d->tiles)
 		{
@@ -327,6 +328,11 @@ class Tile
 
 public:
 	enum Side { left = 0, up = 1, right = 2, down = 3 };
+	//TODO might be faster using switch
+	static inline Side sideOpposite(Side const & side) { return (Tile::Side)((side + 2) % 4); }
+	static inline Side sideRotateCW(Side const & side) { return (Tile::Side)((side + 1) % 4); }
+	static inline Side sideRotateCCW(Side const & side) { return (Tile::Side)((side + 4 - 1) % 4); }
+
 	enum TileSet { BaseGame = 1 << 0 };
 //	struct TileType { TileSet set; int type; };
 	Q_DECLARE_FLAGS(TileSets, TileSet)
@@ -380,6 +386,7 @@ public:
 
 private:
 	EdgeType * getEdgeNodes(Side side);
+	EdgeType const * getEdgeNodes(Side side) const;
 	void setEdgeNode(Side side, int index, Node * n);
 
 public:
@@ -389,6 +396,8 @@ public:
 	inline Node const * const * getNodes() const { return nodes; }
 	inline Node * getNode(int idx) { return nodes[idx]; }
 	inline Node const * getNode(int idx) const { return nodes[idx]; }
+	inline Node const * getEdgeNode(Side side, int index) const { return getEdgeNodes(side)[index]; }
+	inline Node const * getFeatureNode(Side const & side) const { return getEdgeNode(side, 1); }
 
 	void printSides(Node * n);
 	bool equals(Tile const & other, const Game * g) const;

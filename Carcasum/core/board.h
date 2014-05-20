@@ -57,7 +57,7 @@ public:
 	TileMovesType getPossibleTilePlacements(Tile const * tile) const;
 	QList<QPoint> getOpenPlaces() const;
 
-	QPoint positionOf(Tile * t) const;
+	QPoint positionOf(Tile const * t) const;
 	
 	void scoreEndGame();
 	void unscoreEndGame();
@@ -69,6 +69,10 @@ public:
 	inline const Tile * getTile(uint x, uint y) const { return board[x][y]; }
 	inline Tile * getTile(TileMove const & m) { return board[m.x][m.y]; }
 	inline const Tile * getTile(TileMove const & m) const { return board[m.x][m.y]; }
+	inline Tile * getTile(QPoint const & p) { return board[p.x()][p.y()]; }
+	inline const Tile * getTile(QPoint const & p) const { return board[p.x()][p.y()]; }
+	inline std::vector<Tile *> const & getTiles() { return tiles; }
+	inline std::vector<Tile const *> const & getTiles() const { return *reinterpret_cast<std::vector<Tile const *> const *>(&tiles); }	//Dirty solution. I don't know a better one.
 
 	EdgeMask getEdgeMask(QPoint const & position) const { return open[position]; }
 	EdgeMask getEdgeMask(uint x, uint y) const { return getEdgeMask(QPoint(x, y)); }
