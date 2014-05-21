@@ -1,4 +1,3 @@
-#if 1
 #ifndef JCZPLAYER_H
 #define JCZPLAYER_H
 
@@ -127,4 +126,3 @@ private:
 }
 
 #endif // JCZPLAYER_H
-#endif

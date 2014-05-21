@@ -1,6 +1,5 @@
 #include "jczplayer.h"
 #include "player/randomplayer.h"
-#ifdef JCZPLAYER_H
 
 constexpr std::array<std::pair<Tile::Side, QPoint>, 4> jcz::JCZPlayer::ADJACENT;
 constexpr std::array<QPoint, 8> jcz::JCZPlayer::ADJACENT_AND_DIAGONAL;
@@ -640,4 +639,3 @@ double jcz::JCZPlayer::rankConvexity(const jcz::JCZPlayer::RankData & data) {
 			++surrounding;
 	return 0.001 * surrounding;
 }
-#endif
