@@ -1069,6 +1069,10 @@ int Game::calcUpperScoreBound(QList<Tile *> const & tiles)
 
 bool Game::equals(Game const & other) const
 {
+#if CHECK_SIM_STATE
+	if (simState != other.simState)
+		return false;
+#endif
 	if (active != other.active)
 		return false;
 	if (nextPlayer != other.nextPlayer)

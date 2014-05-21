@@ -11,7 +11,7 @@
 template<class UtilityProvider = Utilities::ComplexUtilityNormalized, class Playout = Playouts::RandomPlayout>
 class MonteCarloPlayerUCT : public Player
 {
-	constexpr static qreal Cp = 1;
+	constexpr static qreal Cp = 0.5;
 
 #ifndef TIMEOUT
  #ifdef QT_NO_DEBUG
@@ -47,7 +47,7 @@ public:
 	constexpr MonteCarloPlayerUCT(jcz::TileFactory * tileFactory, int m = 5000, bool mIsTimeout = true)
 #endif
 		: tileFactory(tileFactory),
-	      typeName(QString("MonteCarloPlayerUCT<%1, %2>").arg(UtilityProvider::name).arg(Playout::name)),
+	      typeName(QString("MonteCarloPlayerUCT<%1, %2>(m=%4, mIsTimeout=%5, Cp=%6)").arg(UtilityProvider::name).arg(Playout::name).arg(m).arg(mIsTimeout).arg(Cp)),
 	      M(m),
 		  useTimeout(mIsTimeout)
 	{

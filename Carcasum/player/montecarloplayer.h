@@ -32,7 +32,7 @@ public:
 	constexpr MonteCarloPlayer(jcz::TileFactory * tileFactory, int m = 5000, bool mIsTimeout = true)
 #endif
 	    : tileFactory(tileFactory),
-	      typeName(QString("MonteCarloPlayer<%1, %2>").arg(UtilityProvider::name).arg(Playout::name)),
+	      typeName(QString("MonteCarloPlayer<%1, %2>(m=%4, mIsTimeout=%5)").arg(UtilityProvider::name).arg(Playout::name).arg(m).arg(mIsTimeout)),
 	      M(m),
 		  useTimeout(mIsTimeout)
 	{

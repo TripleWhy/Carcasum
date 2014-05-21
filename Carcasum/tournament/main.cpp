@@ -5,6 +5,7 @@
 #include "player/montecarloplayer2.h"
 #include "player/montecarloplayeruct.h"
 #include "player/mctsplayer.h"
+//#include "player/mctsplayermt.h"
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QVarLengthArray>
@@ -324,11 +325,19 @@ int main(int /*argc*/, char */*argv*/[])
 	}
 	if (false)
 	{
-		qDebug("\n\nMCTSPlayer plain vs MCTSPlayer reuseTree");
-		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
+		qDebug("\n\nMCTSPlayer reuseTree vs MCTSPlayer plain ");
+
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, true));
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
 		doTest(players, tileFactory);
 	}
+//	if (true)
+//	{
+//		qDebug("\n\nMCTSPlayer vs MCTSPlayerMT");
+//		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
+//		players.push_back(new MCTSPlayerMT<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
+//		doTest(players, tileFactory);
+//	}
 	if (true)
 	{
 		qreal const Cps[] = {0.0, 0.25, 0.50, 0.75, 1.0, 2.0, 3.0};
@@ -336,7 +345,7 @@ int main(int /*argc*/, char */*argv*/[])
 		{
 			qDebug() << "\n\nCp" << Cp;
 			players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false, TIMEOUT, true, Cp));
-			players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
+			players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false, TIMEOUT, true, 0.5));
 			doTest(players, tileFactory);
 		}
 	}
