@@ -17,7 +17,7 @@ class PlayerSelector : public QDialog
 	Q_OBJECT
 
 private:
-	enum PlayerType { PlayerTypeRandom, PlayerTypeMonteCarlo, PlayerTypeMonteCarlo2, PlayerTypeMonteCarloUCT, PlayerTypeMCTS };
+	enum PlayerType { PlayerTypeRandom, PlayerTypeMonteCarlo, PlayerTypeMonteCarlo2, PlayerTypeMonteCarloUCT, PlayerTypeMCTS, PlayerTypeJCZ };
 	enum UtilityType { UtilityTypeSimple, UtilityTypeHeyden, UtilityTypeComplex, UtilityTypeComplexNormalized };
 	enum PlayoutType { PlayoutTypeRandom, PlayoutTypeEarlyCutoff };
 
@@ -40,7 +40,8 @@ private:
 		QString toolTip;
 	};
 
-	const std::array<PlayerData, 5> playerData = {{ {PlayerTypeRandom, "Random", ""},
+	const std::array<PlayerData, 6> playerData = {{ {PlayerTypeRandom, "Random", ""},
+	                                                {PlayerTypeJCZ, "JCloisterZone AI", ""},
 	                                                {PlayerTypeMonteCarlo, "Monte Carlo", ""},
 	                                                {PlayerTypeMonteCarlo2, "Monte Carlo 2", ""},
 	                                                {PlayerTypeMonteCarloUCT, "Monte Carlo UCB1", ""},

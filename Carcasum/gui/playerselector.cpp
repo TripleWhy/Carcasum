@@ -5,6 +5,7 @@
 #include "player/montecarloplayer2.h"
 #include "player/montecarloplayeruct.h"
 #include "player/mctsplayer.h"
+#include "jcz/jczplayer.h"
 
 PlayerSelector::PlayerSelector(jcz::TileFactory * tileFactory, QWidget *parent)
     : QDialog(parent),
@@ -44,6 +45,8 @@ Player *PlayerSelector::createPlayer()
 	{
 		case PlayerTypeRandom:
 			return new RandomPlayer();
+		case PlayerTypeJCZ:
+			return new jcz::JCZPlayer(tileFactory);
 		case PlayerTypeMonteCarlo:
 		{
 			switch (utility)
@@ -246,6 +249,7 @@ void PlayerSelector::on_typeList_currentRowChanged(int currentRow)
 	switch (playerData[currentRow].type)
 	{
 		case PlayerTypeRandom:
+		case PlayerTypeJCZ:
 			ui->optionsWidget->setVisible(false);
 			break;
 		case PlayerTypeMCTS:
