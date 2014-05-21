@@ -398,6 +398,7 @@ public:
 	inline Node const * getNode(int idx) const { return nodes[idx]; }
 	inline Node const * getEdgeNode(Side side, int index) const { return getEdgeNodes(side)[index]; }
 	inline Node const * getFeatureNode(Side const & side) const { return getEdgeNode(side, 1); }
+	inline Node const * getFieldNode(Side side, int index) const { return (getEdge(side) == Field) ? getFeatureNode(side) : getEdgeNode(side, index); }
 
 	void printSides(Node * n);
 	bool equals(Tile const & other, const Game * g) const;

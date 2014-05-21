@@ -49,20 +49,20 @@ private:
 
 private:
 	static constexpr std::array<std::pair<Tile::Side, QPoint>, 4> ADJACENT = {{
-	                                                                             {Tile::left,  QPoint(-1,  0)},
-	                                                                             {Tile::up,    QPoint( 0, -1)},
-	                                                                             {Tile::right, QPoint(+1,  0)},
-	                                                                             {Tile::down,  QPoint( 0, +1)}
+	                                                                              {Tile::up,    QPoint( 0, -1)},
+	                                                                              {Tile::right, QPoint(+1,  0)},
+	                                                                              {Tile::down,  QPoint( 0, +1)},
+	                                                                              {Tile::left,  QPoint(-1,  0)}
 	                                                                         }};
 	static constexpr std::array<QPoint, 8> ADJACENT_AND_DIAGONAL = {{
-	                                                                   {QPoint(-1, 0)},
-	                                                                   {QPoint(0, -1)},
-	                                                                   {QPoint(+1, 0)},
-	                                                                   {QPoint(0, +1)},
-	                                                                   {QPoint(-1, -1)},
-	                                                                   {QPoint(+1, -1)},
-	                                                                   {QPoint(+1, +1)},
-	                                                                   {QPoint(-1, +1)}
+	                                                                    {QPoint(0, -1)},
+	                                                                    {QPoint(+1, 0)},
+	                                                                    {QPoint(0, +1)},
+	                                                                    {QPoint(-1, 0)},
+	                                                                    {QPoint(+1, -1)},
+	                                                                    {QPoint(+1, +1)},
+	                                                                    {QPoint(-1, +1)},
+	                                                                    {QPoint(-1, -1)}
 	                                                               }};
 
 	static constexpr double TRAPPED_MY_FIGURE_POINTS = -12.0;

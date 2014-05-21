@@ -56,8 +56,6 @@ TileMove jcz::JCZPlayer::getTileMove(int p, const Tile * tile, const MoveHistory
 	if (p != player)
 		return RandomPlayer::instance.getTileMove(p, tile, move, placements);
 
-	chanceCachePos.clear();
-	chanceCacheNode.clear();
 	Util::syncGamesFast(*game, simGame);
 
 	Q_ASSERT(game->equals(simGame));
@@ -73,12 +71,16 @@ TileMove jcz::JCZPlayer::getTileMove(int p, const Tile * tile, const MoveHistory
 		QPoint const placement(tileMove.x, tileMove.y);
 		simGame.simPartStepTile(tileMove);
 		Tile const * simTile = simGame.simTile;
-		for (MeepleMove const & meepleMove : game->getPossibleMeeplePlacements(p, simTile))
+
+		//JCZ checks not placing a meeple last, while my game puts it first. This results in JCZ implicitly preferring meeple placements over not placing meeples. Thus I need to shift the order a bit.
+		auto const & meeplePlacements = game->getPossibleMeeplePlacements(p, simTile);
+		for (int i = 0, s = meeplePlacements.size(); i < s; ++i)
 		{
+			MeepleMove const & meepleMove = meeplePlacements[(i + 1) % s];
 			simGame.simPartStepMeeple(meepleMove);
 
 			double rnk = rank(&simGame, simTile, placement);
-			if (rnk > bestSoFarRank)	//TODO choose randomly between equal rankings?
+			if (rnk > bestSoFarRank)	//TODO choose randomly between equal rankings? JCZ does not do this. But I could.
 			{
 				bestSoFarRank = rnk;
 				bestSoFar = &tileMove;
@@ -132,6 +134,9 @@ Player * jcz::JCZPlayer::clone() const
 }
 
 double jcz::JCZPlayer::rank(const Game * game, const Tile * tile, const QPoint & placement) {
+	chanceCachePos.clear();
+	chanceCacheNode.clear();
+
 	double ranking = 0.0;
 
 	int const packSize = game->getTileCount();
@@ -149,6 +154,8 @@ double jcz::JCZPlayer::rank(const Game * game, const Tile * tile, const QPoint &
 	ranking += rankConvexity(data);
 //	ranking += rankFairy();
 #else
+	int offset = game->getBoard()->getOffset();
+
 	double mr = meepleRating(data);
 	double pr = pointRating(data);
 	double oor = openObjectRating(data);
@@ -157,7 +164,7 @@ double jcz::JCZPlayer::rank(const Game * game, const Tile * tile, const QPoint &
 	double rc = rankConvexity(data);
 	ranking = mr + pr + oor + rpfc + rc;
 
-	int offset = game->getBoard()->getOffset();
+	std::locale::global(std::locale::classic());
 	static char const * rotations[4] = {"R0", "R90", "R180", "R270"};
 	std::stringstream pos;
 	pos << "[x=" << (placement.x() - offset) << ",y=" << (placement.y() - offset) << "]";
@@ -519,8 +526,8 @@ double jcz::JCZPlayer::futureConnectionRateConnection(jcz::JCZPlayer::RankData &
 
 	if (toEmpty != toFeature) {
 		bool left = (Tile::sideRotateCCW(toEmpty) == toFeature);
-		FieldNode const * farm1 = static_cast<FieldNode const *>( tile2->getEdgeNode(toEmpty, left ? 2 : 0) );
-		FieldNode const * farm2 = static_cast<FieldNode const *>( tile2->getEdgeNode(oppFeat, left ? 0 : 2) );
+		FieldNode const * farm1 = static_cast<FieldNode const *>( tile2->getFieldNode(toEmpty, left ? 2 : 0) );
+		FieldNode const * farm2 = static_cast<FieldNode const *>( tile2->getFieldNode(oppFeat, left ? 0 : 2) );
 
 		if (farm1 != 0 && farm2 != 0) {
 //                System.err.println("    " + tile1.getPosition() + " <-->" + f2Pos + " / " + farm1 + " " + farm2);
