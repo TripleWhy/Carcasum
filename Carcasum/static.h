@@ -83,11 +83,4 @@ struct VarLengthArrayWrapper
 };
 #endif
 
-//The first line is the one I want, but it produces a linker error when compiled in debug mode. WTF?
-#ifdef QT_NO_DEBUG
- #define STATICCONSTEXPR static constexpr
-#else
- #define STATICCONSTEXPR const
-#endif
-
 #endif // STATIC_H
