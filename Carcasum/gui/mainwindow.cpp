@@ -3,7 +3,6 @@
 #include "playerinfoview.h"
 #include "jcz/tilefactory.h"
 #include "player/randomplayer.h"
-#include "jcz/jczplayer.h"
 #include <QSettings>
 #include <QFileDialog>
 #include <QStandardPaths>
@@ -341,6 +340,9 @@ public:
 	}
 };
 
+#include "jcz/jczplayer.h"
+#include "player/simpleplayer.h"
+#include "player/simpleplayer2.h"
 bool MainWindow::event(QEvent * event)
 {
 	if (event->type() == QEvent::UpdateRequest && !gameThread->isRunning() && !gameThread->isFinished())
@@ -358,7 +360,10 @@ bool MainWindow::event(QEvent * event)
 //		}
 
 		game->addPlayer(new jcz::JCZPlayer(&tileFactory));
+//		game->addPlayer(new jcz::JCZPlayer(&tileFactory));
+//		game->addPlayer(new SimplePlayer2());
 		game->addPlayer(this);
+		game->addPlayer(new SimplePlayer2());
 //		game->addPlayer(&RandomPlayer::instance);
 //		game->addPlayer(&RandomPlayer::instance);
 

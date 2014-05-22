@@ -7,6 +7,7 @@
 #include "player/mctsplayer.h"
 //#include "player/mctsplayermt.h"
 #include "player/simpleplayer.h"
+#include "player/simpleplayer2.h"
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QVarLengthArray>
@@ -110,12 +111,10 @@ void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory,
 {
 #ifdef Q_OS_UNIX
 	// The follwing code ties one thread to one core on linux.
-	//-->
 	cpu_set_t cpuset;
 	CPU_ZERO(&cpuset);
 	CPU_SET(threadId, &cpuset);
 	sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
-	//<--
 #endif
 
 	std::vector<Player *> players;

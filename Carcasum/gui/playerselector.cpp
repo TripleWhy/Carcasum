@@ -5,6 +5,8 @@
 #include "player/montecarloplayer2.h"
 #include "player/montecarloplayeruct.h"
 #include "player/mctsplayer.h"
+#include "player/simpleplayer.h"
+#include "player/simpleplayer2.h"
 #include "jcz/jczplayer.h"
 
 PlayerSelector::PlayerSelector(jcz::TileFactory * tileFactory, QWidget *parent)
@@ -45,6 +47,10 @@ Player *PlayerSelector::createPlayer()
 	{
 		case PlayerTypeRandom:
 			return new RandomPlayer();
+		case PlayerSimple:
+			return new SimplePlayer();
+		case PlayerSimple2:
+			return new SimplePlayer2();
 		case PlayerTypeJCZ:
 			return new jcz::JCZPlayer(tileFactory);
 		case PlayerTypeMonteCarlo:
@@ -249,6 +255,8 @@ void PlayerSelector::on_typeList_currentRowChanged(int currentRow)
 	switch (playerData[currentRow].type)
 	{
 		case PlayerTypeRandom:
+		case PlayerSimple:
+		case PlayerSimple2:
 		case PlayerTypeJCZ:
 			ui->optionsWidget->setVisible(false);
 			break;
