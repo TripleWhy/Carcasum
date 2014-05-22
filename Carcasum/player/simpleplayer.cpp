@@ -52,6 +52,7 @@ TileMove SimplePlayer::getTileMove(int player, const Tile * tile, const MoveHist
 				}
 				if (surroundingTiles > best)
 				{
+					best = surroundingTiles;
 					goodMoves.clear();
 					goodMoves.append(&tileMove);
 				}
@@ -99,6 +100,7 @@ TileMove SimplePlayer::getTileMove(int player, const Tile * tile, const MoveHist
 				}
 				if (points > best)
 				{
+					best = points;
 					goodMoves.clear();
 					goodMoves.append(&tileMove);
 				}
@@ -211,9 +213,12 @@ TileMove SimplePlayer::getTileMove(int player, const Tile * tile, const MoveHist
 				best = points;
 				goodMoves.clear();
 				for (MeepleMove const & mm : meepleMoves)
-				{
 					goodMoves.push_back(Move{tileMove, mm});
-				}
+			}
+			else if (points == best)
+			{
+				for (MeepleMove const & mm : meepleMoves)
+					goodMoves.push_back(Move{tileMove, mm});
 			}
 		}
 
