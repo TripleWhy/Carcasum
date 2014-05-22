@@ -11,13 +11,14 @@ void SimplePlayer2::playerMoved(int /*player*/, const Tile * /*tile*/, const Mov
 {
 }
 
-#define SIMPLE_PLAYER2_RULE_CLOISTER_1    1
-#define SIMPLE_PLAYER2_RULE_CLOISTER_2    1
-#define SIMPLE_PLAYER2_RULE_ROAD_CITY     1
-#define SIMPLE_PLAYER2_USE_MEEPLE_PENALTY 1
-#define SIMPLE_PLAYER2_USE_OPEN_PENALTY   1
 TileMove SimplePlayer2::getTileMove(int player, const Tile * tile, const MoveHistoryEntry & move, const TileMovesType & possible)
 {
+	meepleMoveSet = false;
+#if SIMPLE_PLAYER2_TILE_RANDOM > 0
+	if (r.nextInt(100) < SIMPLE_PLAYER2_TILE_RANDOM)
+		return RandomPlayer::instance.getTileMove(player, tile, move, possible);
+#endif
+
 	static constexpr int dx[8] = {-1,  0, +1,  0, -1, +1, +1, -1};
 	static constexpr int dy[8] = { 0, -1,  0, +1, -1, -1, +1, +1};
 	static constexpr Tile::Side dir[4]    = {Tile::left,  Tile::up,    Tile::right, Tile::down};
@@ -44,7 +45,6 @@ TileMove SimplePlayer2::getTileMove(int player, const Tile * tile, const MoveHis
 	static constexpr int openPenalty = 0;
 #endif
 
-	meepleMoveSet = false;
 	if (tile->getCloisterNode() != 0)
 	{
 		if (hasMeeples)
@@ -230,9 +230,16 @@ TileMove SimplePlayer2::getTileMove(int player, const Tile * tile, const MoveHis
 
 MeepleMove SimplePlayer2::getMeepleMove(int player, const Tile * tile, const MoveHistoryEntry & move, const MeepleMovesType & possible)
 {
-	Q_ASSERT(std::find(possible.cbegin(), possible.cend(), meepleMove) != possible.cend());
-	if (meepleMoveSet && std::find(possible.cbegin(), possible.cend(), meepleMove) != possible.cend())
+#if SIMPLE_PLAYER2_MEEPLE_RANDOM > 0
+	if (r.nextInt(100) < SIMPLE_PLAYER2_MEEPLE_RANDOM)
+		return RandomPlayer::instance.getMeepleMove(player, tile, move, possible);
+#endif
+
+	if (meepleMoveSet)
+	{
+		Q_ASSERT(std::find(possible.cbegin(), possible.cend(), meepleMove) != possible.cend());
 		return meepleMove;
+	}
 	return RandomPlayer::instance.getMeepleMove(player, tile, move, possible);
 }
 
