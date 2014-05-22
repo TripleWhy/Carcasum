@@ -33,7 +33,7 @@
 
 // Options
 // Tile
-#define NODE_VARIANT               0
+#define NODE_VARIANT               2
 // Game/MonteCarloPlayer
 #define USE_RESET                  0
 // RandomTable
