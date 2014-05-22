@@ -6,6 +6,8 @@
 #include "player/montecarloplayer.h"
 #include "player/montecarloplayer2.h"
 #include "player/mctsplayer.h"
+#include "player/simpleplayer.h"
+#include "jcz/jczplayer.h"
 #include "util.h"
 
 #define CONTROL_GAME 1
@@ -17,22 +19,27 @@ int main(int argc, char *argv[])
 	RandomNextTileProvider rntp;
 	Game * game = new Game(&rntp);
 	
+	qDebug("NODE_VARIANT: " STR(NODE_VARIANT));
 	if (false)
 	{
 		qDebug() << "CONTROL_GAME" << CONTROL_GAME;
-		for (int i = 0; i < 1000; ++i)
+		for (int i = 0; i < 10000; ++i)
 		{
 			qDebug() << "================================\nRUN" << i;
 			Game g1(&rntp), g2(&rntp), g3(&rntp), g4(&rntp), g5(&rntp);
 			Q_ASSERT(g1.equals(g2));
 			Q_ASSERT(g2.equals(g1));
-			for (int i = 0; i < 3; ++i)
+
+			g1.addPlayer(&RandomPlayer::instance);
+			g1.addPlayer(&RandomPlayer::instance);
+//			g1.addPlayer(new jcz::JCZPlayer(tileFactory));
+
+			for (Player * p : g1.getPlayers())
 			{
-				g1.addPlayer(&RandomPlayer::instance);
-				g2.addPlayer(&RandomPlayer::instance);
-				g3.addPlayer(&RandomPlayer::instance);
-				g4.addPlayer(&RandomPlayer::instance);
-				g5.addPlayer(&RandomPlayer::instance);
+				g2.addPlayer(p->clone());
+				g3.addPlayer(p->clone());
+				g4.addPlayer(p->clone());
+				g5.addPlayer(p->clone());
 			}
 			Q_ASSERT(g1.equals(g2));
 			Q_ASSERT(g2.equals(g1));
@@ -92,12 +99,39 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	if (false)
+	if (true)
 	{
-		static int const playouts = 100000;
+		static int const playouts = 5000;
 		Game g(&rntp);
 		g.addPlayer(&RandomPlayer::instance);
 		g.addPlayer(&RandomPlayer::instance);
+//		g.addPlayer(new jcz::JCZPlayer(tileFactory));
+//		g.addPlayer(new jcz::JCZPlayer(tileFactory));
+//		g.addPlayer(new SimplePlayer());
+
+		QTime t;
+		t.start();
+		for (int i = 0; i < playouts; ++i)
+		{
+			g.newGame(Tile::BaseGame, tileFactory);
+			int steps = 0;
+			do
+			{
+				++steps;
+			} while (g.step());
+		}
+		int e = t.elapsed();
+		std::cout << playouts << "p / " << e << "ms = " << playouts / (e / 1000.0) << " pps" << std::endl;
+//		return 0;
+	}
+
+	if (true)
+	{
+		static int const playouts = 5000;
+		Game g(&rntp);
+		g.addPlayer(&RandomPlayer::instance);
+		g.addPlayer(&RandomPlayer::instance);
+//		g.addPlayer(new SimplePlayer());
 		g.newGame(Tile::BaseGame, tileFactory);
 
 		QTime t;

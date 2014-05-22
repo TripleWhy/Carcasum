@@ -31,7 +31,7 @@ private:
 	static Util::Math const & math;
 
 	QString typeName;
-	STATICCONSTEXPR Playout playoutPolicy = Playout();
+	Playout playoutPolicy = Playout();
 	UtilityProvider utilityProvider = UtilityProvider();
 	const int M;
 	const bool useTimeout;

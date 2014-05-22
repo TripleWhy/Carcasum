@@ -31,7 +31,7 @@ private:
 	static RandomTable r;
 
 	QString typeName;
-	STATICCONSTEXPR Playout playoutPolicy = Playout();
+	Playout playoutPolicy;
 	UtilityProvider utilityProvider = UtilityProvider();
 	const int M;
 	const bool useTimeout;

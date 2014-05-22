@@ -336,10 +336,12 @@ public:
 	enum TileSet { BaseGame = 1 << 0 };
 //	struct TileType { TileSet set; int type; };
 	Q_DECLARE_FLAGS(TileSets, TileSet)
-#if NODE_VARIANT
+#if NODE_VARIANT == 1
 	typedef Node ** EdgeType;
-#else
+#elif NODE_VARIANT == 0
 	typedef Node * EdgeType;
+#elif NODE_VARIANT == 2
+	typedef qint8 EdgeType;
 #endif
 
 
@@ -347,7 +349,12 @@ private:
 	TerrainType edges[4];    // array of edge types
 	uchar nodeCount = 0;     // length of nodes
 	Node ** nodes = 0;       // array of node pointers
-	EdgeType edgeNodes[4][EDGE_NODE_COUNT] = {}; // 4 arrays of edge connectors
+	EdgeType edgeNodes[4][EDGE_NODE_COUNT] = // 4 arrays of edge connectors
+#if NODE_VARIANT == 2
+	{{-1, -1, -1}, {-1, -1, -1}, {-1, -1, -1}, {-1, -1, -1}};
+#else
+	{};
+#endif
 	CloisterNode * cloister = 0;
 #if DEBUG_IDS
 public:
@@ -386,8 +393,18 @@ public:
 
 private:
 	EdgeType * getEdgeNodes(Side side);
+	EdgeType * getEdgeNodes(Side side, Side orientation);
 	EdgeType const * getEdgeNodes(Side side) const;
+	EdgeType const * getEdgeNodes(Side side, Side orientation) const;
 	void setEdgeNode(Side side, int index, Node * n);
+	inline bool isNull(EdgeType const & et)
+	{
+#if NODE_VARIANT == 2
+		return et == -1;
+#else
+		return et == 0;
+#endif
+	}
 
 public:
 	inline uchar getNodeCount() const { return nodeCount; }
@@ -396,12 +413,86 @@ public:
 	inline Node const * const * getNodes() const { return nodes; }
 	inline Node * getNode(int idx) { return nodes[idx]; }
 	inline Node const * getNode(int idx) const { return nodes[idx]; }
-	inline Node const * getEdgeNode(Side side, int index) const { return getEdgeNodes(side)[index]; }
 	inline Node const * getFeatureNode(Side const & side) const { return getEdgeNode(side, 1); }
+	inline Node const * getFeatureNode(Side const & side, Side orientation) const { return getEdgeNode(side, 1, orientation); }
+	inline Node const * getFeatureNodeAndIndex(Side const & side, uchar & nodeIndex) const { return getEdgeNodeAndIndex(side, 1, nodeIndex); }
+	inline Node const * getFeatureNodeAndIndex(Side const & side, uchar & nodeIndex, Side orientation) const { return getEdgeNodeAndIndex(side, 1, nodeIndex, orientation); }
 	inline Node const * getFieldNode(Side side, int index) const { return (getEdge(side) == Field) ? getFeatureNode(side) : getEdgeNode(side, index); }
+	inline Node const * getFieldNode(Side side, int index, Side orientation) const { return (getEdge(side) == Field) ? getFeatureNode(side, orientation) : getEdgeNode(side, index, orientation); }
 	inline Node const * getCloisterNode() const { return cloister; }
 
-	void printSides(Node * n);
+	inline Node const * getEdgeNode(Side side, int index) const
+	{
+#if NODE_VARIANT == 0
+		return getEdgeNodes(side)[index];
+#elif NODE_VARIANT == 1
+		return *(getEdgeNodes(side)[index]);
+#elif NODE_VARIANT == 2
+		return nodes[getEdgeNodes(side)[index]];
+#endif
+	}
+	inline Node const * getEdgeNode(Side side, int index, Side orientation) const
+	{
+#if NODE_VARIANT == 0
+		return getEdgeNodes(side, orientation)[index];
+#elif NODE_VARIANT == 1
+		return *(getEdgeNodes(side, orientation)[index]);
+#elif NODE_VARIANT == 2
+		return nodes[getEdgeNodes(side, orientation)[index]];
+#endif
+	}
+
+	inline Node const * getEdgeNodeAndIndex(Side side, int index, uchar & nodeIndex) const
+	{
+#if NODE_VARIANT == 0
+		Node * n = getEdgeNodes(side)[index];
+		nodeIndex = -1;
+		for (uchar i = 0; i < nodeCount; ++i)
+			if (nodes[i] == n)
+			{
+				nodeIndex = i;
+				break;
+			}
+		return n;
+#elif NODE_VARIANT == 1
+		EdgeType p = getEdgeNodes(side)[index];
+		Q_ASSERT(!isNull(p));
+		if (isNull(p))
+			nodeIndex = -1;
+		else
+			nodeIndex = p - nodes;
+		return *p;
+#elif NODE_VARIANT == 2
+		return nodes[ (nodeIndex = getEdgeNodes(side)[index]) ];
+#endif
+	}
+
+	inline Node const * getEdgeNodeAndIndex(Side side, int index, uchar & nodeIndex, Side orientation) const
+	{
+#if NODE_VARIANT == 0
+		Node * n = getEdgeNodes(side, orientation)[index];
+		nodeIndex = -1;
+		for (uchar i = 0; i < nodeCount; ++i)
+			if (nodes[i] == n)
+			{
+				nodeIndex = i;
+				break;
+			}
+		return n;
+#elif NODE_VARIANT == 1
+		EdgeType p = getEdgeNodes(side, orientation)[index];
+		Q_ASSERT(!isNull(p));
+		if (isNull(p))
+			nodeIndex = -1;
+		else
+			nodeIndex = p - nodes;
+		return *p;
+#elif NODE_VARIANT == 2
+		return nodes[nodeIndex = getEdgeNodes(side, orientation)[index]];
+#endif
+	}
+
+//	void printSides(Node * n);
 	bool equals(Tile const & other, const Game * g) const;
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(Tile::TileSets)

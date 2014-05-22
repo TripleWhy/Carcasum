@@ -333,6 +333,11 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 		xml.skipCurrentElement();
 	}
 
+	tile->nodeCount = (uchar)nodes.size();
+	tile->nodes = new Node *[tile->nodeCount];
+	for (int i = 0; i < tile->nodeCount; ++i)
+		tile->nodes[i] = nodes.at(i);
+
 	for (int i = 0; i < 4; ++i)
 	{
 		Tile::Side side = (Tile::Side)i;
@@ -357,11 +362,6 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 				break;
 		}
 	}
-
-	tile->nodeCount = (uchar)nodes.size();
-	tile->nodes = new Node *[tile->nodeCount];
-	for (int i = 0; i < tile->nodeCount; ++i)
-		tile->nodes[i] = nodes.at(i);
 
 	tileTemplates[set].append(tile);
 	tileMetaData[tile] = data;

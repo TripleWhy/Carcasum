@@ -469,7 +469,8 @@ bool Game::simStep(const MoveHistoryEntry & entry)
 		moveMeeple(tile, nextPlayer, move.meepleMove);
 		setNextPlayer();
 	}
-	moveHistory.push_back(entry);
+	moveHistory.emplace_back(entry);
+	moveHistory.back().tileType = tile->tileType;
 	tiles.removeAt(entry.tileIndex);
 	--tileCount[tile->tileType];
 	assertTileCount();

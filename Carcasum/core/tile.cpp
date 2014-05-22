@@ -416,14 +416,16 @@ void Tile::connect(Tile::Side side, Tile * other, Game * game)
 	for (int i = 0; i < EDGE_NODE_COUNT; ++i)
 	{
 		EdgeType thisNode = nodeList[EDGE_NODE_COUNT - 1 - i];
-		if (thisNode == 0)
+		if (isNull(thisNode))
 			continue;
 		EdgeType otherNode = otherNodeList[i];
 
-#if NODE_VARIANT
+#if NODE_VARIANT == 1
 		(*thisNode)->connect(*otherNode, game);
-#else
+#elif NODE_VARIANT == 0
 		thisNode->connect(otherNode, game);
+#elif NODE_VARIANT == 2
+		nodes[thisNode]->connect(other->nodes[otherNode], game);
 #endif
 	}
 	
@@ -452,14 +454,16 @@ void Tile::disconnect(Tile::Side side, Tile * other, Game * game)
 	for (int i = 0; i < EDGE_NODE_COUNT; ++i)
 	{
 		EdgeType thisNode = nodeList[i];
-		if (thisNode == 0)
+		if (isNull(thisNode))
 			continue;
 		EdgeType otherNode = otherNodeList[EDGE_NODE_COUNT - 1 - i];
 
-#if NODE_VARIANT
+#if NODE_VARIANT == 1
 		(*thisNode)->disconnect(*otherNode, game);
-#else
+#elif NODE_VARIANT == 0
 		thisNode->disconnect(otherNode, game);
+#elif NODE_VARIANT == 2
+		nodes[thisNode]->disconnect(other->nodes[otherNode], game);
 #endif
 	}
 }
@@ -488,25 +492,24 @@ Tile * Tile::clone(const Game * g)	//TODO? This process only works on unconnecte
 	copy->nodeCount = nodeCount;
 	copy->nodes = new Node*[nodeCount];
 
-	std::unordered_map<EdgeType, EdgeType> nodeMap;
+	std::unordered_map<Node *, Node *> nodeMap;
 	for (int i = 0; i < nodeCount; ++i)
 	{
 		copy->nodes[i] = nodes[i]->clone(copy, g);
 //		copy->nodes[i]->pointers.push_back(copy->nodes + i);
-#if NODE_VARIANT
-		nodeMap[nodes + i] = copy->nodes + i;
-#else
 		nodeMap[nodes[i]] = copy->nodes[i];
-#endif
 	}
 	
 	for (int i = 0; i < 4; ++i)
 	{
 		for (int j = 0; j < EDGE_NODE_COUNT; ++j)
-#if NODE_VARIANT
-			copy->edgeNodes[(Side)i][j] = nodeMap[edgeNodes[(Side)i][j]];
-#else
+#if NODE_VARIANT == 1
+			if (edgeNodes[i][j] != 0)
+				copy->edgeNodes[i][j] = copy->nodes + ( edgeNodes[i][j] - nodes );
+#elif NODE_VARIANT == 0
 			copy->setEdgeNode((Side)i, j, nodeMap[edgeNodes[(Side)i][j]]);
+#elif NODE_VARIANT == 2
+			copy->edgeNodes[i][j] = edgeNodes[i][j];
 #endif
 	}
 	
@@ -547,37 +550,65 @@ Tile::EdgeType * Tile::getEdgeNodes(Tile::Side side)
 	return edgeNodes[(4 + side - orientation) % 4];
 }
 
+Tile::EdgeType *Tile::getEdgeNodes(Tile::Side side, Tile::Side orientation)
+{
+	return edgeNodes[(4 + side - orientation) % 4];
+}
+
 const Tile::EdgeType *Tile::getEdgeNodes(Tile::Side side) const
+{
+	return edgeNodes[(4 + side - orientation) % 4];
+}
+
+const Tile::EdgeType *Tile::getEdgeNodes(Tile::Side side, Tile::Side orientation) const
 {
 	return edgeNodes[(4 + side - orientation) % 4];
 }
 
 void Tile::setEdgeNode(Tile::Side side, int index, Node * n)
 {
-#if NODE_VARIANT
+#if NODE_VARIANT == 1
 	if (n == 0)
 		edgeNodes[side][index] = 0;
-	for (int i = 0; i < nodeCount; ++i)
+	else
 	{
-		if (nodes[i] == n)
+		for (int i = 0; i < nodeCount; ++i)
 		{
-			edgeNodes[side][index] = nodes + i;
-			break;
+			if (nodes[i] == n)
+			{
+				edgeNodes[side][index] = nodes + i;
+				break;
+			}
 		}
 	}
-#else
+#elif NODE_VARIANT == 0
 	edgeNodes[side][index] = n;
 //	n->pointers.push_back(&(edgeNodes[side][index]));
+#elif NODE_VARIANT == 2
+	if (n == 0)
+		edgeNodes[side][index] = -1;
+	else
+	{
+		for (uchar i = 0; i < nodeCount; ++i)
+		{
+			if (nodes[i] == n)
+			{
+				edgeNodes[side][index] = i;
+				break;
+			}
+		}
+		Q_ASSERT(edgeNodes[side][index] != -1);
+	}
 #endif
 }
 
-void Tile::printSides(Node * n)
-{
-	for (int i = 0; i < 4; ++i)
-		for (int j = 0; j < EDGE_NODE_COUNT; ++j)
-			if (getEdgeNodes((Side)i)[j] == n)
-				qDebug() << "\t" << (Side)i << j;
-}
+//void Tile::printSides(Node * n)
+//{
+//	for (int i = 0; i < 4; ++i)
+//		for (int j = 0; j < EDGE_NODE_COUNT; ++j)
+//			if (getEdgeNodes((Side)i)[j] == n)
+//				qDebug() << "\t" << (Side)i << j;
+//}
 
 bool Tile::equals(const Tile & other, Game const * g) const
 {

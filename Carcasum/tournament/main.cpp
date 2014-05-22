@@ -6,6 +6,7 @@
 #include "player/montecarloplayeruct.h"
 #include "player/mctsplayer.h"
 //#include "player/mctsplayermt.h"
+#include "player/simpleplayer.h"
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QVarLengthArray>
@@ -105,7 +106,7 @@ void printResult(T const & results, int const playerCount, size_t index)
 	}
 }
 
-void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory, std::vector<Result> & results, int const N, int const threadId, int const threadCount)
+void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory, std::vector<Result> & results, int const N, int const threadId, int const threadCount, bool const printSteps)
 {
 #ifdef Q_OS_UNIX
 	// The follwing code ties one thread to one core on linux.
@@ -173,7 +174,8 @@ void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory,
 				}
 				else
 				{
-					qDebug() << i << "skipped tile";
+					if (printSteps)
+						qDebug() << i << "skipped tile";
 				}
 			}
 
@@ -191,17 +193,17 @@ void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory,
 
 			results[j] = result;
 
-			printResult(results, playerCount, j);
+			if (printSteps)
+				printResult(results, playerCount, j);
 		}
 	}
 
 	qDeleteAll(players);
 }
 
-void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory, bool const doIt = true)
+void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory, int const N=100, bool const printSteps = true, bool const doIt = true)
 {
-	int const N = 100;
-	int const THREADS = 8;
+	int const THREADS = 1;
 
 #ifdef TIMEOUT
 	qDebug() << "TIMEOUT" << TIMEOUT;
@@ -224,13 +226,13 @@ void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory, boo
 
 		if (THREADS == 1)
 		{
-			run(players, tileFactory, std::ref(results), N, 0, THREADS);
+			run(players, tileFactory, std::ref(results), N, 0, THREADS, printSteps);
 		}
 		else
 		{
 			std::thread * threads[THREADS];
 			for (int i = 0; i < THREADS; ++i)
-				threads[i] = new std::thread(run, players, tileFactory, std::ref(results), N, i, THREADS);
+				threads[i] = new std::thread(run, players, tileFactory, std::ref(results), N, i, THREADS, printSteps);
 			for (int i = 0; i < THREADS; ++i)
 				threads[i]->join();
 		}
@@ -331,14 +333,20 @@ int main(int /*argc*/, char */*argv*/[])
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
 		doTest(players, tileFactory);
 	}
-//	if (true)
+	if (true)
+	{
+		players.push_back(new RandomPlayer());
+		players.push_back(new SimplePlayer());
+		doTest(players, tileFactory, 10000, false);
+	}
+//	if (false)
 //	{
 //		qDebug("\n\nMCTSPlayer vs MCTSPlayerMT");
 //		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
 //		players.push_back(new MCTSPlayerMT<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
 //		doTest(players, tileFactory);
 //	}
-	if (true)
+	if (false)
 	{
 		qreal const Cps[] = {0.0, 0.25, 0.50, 0.75, 1.0, 2.0, 3.0};
 		for (qreal const Cp : Cps)

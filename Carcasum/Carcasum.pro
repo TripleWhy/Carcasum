@@ -106,7 +106,8 @@ SOURCES += core/tile.cpp \
     player/mctsplayermt.tpp \
     player/playouts.cpp \
     player/utilities.cpp \
-    jcz/jczplayer.cpp
+    jcz/jczplayer.cpp \
+    player/simpleplayer.cpp
 
 HEADERS += \
 	core/tile.h \
@@ -129,7 +130,8 @@ HEADERS += \
     player/montecarloplayeruct.h \
     player/playouts.h \
     player/utilities.h \
-    jcz/jczplayer.h
+    jcz/jczplayer.h \
+    player/simpleplayer.h
 
 RESOURCES += \
 	jcz/jcz.qrc

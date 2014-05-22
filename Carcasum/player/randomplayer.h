@@ -24,7 +24,7 @@ public:
 	inline virtual MeepleMove getMeepleMove(int /*player*/, Tile const * /*tile*/, MoveHistoryEntry const & /*move*/, MeepleMovesType const & possible) { return possible[r.nextInt(possible.size())]; }
 	inline virtual void endGame() {}
 	virtual QString getTypeName() { return "RandomPlayer"; }
-	virtual Player * clone() const { return const_cast<RandomPlayer *>(this); }
+	virtual Player * clone() const { return new RandomPlayer(); }
 };
 
 #endif // RANDOMPLAYER_H

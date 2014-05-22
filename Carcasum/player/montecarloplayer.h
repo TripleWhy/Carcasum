@@ -20,7 +20,7 @@ private:
 	jcz::TileFactory * tileFactory;
 
 	QString typeName;
-	STATICCONSTEXPR Playout playoutPolicy = Playout();
+	Playout playoutPolicy;
 	UtilityProvider utilityProvider = UtilityProvider();
 	const int M;
 	const bool useTimeout;
