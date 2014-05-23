@@ -334,9 +334,10 @@ int main(int /*argc*/, char */*argv*/[])
 	}
 	if (true)
 	{
-		players.push_back(new RandomPlayer());
+//		players.push_back(new RandomPlayer());
 		players.push_back(new SimplePlayer());
-		doTest(players, tileFactory, 10000, false);
+		players.push_back(new SimplePlayer2());
+		doTest(players, tileFactory, 100000, false);
 	}
 //	if (false)
 //	{

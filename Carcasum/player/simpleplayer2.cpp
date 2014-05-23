@@ -24,7 +24,12 @@ TileMove SimplePlayer2::getTileMove(int player, const Tile * tile, const MoveHis
 	static constexpr Tile::Side dir[4]    = {Tile::left,  Tile::up,    Tile::right, Tile::down};
 	static constexpr Tile::Side oppDir[4] = {Tile::right, Tile::down,  Tile::left,  Tile::up  };
 	//                                                     { None = 0, Field, City, Road, Cloister }
+#if SIMPLE_PLAYER2_RULE_FIELD
+	static constexpr int terrainBonus[TERRAIN_TYPE_SIZE] = {        0,     1,    6,    2,        0 };
+#else
+	// I don't understand why, but this works better, if fields are disabled.
 	static constexpr int terrainBonus[TERRAIN_TYPE_SIZE] = {        0,     0,    3,    1,        0 };
+#endif
 
 	int const playerCount = game->getPlayerCount();
 	int const myBonus = playerCount * 10;
@@ -33,7 +38,12 @@ TileMove SimplePlayer2::getTileMove(int player, const Tile * tile, const MoveHis
 	bool const hasMeeples = (meepleCount > 0);
 
 #if SIMPLE_PLAYER2_USE_MEEPLE_PENALTY
-	static constexpr int meeplePenalties[MEEPLE_COUNT+1] = {5, 4, 3, 2, 1, 1, 0, 0};
+//	static constexpr int meeplePenalties[MEEPLE_COUNT+1] = {5, 4, 3, 2, 1, 1, 0, 0};	//original
+//	static constexpr int meeplePenalties[MEEPLE_COUNT+1] = {13, 8, 5, 3, 2, 1, 1, 0};	//also good
+//	static constexpr int meeplePenalties[MEEPLE_COUNT+1] = {29, 22, 16, 11, 7, 4, 2, 1};	//5174
+	static constexpr int meeplePenalties[MEEPLE_COUNT+1] = {24, 22, 14, 8, 5, 3, 2, 1};		//5303
+//	static constexpr int meeplePenalties[MEEPLE_COUNT+1] = {41, 24, 14, 8, 5, 3, 2, 1};		//5205
+//	static constexpr int meeplePenalties[MEEPLE_COUNT+1] = {27, 17, 10, 7, 4, 3, 2, 1};		//4785
 	int const meeplePenalty = meeplePenalties[meepleCount];
 #else
 	static constexpr int meeplePenalty = 0;
@@ -64,11 +74,11 @@ TileMove SimplePlayer2::getTileMove(int player, const Tile * tile, const MoveHis
 				{
 					best = surroundingTiles;
 					goodMoves.clear();
-					goodMoves.append(&tileMove);
+					goodMoves.push_back(&tileMove);
 				}
 				else if (surroundingTiles == best)
 				{
-					goodMoves.append(&tileMove);
+					goodMoves.push_back(&tileMove);
 				}
 			}
 
@@ -112,11 +122,11 @@ TileMove SimplePlayer2::getTileMove(int player, const Tile * tile, const MoveHis
 				{
 					best = points;
 					goodMoves.clear();
-					goodMoves.append(&tileMove);
+					goodMoves.push_back(&tileMove);
 				}
 				else if (points == best)
 				{
-					goodMoves.append(&tileMove);
+					goodMoves.push_back(&tileMove);
 				}
 			}
 
@@ -126,7 +136,7 @@ TileMove SimplePlayer2::getTileMove(int player, const Tile * tile, const MoveHis
 	}
 	else // No cloister tile
 	{
-#if  SIMPLE_PLAYER2_RULE_ROAD_CITY
+#if  SIMPLE_PLAYER2_RULE_ROAD_CITY || SIMPLE_PLAYER2_RULE_FIELD
 		VarLengthArrayWrapper<Move, TILE_ARRAY_LENGTH * NODE_ARRAY_LENGTH>::type goodMoves;
 		int best = std::numeric_limits<int>::min();
 
@@ -140,34 +150,72 @@ TileMove SimplePlayer2::getTileMove(int player, const Tile * tile, const MoveHis
 			{
 				Node const * node = tile->getNode(nodeIndex);
 				TerrainType const & terrain = node->getTerrain();
-				if (terrain == Field)
-					continue; //TODO
 
 				int score = node->getScore();
 				int meeples[MAX_PLAYERS] = {};
 				int maxMeeples = 0;
-				for (int i = 0; i < 4; ++i)
+
+				if (terrain == Field)
 				{
-					Tile::Side const & direction = dir[i];
-					if (tile->getFeatureNode(direction, tileMove.orientation) != node)
-						continue;
-
-					Tile const * otherTile = board->getTile(tileMove.x + dx[i], tileMove.y + dy[i]);
-					if (otherTile == 0)
-						continue;
-					Tile::Side const & oppDirection = oppDir[i];
-					Q_ASSERT(otherTile->getEdge(oppDirection) == terrain);
-					Node const * otherNode = otherTile->getFeatureNode(oppDirection);
-					Q_ASSERT(otherNode != 0);
-					Q_ASSERT(otherNode->getTerrain() == terrain);
-
-					score += otherNode->getScore();
-					for (int p = 0; p < playerCount; ++p)
+#if SIMPLE_PLAYER2_RULE_FIELD
+					for (int i = 0; i < 4; ++i)
 					{
-						meeples[p] += otherNode->getPlayerMeeples(p);
-						if (meeples[p] > maxMeeples)
-							maxMeeples = meeples[p];
+						Tile const * otherTile = board->getTile(tileMove.x + dx[i], tileMove.y + dy[i]);
+						if (otherTile == 0)
+							continue;
+						Tile::Side const & direction = dir[i];
+						Tile::Side const & oppDirection = oppDir[i];
+						for (int j = 0; j < EDGE_NODE_COUNT; ++j)
+						{
+							if (tile->getEdgeNode(direction, j, tileMove.orientation) != node)
+								continue;
+
+							Node const * otherNode = otherTile->getEdgeNode(oppDirection, EDGE_NODE_COUNT-1 - j);
+							Q_ASSERT(otherNode != 0);
+							Q_ASSERT(otherNode->getTerrain() == terrain);
+
+							score = qMax(score, otherNode->getScore());	//Fields usually don't add up in score, if merged. Max is also not correct, but it's ok as an estimate.
+							for (int p = 0; p < playerCount; ++p)
+							{
+								meeples[p] += otherNode->getPlayerMeeples(p);
+								if (meeples[p] > maxMeeples)
+									maxMeeples = meeples[p];
+							}
+						}
 					}
+#else
+					continue;
+#endif
+				}
+				else
+				{
+#if  SIMPLE_PLAYER2_RULE_ROAD_CITY
+					for (int i = 0; i < 4; ++i)
+					{
+						Tile::Side const & direction = dir[i];
+						if (tile->getFeatureNode(direction, tileMove.orientation) != node)
+							continue;
+
+						Tile const * otherTile = board->getTile(tileMove.x + dx[i], tileMove.y + dy[i]);
+						if (otherTile == 0)
+							continue;
+						Tile::Side const & oppDirection = oppDir[i];
+						Q_ASSERT(otherTile->getEdge(oppDirection) == terrain);
+						Node const * otherNode = otherTile->getFeatureNode(oppDirection);
+						Q_ASSERT(otherNode != 0);
+						Q_ASSERT(otherNode->getTerrain() == terrain);
+
+						score += otherNode->getScore();
+						for (int p = 0; p < playerCount; ++p)
+						{
+							meeples[p] += otherNode->getPlayerMeeples(p);
+							if (meeples[p] > maxMeeples)
+								maxMeeples = meeples[p];
+						}
+					}
+#else
+					continue;
+#endif
 				}
 
 				if (maxMeeples != 0) //occupied
@@ -197,7 +245,7 @@ TileMove SimplePlayer2::getTileMove(int player, const Tile * tile, const MoveHis
 						}
 						else if (meeplePoints == bestMeeplePoints)
 						{
-							meepleMoves.append(MeepleMove{nodeIndex});
+							meepleMoves.push_back(MeepleMove{nodeIndex});
 						}
 					}
 				}
@@ -237,7 +285,12 @@ MeepleMove SimplePlayer2::getMeepleMove(int player, const Tile * tile, const Mov
 
 	if (meepleMoveSet)
 	{
-		Q_ASSERT(std::find(possible.cbegin(), possible.cend(), meepleMove) != possible.cend());
+#if SIMPLE_PLAYER2_RULE_FIELD
+		if (std::find(possible.cbegin(), possible.cend(), meepleMove) == possible.cend())	// This is needed, because I cannot figure out if two fileds will be the same without simulating the move.
+			return RandomPlayer::instance.getMeepleMove(player, tile, move, possible);
+#else
+		Q_ASSERT(std::find(possible.cbegin(), possible.cend(), meepleMove) != possible.cend());;
+#endif
 		return meepleMove;
 	}
 	return RandomPlayer::instance.getMeepleMove(player, tile, move, possible);

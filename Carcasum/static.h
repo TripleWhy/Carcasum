@@ -42,10 +42,11 @@
 #define SIMPLE_PLAYER2_RULE_CLOISTER_1    1
 #define SIMPLE_PLAYER2_RULE_CLOISTER_2    1
 #define SIMPLE_PLAYER2_RULE_ROAD_CITY     1
-#define SIMPLE_PLAYER2_USE_MEEPLE_PENALTY 0
-#define SIMPLE_PLAYER2_USE_OPEN_PENALTY   0
+#define SIMPLE_PLAYER2_RULE_FIELD         1
+#define SIMPLE_PLAYER2_USE_MEEPLE_PENALTY 1 // This flag only really matters if fields are enabled.
+#define SIMPLE_PLAYER2_USE_OPEN_PENALTY   1
 #define SIMPLE_PLAYER2_TILE_RANDOM        0 // probability in percent, not a flag
-#define SIMPLE_PLAYER2_MEEPLE_RANDOM      10 // probability in percent, not a flag
+#define SIMPLE_PLAYER2_MEEPLE_RANDOM      5 // probability in percent, not a flag
 
 
 // Debug options

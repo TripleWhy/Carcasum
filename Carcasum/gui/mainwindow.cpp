@@ -347,10 +347,10 @@ bool MainWindow::event(QEvent * event)
 {
 	if (event->type() == QEvent::UpdateRequest && !gameThread->isRunning() && !gameThread->isFinished())
 	{
-		ui->actionChoose_Tiles->setChecked(true);
-
 		std::vector<MoveHistoryEntry> history;
-//		history = Game::loadFromFile("../../Carcasum/badjcz");
+
+//		ui->actionChoose_Tiles->setChecked(true);
+//		history = Game::loadFromFile("../../Carcasum/bads2_2");
 //		if (history.size() > 0)
 //		{
 //			//Remove last move.
@@ -359,10 +359,9 @@ bool MainWindow::event(QEvent * event)
 //			history.pop_back();
 //		}
 
-		game->addPlayer(new jcz::JCZPlayer(&tileFactory));
 //		game->addPlayer(new jcz::JCZPlayer(&tileFactory));
-//		game->addPlayer(new SimplePlayer2());
-		game->addPlayer(this);
+//		game->addPlayer(this);
+		game->addPlayer(new SimplePlayer());
 		game->addPlayer(new SimplePlayer2());
 //		game->addPlayer(&RandomPlayer::instance);
 //		game->addPlayer(&RandomPlayer::instance);

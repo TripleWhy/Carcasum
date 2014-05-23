@@ -397,7 +397,7 @@ private:
 	EdgeType const * getEdgeNodes(Side side) const;
 	EdgeType const * getEdgeNodes(Side side, Side orientation) const;
 	void setEdgeNode(Side side, int index, Node * n);
-	inline bool isNull(EdgeType const & et)
+	inline bool isNull(EdgeType const & et) const
 	{
 #if NODE_VARIANT == 2
 		return et == -1;
@@ -423,22 +423,32 @@ public:
 
 	inline Node const * getEdgeNode(Side side, int index) const
 	{
+		EdgeType const & e = getEdgeNodes(side)[index];
 #if NODE_VARIANT == 0
-		return getEdgeNodes(side)[index];
+		return e;
 #elif NODE_VARIANT == 1
-		return *(getEdgeNodes(side)[index]);
+		if (isNull(e))
+			return 0;
+		return *e;
 #elif NODE_VARIANT == 2
-		return nodes[getEdgeNodes(side)[index]];
+		if (isNull(e))
+			return 0;
+		return nodes[e];
 #endif
 	}
 	inline Node const * getEdgeNode(Side side, int index, Side orientation) const
 	{
+		EdgeType const & e = getEdgeNodes(side, orientation)[index];
 #if NODE_VARIANT == 0
-		return getEdgeNodes(side, orientation)[index];
+		return e;
 #elif NODE_VARIANT == 1
-		return *(getEdgeNodes(side, orientation)[index]);
+		if (isNull(e))
+			return 0;
+		return *e;
 #elif NODE_VARIANT == 2
-		return nodes[getEdgeNodes(side, orientation)[index]];
+		if (isNull(e))
+			return 0;
+		return nodes[e];
 #endif
 	}
 

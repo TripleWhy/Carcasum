@@ -103,7 +103,6 @@ SOURCES += core/tile.cpp \
     player/montecarloplayer2.tpp \
     player/montecarloplayeruct.tpp \
     player/mctsplayer.tpp \
-    player/mctsplayermt.tpp \
     player/playouts.cpp \
     player/utilities.cpp \
     jcz/jczplayer.cpp \
@@ -126,7 +125,6 @@ HEADERS += \
     core/random.h \
     core/nexttileprovider.h \
     player/mctsplayer.h \
-    player/mctsplayermt.h \
     player/montecarloplayer2.h \
     player/montecarloplayeruct.h \
     player/playouts.h \
