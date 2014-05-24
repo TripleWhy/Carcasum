@@ -122,7 +122,7 @@ void jcz::JCZPlayer::endGame()
 {
 }
 
-QString jcz::JCZPlayer::getTypeName()
+QString jcz::JCZPlayer::getTypeName() const
 {
 	return "JCZPlayer";
 }

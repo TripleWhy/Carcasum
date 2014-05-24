@@ -148,7 +148,7 @@ void MCTSPlayer MCTS_TU::endGame()
 }
 
 MCTS_T
-QString MCTSPlayer MCTS_TU::getTypeName()
+QString MCTSPlayer MCTS_TU::getTypeName() const
 {
 	return typeName;
 }

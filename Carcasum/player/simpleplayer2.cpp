@@ -301,7 +301,7 @@ void SimplePlayer2::endGame()
 {
 }
 
-QString SimplePlayer2::getTypeName()
+QString SimplePlayer2::getTypeName() const
 {
 	return "SimplePlayer2";
 }

@@ -85,6 +85,22 @@ QColor TileImageFactory::getPlayerColor(int player) const
 		return playerColors[player];
 }
 
+void TileImageFactory::setPlayerName(int player, const QString & name)
+{
+	if (player < 0 || player >= (int)playerNames.size())
+		return;
+	else
+		playerNames[player] = name;
+}
+
+QString TileImageFactory::getPlayerName(int player) const
+{
+	if (player < 0 || player >= (int)playerNames.size())
+		return QString("Player %1").arg(player);
+	else
+		return playerNames[player];
+}
+
 QPixmap TileImageFactory::generateMeepleStanding(int size, QColor color)
 {
 	QSvgRenderer renderer(getMeepleFillSvgStanding());

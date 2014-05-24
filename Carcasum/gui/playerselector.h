@@ -42,7 +42,7 @@ private:
 
 	const std::array<PlayerData, 8> playerData = {{ {PlayerTypeRandom, "Random", ""},
 	                                                {PlayerSimple, "SimplePlayer v1", ""},
-	                                                {PlayerSimple, "SimplePlayer v2", ""},
+	                                                {PlayerSimple2, "SimplePlayer v2", ""},
 	                                                {PlayerTypeJCZ, "JCloisterZone AI", ""},
 	                                                {PlayerTypeMonteCarlo, "Monte Carlo", ""},
 	                                                {PlayerTypeMonteCarlo2, "Monte Carlo 2", ""},

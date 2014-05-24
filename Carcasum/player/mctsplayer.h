@@ -164,7 +164,7 @@ public:
 	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	virtual void endGame();
-	virtual QString getTypeName();
+	virtual QString getTypeName() const;
 	virtual Player * clone() const;
 
 	MCTSNode * treePolicy(MCTSNode * node);

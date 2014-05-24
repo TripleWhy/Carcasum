@@ -69,7 +69,7 @@ public:
 	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	virtual void endGame();
-	virtual QString getTypeName() { return "MainWindow"; }
+	virtual QString getTypeName() const { return "MainWindow"; }
 	virtual Player * clone() const;
 	virtual void nodeScored(Node const * n, const int score, Game const * game);
 	virtual void nodeUnscored(Node const * n, const int score, Game const * game);

@@ -242,7 +242,7 @@ void SimplePlayer::endGame()
 {
 }
 
-QString SimplePlayer::getTypeName()
+QString SimplePlayer::getTypeName() const
 {
 	return "SimplePlayer";
 }

@@ -25,7 +25,7 @@ public:
 	inline virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
 	inline virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	inline virtual void endGame();
-	virtual QString getTypeName();
+	virtual QString getTypeName() const;
 	virtual Player * clone() const;
 };
 

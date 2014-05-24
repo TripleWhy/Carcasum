@@ -32,7 +32,7 @@ public:
 	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements) = 0;
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible) = 0;
 	virtual void endGame() = 0;
-	virtual QString getTypeName() = 0;
+	virtual QString getTypeName() const = 0;
 	virtual Player * clone() const = 0;
 };
 

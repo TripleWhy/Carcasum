@@ -38,6 +38,8 @@ void PlayerInfoView::setPlayer(int player, Game const * g, TileImageFactory * ti
 	game = g;
 	imgFactory = tif;
 
+	ui->nameLabel->setText(imgFactory->getPlayerName(player));
+
 	QPixmap icon = imgFactory->generateMeepleStanding(PINFO_ICON_SIZE, imgFactory->getPlayerColor(player));
 	QPixmap meeple = imgFactory->generateMeepleStanding(PINFO_MEEPLE_SIZE, imgFactory->getPlayerColor(player));
 	
@@ -56,11 +58,6 @@ void PlayerInfoView::setPlayer(int player, Game const * g, TileImageFactory * ti
 		setPalette(hlPalette);
 	else
 		setPalette(normPalette);
-}
-
-void PlayerInfoView::setPlayerName(const QString & name)
-{
-	ui->nameLabel->setText(name);
 }
 
 void PlayerInfoView::updateView()

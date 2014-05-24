@@ -96,6 +96,14 @@ void MainWindow::newGame(int player, const Game * game)
 {
 	gameStartTimestamp = QDateTime::currentMSecsSinceEpoch();
 
+	if (player < 0)
+	{
+		qDebug("New game started with players:");
+		for (Player const * p : game->getPlayers())
+			qDebug() << p->getTypeName();
+		qDebug();
+	}
+
 	boardUi->newGame(player, game);
 
 	if (isSetUp)
@@ -108,17 +116,6 @@ void MainWindow::newGame(int player, const Game * game)
 	for (uint i = 0; i < game->getPlayerCount(); ++i)
 	{
 		PlayerInfoView * pi = new PlayerInfoView(i, game, &imgFactory);
-
-		QString name = ngPlayerEdits[i].nameEdit->text();
-		if (name.isEmpty())
-		{
-			if (ngPlayerEdits[i].typeBox->currentIndex() == 3)
-				name = ngPlayerEdits[i].typeBox->currentText();
-			else
-				name = tr("Player %1").arg(i+1);
-		}
-		pi->setPlayerName(name);
-
 		l->insertWidget(i, pi);
 		connect(this, SIGNAL(updateNeeded()), pi, SLOT(updateView()));
 		connect(this, SIGNAL(tileDrawn(int,int)), pi, SLOT(displayTile(int,int)));
@@ -545,14 +542,28 @@ void MainWindow::on_buttonBox_accepted()
 		if (p != 0)
 		{
 			game->addPlayer(p);
-			qDebug() << p->getTypeName();
 		}
 	}
-	for (uint i = 0; i < ngPlayerEdits.size(); ++i)
+	for (uint i = 0, p = 0; i < ngPlayerEdits.size(); ++i)
 	{
 		NgPlayerEdit const & pe = ngPlayerEdits[i];
+		if (pe.typeBox->currentIndex() == 0)
+			continue;
+
 		QColor color = colors[pe.colorBox->currentIndex()];
-		imgFactory.setPlayerColor(i, color);
+		imgFactory.setPlayerColor(p, color);
+
+		QString name = pe.nameEdit->text();
+		if (name.isEmpty())
+		{
+			if (pe.typeBox->currentIndex() == 3)
+				name = pe.typeBox->currentText();
+			else
+				name = tr("Player %1").arg(p+1);
+		}
+		imgFactory.setPlayerName(p, name);
+
+		++p;
 	}
 
 	if (game->getPlayerCount() < 1)

@@ -22,6 +22,7 @@ private:
 	QHash<jcz::Expansion, QList<jcz::XmlParser::XMLTile>> xmlTiles;
 	QByteArray zipData;
 	std::array<QColor, MAX_PLAYERS> playerColors = {{Qt::red, Qt::blue, Qt::yellow, Qt::darkGreen, Qt::black, Qt::gray}};
+	std::array<QString, MAX_PLAYERS> playerNames = {{"!Player 1", "!Player 2", "!Player 3", "!Player 4", "!Player 5", "!Player 6"}};
 
 public:
 	TileImageFactory(jcz::TileFactory * tileFactory);
@@ -35,6 +36,8 @@ public:
 	QString getMeepleOutlineSvgStanding() const;
 	void setPlayerColor(int player, QColor const & color);
 	QColor getPlayerColor(int player) const;
+	void setPlayerName(int player, QString const & name);
+	QString getPlayerName(int player) const;
 	QPixmap generateMeepleStanding(int size, QColor color);
 
 	QMap<uchar, QPoint> getPoints(Tile const * tile);
