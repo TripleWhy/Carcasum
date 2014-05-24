@@ -23,7 +23,7 @@ core {
 #	DEFINES += QT_NO_WARNING_OUTPUT
 
 } else:tournament {
-	TARGET = carcasum_turnement
+	TARGET = carcasum_tournament
 
 	CONFIG   += console
 	CONFIG   -= app_bundle
