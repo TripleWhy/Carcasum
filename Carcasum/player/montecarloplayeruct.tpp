@@ -20,6 +20,7 @@ void MonteCarloPlayerUCT MCU_TU::newGame(int player, const Game * g)
 		simGame->addPlayer(&RandomPlayer::instance);
 	simGame->newGame(g->getTileSets(), tileFactory, g->getMoveHistory());
 	utilityProvider.newGame(player, g);
+	playoutPolicy.newGame(player, g);
 }
 
 MCU_T

@@ -52,7 +52,7 @@ MCTSPlayer MCTS_TU::MCTSChanceNode::MCTSChanceNode(uchar player, TileCountType c
 MCTS_T
 constexpr MCTSPlayer MCTS_TU::MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree, const int m, const bool mIsTimeout, qreal const Cp)
 	: tileFactory(tileFactory),
-	  typeName(QString("MCTSPlayer<%1, %2>(reuseTree=%3, m=%4, mIsTimeout=%5, Cp=%6)").arg(UtilityProvider::name).arg(Playout::name).arg(reuseTree).arg(m).arg(mIsTimeout).arg(Cp)),
+	  typeName(QString("MCTSPlayer<%1, %2>(reuseTree=%3, m=%4, mIsTimeout=%5, Cp=%6)").arg(UtilityProvider::name).arg(playoutPolicy.name).arg(reuseTree).arg(m).arg(mIsTimeout).arg(Cp)),
 	  M(m),
 	  useTimeout(mIsTimeout),
 	  Cp(Cp),
@@ -588,4 +588,5 @@ void MCTSPlayer MCTS_TU::newGame(int player, Game const * g)
 		simGame.addPlayer(&RandomPlayer::instance);
 	simGame.newGame(g->getTileSets(), tileFactory, g->getMoveHistory());
 	utilityProvider.newGame(player, g);
+	playoutPolicy.newGame(player, g);
 }

@@ -19,6 +19,7 @@ void MonteCarloPlayer2 MC2_TU::newGame(int player, const Game * g)
 		simGame->addPlayer(&RandomPlayer::instance);
 	simGame->newGame(game->getTileSets(), tileFactory, g->getMoveHistory());
 	utilityProvider.newGame(player, g);
+	playoutPolicy.newGame(player, g);
 }
 
 MC2_T

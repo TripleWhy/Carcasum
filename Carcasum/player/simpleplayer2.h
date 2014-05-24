@@ -16,15 +16,11 @@ private:
 	MeepleMove meepleMove;
 
 public:
-	SimplePlayer2() = default;
-	SimplePlayer2(const SimplePlayer2 &) = delete;
-	SimplePlayer2 & operator = (const SimplePlayer2 &) = delete;
-
-	inline virtual void newGame(int player, Game const * game);
-	inline virtual void playerMoved(int player, Tile const * tile, MoveHistoryEntry const & move);
-	inline virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
-	inline virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
-	inline virtual void endGame();
+	virtual void newGame(int player, Game const * game);
+	virtual void playerMoved(int player, Tile const * tile, MoveHistoryEntry const & move);
+	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
+	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
+	virtual void endGame();
 	virtual QString getTypeName();
 	virtual Player * clone() const;
 };

@@ -285,6 +285,7 @@ MeepleMove SimplePlayer2::getMeepleMove(int player, const Tile * tile, const Mov
 
 	if (meepleMoveSet)
 	{
+		meepleMoveSet = false;
 #if SIMPLE_PLAYER2_RULE_FIELD
 		if (std::find(possible.cbegin(), possible.cend(), meepleMove) == possible.cend())	// This is needed, because I cannot figure out if two fileds will be the same without simulating the move.
 			return RandomPlayer::instance.getMeepleMove(player, tile, move, possible);

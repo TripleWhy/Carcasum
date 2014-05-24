@@ -128,9 +128,9 @@ private:
 	MCTSChanceNode * rootNode = 0;
 	static Util::Math const & math;
 
+	Playout playoutPolicy;
+	UtilityProvider utilityProvider;
 	QString typeName;
-	Playout playoutPolicy = Playout();
-	UtilityProvider utilityProvider = UtilityProvider();
 	const int M;
 	const bool useTimeout;
 	const qreal Cp;

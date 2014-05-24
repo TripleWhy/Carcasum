@@ -22,6 +22,7 @@ public:
 
 public:
 	Player() = default;
+	Player (Player &&) = default;
 	Player (const Player &) = delete;
 	Player & operator = (const Player &) = delete;
 
