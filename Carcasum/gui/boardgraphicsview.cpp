@@ -37,11 +37,21 @@ void BoardGraphicsView::mouseMoveEvent(QMouseEvent *event)
 }
 
 // from http://stackoverflow.com/questions/19113532/qgraphicsview-zooming-in-and-out-under-mouse-position-using-mouse-wheel#20802191
+// extended by zoom limitation
 void BoardGraphicsView::wheelEvent(QWheelEvent* event)
 {
+	event->accept();
+
+	qreal currentScale = transform().m11();
+	int delta = event->delta();
+	if (currentScale >= BOARDGRAPHICSVIEW_MAX_ZOOM && delta >= 0)
+		return;
+	if (currentScale <= BOARDGRAPHICSVIEW_MIN_ZOOM && delta <= 0)
+		return;
+
 	const QPointF p0scene = mapToScene(event->pos());
 
-	qreal factor = std::pow(1.002, event->delta());
+	qreal factor = std::pow(BOARDGRAPHICSVIEW_ZOOM_SPEED, delta);
 	scale(factor, factor);
 
 	const QPointF p1mouse = mapFromScene(p0scene);

@@ -67,6 +67,12 @@ void MCTSPlayer MCTS_TU::playerMoved(int /*player*/, const Tile * /*tile*/, cons
 }
 
 MCTS_T
+void MCTSPlayer MCTS_TU::undoneMove(const MoveHistoryEntry & /*move*/)
+{
+	fullSyncGame();
+}
+
+MCTS_T
 TileMove MCTSPlayer MCTS_TU::getTileMove(int player, const Tile * tile, const MoveHistoryEntry & /*move*/, const TileMovesType & /*placements*/)
 {
 	QElapsedTimer t;
@@ -465,6 +471,17 @@ void MCTSPlayer MCTS_TU::syncGame()
 				rootNode = cn;
 			}
 		}
+	}
+}
+
+MCTS_T
+void MCTSPlayer MCTS_TU::fullSyncGame()
+{
+	Util::syncGames(*game, simGame);
+	if (reuseTree)
+	{
+		delete rootNode;
+		rootNode = 0;
 	}
 }
 

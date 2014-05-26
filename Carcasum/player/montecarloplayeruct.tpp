@@ -30,6 +30,12 @@ void MonteCarloPlayerUCT MCU_TU::playerMoved(int /*player*/, const Tile * /*tile
 }
 
 MCU_T
+void MonteCarloPlayerUCT MCU_TU::undoneMove(const MoveHistoryEntry & /*move*/)
+{
+	Util::syncGames(*game, *simGame);
+}
+
+MCU_T
 TileMove MonteCarloPlayerUCT MCU_TU::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & possible)
 {
 	QElapsedTimer timer;

@@ -29,6 +29,7 @@ public:
 	virtual ~Player() {}
 	virtual void newGame(int player, Game const * game) = 0;
 	virtual void playerMoved(int player, Tile const * tile, MoveHistoryEntry const & move) = 0;
+	virtual void undoneMove(MoveHistoryEntry const & move) = 0;
 	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements) = 0;
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible) = 0;
 	virtual void endGame() = 0;

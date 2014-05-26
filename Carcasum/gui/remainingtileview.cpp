@@ -10,7 +10,6 @@ RemainingTileView::RemainingTileView(TileTypeType type, int count, TileImageFact
     ui(new Ui::RemainingTileView)
 {
 	ui->setupUi(this);
-	effect.setColor(Qt::black);
 
 	QPixmap const & p = imgFactory->getImage(type);
 	pxNormal = p.scaled(RTILE_TILE_SIZE, RTILE_TILE_SIZE, Qt::KeepAspectRatio, Qt::SmoothTransformation);
@@ -33,7 +32,10 @@ RemainingTileView::~RemainingTileView()
 void RemainingTileView::setCount(int count)
 {
 	if (count == 0)
-		ui->tileLabel->setGraphicsEffect(&effect);
+	{
+		if (ui->tileLabel->graphicsEffect() == 0)
+			ui->tileLabel->setGraphicsEffect(newColorEffect());	// Widget takes ownership, so we need a new effect for every widget.
+	}
 	else
 		ui->tileLabel->setGraphicsEffect(0);
 
@@ -47,4 +49,11 @@ void RemainingTileView::setCount(int count)
 void RemainingTileView::setHighlight(bool hl)
 {
 	ui->tileLabel->setPixmap(hl ? pxHl : pxNormal);
+}
+
+QGraphicsColorizeEffect *RemainingTileView::newColorEffect()
+{
+	QGraphicsColorizeEffect * effect = new QGraphicsColorizeEffect();
+	effect->setColor(Qt::black);
+	return effect;
 }

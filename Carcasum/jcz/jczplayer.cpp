@@ -34,6 +34,11 @@ void jcz::JCZPlayer::playerMoved(int /*player*/, const Tile * /*tile*/, const Mo
 	Util::syncGamesFast(*game, simGame);
 }
 
+void jcz::JCZPlayer::undoneMove(const MoveHistoryEntry & /*move*/)
+{
+	Util::syncGames(*game, simGame);
+}
+
 #if JCZ_DEBUG_PRINTS
 #include <iostream>
 #include <iomanip>

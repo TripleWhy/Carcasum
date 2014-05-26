@@ -11,6 +11,10 @@ void SimplePlayer2::playerMoved(int /*player*/, const Tile * /*tile*/, const Mov
 {
 }
 
+void SimplePlayer2::undoneMove(const MoveHistoryEntry & /*move*/)
+{
+}
+
 TileMove SimplePlayer2::getTileMove(int player, const Tile * tile, const MoveHistoryEntry & move, const TileMovesType & possible)
 {
 	meepleMoveSet = false;

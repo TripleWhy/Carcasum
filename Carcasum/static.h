@@ -51,28 +51,34 @@
 
 // Debug options
 // Game
-#define PRINT_STEPS                0
-#define WATCH_SCORES               !defined(QT_NO_DEBUG)
-#define CHECK_SIM_STATE            1
+#define PRINT_STEPS                  0
+#define WATCH_SCORES                 !defined(QT_NO_DEBUG)
+#define CHECK_SIM_STATE              1
 // Tile
-#define PRINT_CONNECTIONS          0
-#define DEBUG_IDS                  0
+#define PRINT_CONNECTIONS            0
+#define DEBUG_IDS                    0
 // Ranodm
-//#define RANDOM_SEED                17
+//#define RANDOM_SEED                  17
 // BoardGraphicsScene
-#define DRAW_TILE_POSITION_TEXT    0
+#define DRAW_TILE_POSITION_TEXT      0
+#define DRAW_NODE_ID_TEXT            0
 // MonteCarloPlayer
-#define COUNT_PLAYOUTS             1
+#define COUNT_PLAYOUTS               1
 // MCTSPlayer
-#define MCTS_COUNT_EXPAND_HITS     0
-#define MCTS_PRINT_UTILITIES       0
+#define MCTS_COUNT_EXPAND_HITS       0
+#define MCTS_PRINT_UTILITIES         0
 // Util
-#define OFFSET_ARRAY_ENABLE_CHECKS 0
-//MainWindow
-#define MAINWINDOW_GAME_ON_STARTUP 0
+#define OFFSET_ARRAY_ENABLE_CHECKS   0
+// MainWindow
+#define MAINWINDOW_GAME_ON_STARTUP   0
+#define MAINWINDOW_ENABLE_UNDO       1	// Experimental, buggy, but only supposed for debugging.
+// BoardGraphicsView
+#define BOARDGRAPHICSVIEW_ZOOM_SPEED 1.002
+#define BOARDGRAPHICSVIEW_MAX_ZOOM   2.0
+#define BOARDGRAPHICSVIEW_MIN_ZOOM   0.05
 
-#define DISPLAY_WHILE_LOADING      0
-#define REPLACE_VARLENGTH_ARRAY    0
+#define DISPLAY_WHILE_LOADING        0
+#define REPLACE_VARLENGTH_ARRAY      0
 
 
 
@@ -90,6 +96,11 @@ struct VarLengthArrayWrapper
 {
  typedef QVarLengthArray<T, U> type;
 };
+#endif
+
+#if DRAW_NODE_ID_TEXT
+#undef DEBUG_IDS
+#define DEBUG_IDS 1
 #endif
 
 #endif // STATIC_H

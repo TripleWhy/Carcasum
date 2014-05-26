@@ -9,13 +9,35 @@
 #include <QDateTime>
 #include <QMessageBox>
 
+void MainWindow::GameThread::undo(int steps)
+{
+	undoSteps = steps;
+	interrupt();
+}
+
 void MainWindow::GameThread::run()
 {
+	clearInterrupt();
 	setTerminationEnabled(true);
-	while (!isInterruptionRequested() && !g->isFinished())
+
+	for (; undoSteps > 0; --undoSteps)
+		g->undo();
+
+	while (!g->isFinished())
 	{
 		msleep(PLAYER_GAP_TIMEOUT);
 		g->step();
+
+		if (isInterrupted() && undoSteps == 0)
+			break;
+		else
+			clearInterrupt();
+
+		for (; undoSteps > 0; --undoSteps)
+		{
+			while (g->undo())
+			{}
+		}
 	}
 }
 
@@ -25,6 +47,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
+#if !MAINWINDOW_ENABLE_UNDO
+	delete ui->actionUndo;
+#endif
 	ui->optionsWidget->setVisible(ui->optionsCheckBox->isChecked());
 	setWindowTitle(APP_NAME);
 
@@ -75,6 +100,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	connect(boardUi, SIGNAL(sceneRectChanged(QRectF)), this, SLOT(recenter(QRectF)));
 	connect(this, SIGNAL(gameEvent(QString)), this, SLOT(displayGameEvent(QString)));
+	connect(this, SIGNAL(gameEventPop()), this, SLOT(displayGameEventPop()));
 
 	readSettings();
 
@@ -163,13 +189,13 @@ void MainWindow::playerMoved(int player, const Tile * tile, const MoveHistoryEnt
 	else
 		emit gameEvent(tr("Player %1 moved.").arg(player+1));
 
-	QSettings settings;
-	settings.beginGroup("games");
-	int size = settings.beginReadArray("game");
-	settings.endArray(); //game
+//	QSettings settings;
+//	settings.beginGroup("games");
+//	int size = settings.beginReadArray("game");
+//	settings.endArray(); //game
 
-	settings.beginWriteArray("game");
-	settings.setArrayIndex(size-1);
+//	settings.beginWriteArray("game");
+//	settings.setArrayIndex(size-1);
 
 //	int moveSize = settings.beginReadArray("moves");
 //	settings.endArray(); //moves
@@ -188,8 +214,21 @@ void MainWindow::playerMoved(int player, const Tile * tile, const MoveHistoryEnt
 //	}
 //	settings.endArray(); //moves
 
-	settings.endArray(); //game
-	settings.endGroup(); //games
+//	settings.endArray(); //game
+//	settings.endGroup(); //games
+
+	QString const & dataLoc = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+	QDir dir = QDir(dataLoc).absoluteFilePath("games");
+	if (dir.mkpath(".") && gameStartTimestamp != -1)
+		game->storeToFile(dir.absoluteFilePath(QString::number(gameStartTimestamp)));
+}
+
+void MainWindow::undoneMove(const MoveHistoryEntry & move)
+{
+	emit updateNeeded();
+	boardUi->undoneMove(move);
+
+	emit gameEventPop();
 
 	QString const & dataLoc = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
 	QDir dir = QDir(dataLoc).absoluteFilePath("games");
@@ -299,7 +338,6 @@ int MainWindow::nextTile(const Game * game)
 void MainWindow::closeEvent(QCloseEvent * event)
 {
 	requestEndGame();
-	qWarning("MainWindow::closeEvent: If the following line warns about an invalid move, ignore it.");
 	boardUi->quit();
 
 	QSettings settings;
@@ -357,9 +395,10 @@ bool MainWindow::event(QEvent * event)
 //		}
 
 //		game->addPlayer(new jcz::JCZPlayer(&tileFactory));
-//		game->addPlayer(this);
-		game->addPlayer(new SimplePlayer());
-		game->addPlayer(new SimplePlayer2());
+		game->addPlayer(this);
+		game->addPlayer(this);
+//		game->addPlayer(new SimplePlayer());
+//		game->addPlayer(new SimplePlayer2());
 //		game->addPlayer(&RandomPlayer::instance);
 //		game->addPlayer(&RandomPlayer::instance);
 
@@ -403,7 +442,7 @@ void MainWindow::readSettings()
 
 void MainWindow::requestEndGame()
 {
-	gameThread->requestInterruption();
+	gameThread->interrupt();
 }
 
 void MainWindow::forceEndGame()
@@ -417,6 +456,13 @@ void MainWindow::forceEndGame()
 void MainWindow::displayGameEvent(const QString & msg)
 {
 	ui->eventList->addItem(QString("%1: %2").arg(QTime::currentTime().toString(Qt::TextDate)).arg(msg));
+	ui->eventList->scrollToBottom();
+}
+
+void MainWindow::displayGameEventPop()
+{
+	//TODO if something was scored, this needs to remove more than one entry.
+	delete ui->eventList->takeItem(ui->eventList->count() - 1);
 	ui->eventList->scrollToBottom();
 }
 
@@ -615,4 +661,11 @@ void MainWindow::on_actionControls_triggered()
 							 "Place no meeple: right mouse button\n\n"
 							 "Move board: middle mouse button\n"
 							 "Zoom: mouse wheel"));
+}
+
+void MainWindow::on_actionUndo_triggered()
+{
+#if MAINWINDOW_ENABLE_UNDO
+	gameThread->undo();
+#endif
 }

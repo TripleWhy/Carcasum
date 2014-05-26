@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include "static.h"
+#include "core/util.h"
 #include "core/game.h"
 #include "core/player.h"
 #include "boardgraphicsscene.h"
@@ -29,13 +30,15 @@ private:
 		QLineEdit * nameEdit;
 	};
 
-	class GameThread : public QThread
+	class GameThread : public Util::InterruptableThread
 	{
 	private:
 		Game * g;
+		std::atomic<int> undoSteps;
 
 	public:
-		GameThread(Game * g, QObject * parent = 0) : QThread(parent), g(g) {}
+		GameThread(Game * g, QObject * parent = 0) : Util::InterruptableThread(parent), g(g), undoSteps(0) {}
+		void undo(int steps = 1);
 	protected:
 		virtual void run();
 	};
@@ -66,6 +69,7 @@ public:
 	
 	virtual void newGame(int player, const Game * game);
 	virtual void playerMoved(int player, Tile const * tile, MoveHistoryEntry const & move);
+	virtual void undoneMove(MoveHistoryEntry const & move);
 	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	virtual void endGame();
@@ -88,11 +92,13 @@ private:
 
 signals:
 	void gameEvent(QString const & msg);
+	void gameEventPop();
 	void updateNeeded();
 	void tileDrawn(int player, int tileType);
 
 private slots:
 	void displayGameEvent(QString const & msg);
+	void displayGameEventPop();
 	void timeout();
 	void recenter(QRectF rect);
 	void colorBoxChanged(int index);
@@ -105,6 +111,7 @@ private slots:
 	void on_actionStore_board_triggered();
 	void on_boardFileButton_clicked();
 	void on_actionControls_triggered();
+	void on_actionUndo_triggered();
 
 private:
 	Ui::MainWindow *ui;

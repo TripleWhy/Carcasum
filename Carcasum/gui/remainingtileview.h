@@ -18,7 +18,6 @@ private:
 	bool highlight = false;
 	QPixmap pxNormal;
 	QPixmap pxHl;
-	QGraphicsColorizeEffect effect;
 
 public:
 	explicit RemainingTileView(TileTypeType type, int count, TileImageFactory * imgFactory, QWidget *parent = 0);
@@ -30,6 +29,9 @@ public:
 public slots:
 	void setCount(int count);
 	void setHighlight(bool hl);
+
+private:
+	QGraphicsColorizeEffect * newColorEffect();
 
 private:
 	Ui::RemainingTileView *ui;

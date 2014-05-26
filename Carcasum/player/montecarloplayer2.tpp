@@ -29,6 +29,12 @@ void MonteCarloPlayer2 MC2_TU::playerMoved(int /*player*/, const Tile * /*tile*/
 }
 
 MC2_T
+void MonteCarloPlayer2 MC2_TU::undoneMove(const MoveHistoryEntry & /*move*/)
+{
+	Util::syncGames(*game, *simGame);
+}
+
+MC2_T
 TileMove MonteCarloPlayer2 MC2_TU::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & possible)
 {
 	QElapsedTimer timer;

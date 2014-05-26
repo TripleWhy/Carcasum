@@ -71,6 +71,8 @@ void RemainingTilesView::setUp(const Game * g, TileImageFactory * imgFactory)
 		rtv->setAttribute(Qt::WA_TransparentForMouseEvents);
 	}
 	ui->discardedWidget->setVisible(false);
+
+	ui->tilesLeftLabel->setNum(g->getTileCount());
 }
 
 int RemainingTilesView::nextTile(const Game * game)
@@ -188,6 +190,8 @@ void RemainingTilesView::updateView()
 			discardedViews.append(rtv);
 		}
 	}
+
+	ui->tilesLeftLabel->setNum(game->getTileCount());
 }
 
 RemainingTileView * RemainingTilesView::getViewAt(const QPoint & pos)

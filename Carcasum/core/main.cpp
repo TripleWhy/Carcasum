@@ -75,8 +75,8 @@ int main(int argc, char *argv[])
 			}
 			for (int i = 0; i < steps; ++i)
 			{
-				g1.undo();
-				g4.undo();
+				g1.simUndo();
+				g4.simUndo();
 
 				g5.simPartUndoMeeple();
 				g5.simPartUndoTile();
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 
 			for (; steps > 0; --steps)
 			{
-				g.undo();
+				g.simUndo();
 			}
 		}
 		int e = t.elapsed();

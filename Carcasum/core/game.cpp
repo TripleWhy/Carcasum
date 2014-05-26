@@ -257,8 +257,12 @@ bool Game::step()
 			break;
 		else
 		{
+			auto * it = Util::InterruptableThread::currentInterruptableThread();
+			if (tileMove.isNull() && it != 0 && it->isInterrupted())
+				return false;
+
 			qWarning("Player returned invalid move!");
-//			Q_ASSERT_X(false, "Game::step()", "Player returned invalid tile move!");
+			Q_ASSERT_X(false, "Game::step()", "Player returned invalid tile move!");
 			endGame();
 			return false;
 		}
@@ -552,7 +556,20 @@ void Game::simPartStepMeeple(const MeepleMove & meepleMove)
 		endGame();
 }
 
-void Game::undo()
+bool Game::undo()
+{
+	if (moveHistory.size() == 0)
+		return false;
+
+	MoveHistoryEntry e = moveHistory.back();	//copy because it gets erased in simUndo();
+	simUndo();
+	for (Player * p : allPlayers)
+		p->undoneMove(e);
+
+	return e.move.tileMove.isNull();
+}
+
+void Game::simUndo()
 {
 #if CHECK_SIM_STATE
 	Q_ASSERT(simState == 0);

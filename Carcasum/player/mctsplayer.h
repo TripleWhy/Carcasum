@@ -161,6 +161,7 @@ public:
 
 	virtual void newGame(int player, Game const * game);
 	virtual void playerMoved(int player, Tile const * tile, MoveHistoryEntry const & move);
+	virtual void undoneMove(MoveHistoryEntry const & move);
 	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	virtual void endGame();
@@ -175,6 +176,7 @@ public:
 	void backup(MCTSNode * v, const RewardListType & delta);
 
 	void syncGame();
+	void fullSyncGame();
 
 	inline RewardType & Q(MCTSNode * v) { return v->reward; }
 	inline uint & N(MCTSNode * v) { return v->visitCount; }

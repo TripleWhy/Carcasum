@@ -125,7 +125,8 @@ public:
 	void simPartStepChance(int index);
 	void simPartStepTile(const TileMove & tileMove);
 	void simPartStepMeeple(const MeepleMove & meepleMove);
-	void undo();
+	bool undo(); // Returns if move was a null move and thus if another move needs to be undone.
+	void simUndo();
 	void simPartUndoChance();
 	void simPartUndoTile();
 	void simPartUndoMeeple();
@@ -168,7 +169,8 @@ public:
 	inline int getPlayerScore(int player) const { return playerScores[player]; }
 	inline int getTileCount() const { return tiles.size(); }
 	inline TileCountType const & getTileCounts() const { return tileCount; }
-	inline QList<Tile *> const & getTiles() const { return tiles; }
+	inline QList<Tile *> const & getTiles() { return tiles; }
+	inline QList<Tile const *> const & getTiles() const { return *reinterpret_cast<QList<Tile const *> const *>(&tiles); }
 	inline std::vector<Tile *> const & getDiscardedTiles() const { return discardedTiles; }
 	inline void setNextTileProvider(NextTileProvider * n) { ntp = n; }
 	inline NextTileProvider * getNextTileProvider() { return ntp; }

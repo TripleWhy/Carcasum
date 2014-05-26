@@ -40,6 +40,7 @@ public:
 
 	virtual void newGame(int player, Game const * g);
 	virtual void playerMoved(int player, Tile const * tile, MoveHistoryEntry const & move);
+	virtual void undoneMove(MoveHistoryEntry const & move);
 	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	virtual void endGame();

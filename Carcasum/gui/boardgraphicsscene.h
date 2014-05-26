@@ -22,8 +22,9 @@ private:
 	QGraphicsItemGroup * meepleLayer;
 	QGraphicsItemGroup * placementLayer;
 	QGraphicsItemGroup * meeplePlacementLayer;
-#if DRAW_TILE_POSITION_TEXT
+#if DRAW_TILE_POSITION_TEXT || DRAW_NODE_ID_TEXT
 	QGraphicsItemGroup * textOverlayLayer;
+	QGraphicsItemGroup * textNodeOverlayLayer;
 #endif
 
 	QList<QGraphicsRectItem *> frames;
@@ -53,6 +54,7 @@ public:
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	virtual void newGame(int player, Game const * game);
 	virtual void playerMoved(int player, Tile const * const tile, MoveHistoryEntry const & move);
+	virtual void undoneMove(MoveHistoryEntry const & move);
 	virtual void endGame();
 	virtual QString getTypeName() const { return "BoardGraphicsScene"; }
 	virtual Player * clone() const;
@@ -72,6 +74,7 @@ private:
 private slots:
 	void displayNewGame(int callDepth = 0);
 	void displayPlayerMoved(void * data, int callDepth = 0);
+	void displayUndoneMove(void * data, int callDepth = 0);
 	void displayGetTileMove(void * data, int callDepth = 0);
 	void displayGetMeepleMove(void * data, int callDepth = 0);
 	void displayEndGame(int callDepth = 0);
@@ -81,6 +84,14 @@ private:
 		int player;
 		Tile const * const tile;
 		Move move;
+#if DRAW_NODE_ID_TEXT && DEBUG_IDS
+		std::vector<Tile const *> const tiles;
+		std::vector<MoveHistoryEntry> const history;
+#endif
+	};
+	struct DUMData
+	{
+		MoveHistoryEntry move;
 	};
 	struct DGTMData
 	{

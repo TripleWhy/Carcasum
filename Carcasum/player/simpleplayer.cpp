@@ -11,6 +11,10 @@ void SimplePlayer::playerMoved(int /*player*/, const Tile * /*tile*/, const Move
 {
 }
 
+void SimplePlayer::undoneMove(const MoveHistoryEntry & /*move*/)
+{
+}
+
 #define SIMPLE_PLAYER_RULE_CLOISTER_1    1
 #define SIMPLE_PLAYER_RULE_CLOISTER_2    1
 #define SIMPLE_PLAYER_RULE_ROAD_CITY     1

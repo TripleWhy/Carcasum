@@ -17,7 +17,7 @@ void Util::syncGames(const Game & from, Game & to)
 	auto & toHistory = to.getMoveHistory();
 
 	while (toHistory.size() > fromHistory.size())
-		to.undo();
+		to.simUndo();
 
 	size_t offset = toHistory.size();
 	for (size_t i = 0; i < toHistory.size(); ++i)
@@ -29,7 +29,7 @@ void Util::syncGames(const Game & from, Game & to)
 		}
 	}
 	for (size_t i = offset; i < toHistory.size(); ++i)
-		to.undo();
+		to.simUndo();
 
 	syncGamesFast(from, to);
 }

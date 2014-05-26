@@ -26,6 +26,12 @@ void MonteCarloPlayer MC_TU::playerMoved(int /*player*/, const Tile * /*tile*/, 
 }
 
 MC_T
+void MonteCarloPlayer MC_TU::undoneMove(const MoveHistoryEntry & /*move*/)
+{
+	Util::syncGames(*game, *simGame);
+}
+
+MC_T
 TileMove MonteCarloPlayer MC_TU::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & possible)
 {
 	QElapsedTimer timer;
@@ -148,7 +154,7 @@ MeepleMove MonteCarloPlayer MC_TU::getMeepleMove(int player, const Tile * /*tile
 			utilities[moveIndex] += utility(simGame->getScores(), playerCount, player, simGame);
 			
 			for (int i = 0; i < steps; ++i)
-				simGame->undo();
+				simGame->simUndo();
 //			Q_ASSERT(game->equals(g));
 #endif
 			++moveIndex;

@@ -37,7 +37,7 @@ public:
 	inline void undoPlayout(Game & simGame, int steps) const
 	{
 		for (int i = 0; i < steps; ++i)
-			simGame.undo();
+			simGame.simUndo();
 	}
 };
 
@@ -133,7 +133,7 @@ public:
 	inline void undoPlayout(Game & simGame, int steps) const
 	{
 		for (int i = 0; i < steps; ++i)
-			simGame.undo();
+			simGame.simUndo();
 	}
 };
 

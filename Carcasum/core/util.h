@@ -14,6 +14,7 @@
 #include <map>
 #include <thread>
 #include <chrono>
+#include <atomic>
 
 namespace Util
 {
@@ -208,6 +209,35 @@ namespace Util
 			if (r >= LN_TABLE_SIZE)
 				return ::log(r);
 			return lnTable[r];
+		}
+	};
+
+	class InterruptableThread : public QThread
+	{
+	private:
+		std::atomic<bool> interruptionRequested;
+
+	public:
+		InterruptableThread(QObject * parent = 0) : QThread(parent), interruptionRequested(false) {}
+
+		void interrupt()
+		{
+			interruptionRequested = true;
+		}
+
+		bool isInterrupted()
+		{
+			return interruptionRequested;
+		}
+
+		void clearInterrupt()
+		{
+			interruptionRequested = false;
+		}
+
+		static InterruptableThread * currentInterruptableThread()
+		{
+			return dynamic_cast<InterruptableThread *>(QThread::currentThread());
 		}
 	};
 
