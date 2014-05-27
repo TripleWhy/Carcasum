@@ -29,7 +29,8 @@ private:
 	size_t offset;
 
 public:
-	HistoryProvider(NextTileProvider * ntp, std::vector<MoveHistoryEntry> const & history, size_t offset);
+	HistoryProvider(NextTileProvider * ntp, std::vector<MoveHistoryEntry> const & history = {}, size_t offset = 0);
+	void setData(std::vector<MoveHistoryEntry> const & history, size_t offset);
 	virtual int nextTile(Game const * game);
 };
 

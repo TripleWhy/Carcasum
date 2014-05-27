@@ -14,6 +14,12 @@ HistoryProvider::HistoryProvider(NextTileProvider * ntp, const std::vector<MoveH
 {
 }
 
+void HistoryProvider::setData(const std::vector<MoveHistoryEntry> & history, size_t offset)
+{
+	HistoryProvider::history = history;
+	HistoryProvider::offset = offset;
+}
+
 int HistoryProvider::nextTile(const Game * game)
 {
 	if (offset >= history.size())

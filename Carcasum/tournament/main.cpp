@@ -15,6 +15,10 @@
 #include <array>
 #include <thread>
 
+#if MAIN_USE_TEST_STATES
+#include <QDir>
+#endif
+
 struct Result
 {
 	QVarLengthArray<int, MAX_PLAYERS> scores;
@@ -118,12 +122,29 @@ void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory,
 	sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
 #endif
 
+#if MAIN_USE_TEST_STATES
+	QDir dir("states/");
+	QStringList filters;
+	filters << "state*";
+	QStringList const & files = dir.entryList(filters);
+	if (files.size() == 0)
+	{
+		qWarning("files empty");
+		exit(1);
+	}
+#endif
+
 	std::vector<Player *> players;
 	for (Player const * p : players_)
 		players.push_back(p->clone());
 
 	RandomNextTileProvider rntp;
+#if MAIN_USE_TEST_STATES
+	HistoryProvider htp(&rntp);
+	Game game(&htp);
+#else
 	Game game(&rntp);
+#endif
 	int const playerCount = (int)players.size();
 	Utilities::SimpleUtility utility;
 
@@ -150,7 +171,17 @@ void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory,
 				result.timeDiffs[i] = 0;
 				result.plys[i] = 0;
 			}
+
+#if MAIN_USE_TEST_STATES
+			QString const & file = dir.filePath(files[ (int)j % files.size() ]);
+			qDebug() << j << file;
+			auto && history = Game::loadFromFile(file);
+			htp.setData(history, history.size() - 1);
+			history.pop_back();
+			game.newGame(Tile::BaseGame, tileFactory, history, true);
+#else
 			game.newGame(Tile::BaseGame, tileFactory);
+#endif
 			int i = 0;
 			for (bool cont = true; cont; ++i)
 			{
@@ -201,7 +232,7 @@ void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory,
 	qDeleteAll(players);
 }
 
-void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory, int const N=100, bool const printSteps = true, bool const doIt = true)
+void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory, bool const doIt = true, int const N=100, bool const printSteps = true)
 {
 	int const THREADS = 8;
 
@@ -308,7 +339,7 @@ int main(int /*argc*/, char */*argv*/[])
 			doTest(players, tileFactory);
 		}
 	}
-	if (false)
+	if (true)
 	{
 		qDebug("\n\nMonteCarloPlayer vs MCTSPlayer");
 		players.push_back(new MonteCarloPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
@@ -333,7 +364,7 @@ int main(int /*argc*/, char */*argv*/[])
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
 		doTest(players, tileFactory);
 	}
-	if (true)
+	if (false)
 	{
 		qDebug();
 		players.push_back(new SimplePlayer());
