@@ -88,9 +88,9 @@ void Board::removeTile(const TileMove & move)
 
 	Tile * tile = board[x][y];
 
-	auto it = std::find(tiles.crbegin(), tiles.crend(), tile);
-	Q_ASSERT(it == tiles.crbegin());
-	Q_ASSERT(it != tiles.crend());
+	auto it = std::find(tiles.rbegin(), tiles.rend(), tile);
+	Q_ASSERT(it == tiles.rbegin());
+	Q_ASSERT(it != tiles.rend());
 	if (it != tiles.rend())
 		tiles.erase( --(it.base()) );
 	
