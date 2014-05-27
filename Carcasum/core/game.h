@@ -171,6 +171,7 @@ public:
 	inline TileCountType const & getTileCounts() const { return tileCount; }
 	inline QList<Tile *> const & getTiles() { return tiles; }
 	inline QList<Tile const *> const & getTiles() const { return *reinterpret_cast<QList<Tile const *> const *>(&tiles); }
+	inline Tile const * getTile(int index) const { return tiles[index]; }
 	inline std::vector<Tile *> const & getDiscardedTiles() const { return discardedTiles; }
 	inline void setNextTileProvider(NextTileProvider * n) { ntp = n; }
 	inline NextTileProvider * getNextTileProvider() { return ntp; }

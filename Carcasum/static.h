@@ -33,11 +33,11 @@
 
 // Options
 // Tile
-#define NODE_VARIANT               2
+#define NODE_VARIANT                      2
 // Game/MonteCarloPlayer
-#define USE_RESET                  0
+#define USE_RESET                         0
 // RandomTable
-#define RANDOM_TABLE_SHARED_OFFSET 0
+#define RANDOM_TABLE_SHARED_OFFSET        0
 // SimplePlayer2
 #define SIMPLE_PLAYER2_RULE_CLOISTER_1    1
 #define SIMPLE_PLAYER2_RULE_CLOISTER_2    1
@@ -47,6 +47,10 @@
 #define SIMPLE_PLAYER2_USE_OPEN_PENALTY   1
 #define SIMPLE_PLAYER2_TILE_RANDOM        0 // probability in percent, not a flag
 #define SIMPLE_PLAYER2_MEEPLE_RANDOM      5 // probability in percent, not a flag
+// BoardGraphicsView
+#define BOARDGRAPHICSVIEW_ZOOM_SPEED      1.002
+#define BOARDGRAPHICSVIEW_MAX_ZOOM        2.0
+#define BOARDGRAPHICSVIEW_MIN_ZOOM        0.05
 
 
 // Debug options
@@ -70,12 +74,12 @@
 // Util
 #define OFFSET_ARRAY_ENABLE_CHECKS   0
 // MainWindow
-#define MAINWINDOW_GAME_ON_STARTUP   0
+#define MAINWINDOW_GAME_ON_STARTUP   1
 #define MAINWINDOW_ENABLE_UNDO       1	// Experimental, buggy, but only supposed for debugging.
-// BoardGraphicsView
-#define BOARDGRAPHICSVIEW_ZOOM_SPEED 1.002
-#define BOARDGRAPHICSVIEW_MAX_ZOOM   2.0
-#define BOARDGRAPHICSVIEW_MIN_ZOOM   0.05
+// main.cpp
+#define MAIN_RENDER_STATES           0
+// PlayerInfoView
+#define PLAYERINFOVIEW_SCALEABLE     0
 
 #define DISPLAY_WHILE_LOADING        0
 #define REPLACE_VARLENGTH_ARRAY      0

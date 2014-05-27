@@ -43,6 +43,9 @@ private:
 	MeepleMove userMeepleMove;
 	bool _quit = false;
 
+	bool renderOpenTiles = true;
+	bool renderFrames = true;
+
 public:
 	explicit BoardGraphicsScene(jcz::TileFactory * tileFactory = 0, TileImageFactory * imgFactory = 0, QObject * parent = 0);
 	~BoardGraphicsScene();
@@ -59,6 +62,9 @@ public:
 	virtual QString getTypeName() const { return "BoardGraphicsScene"; }
 	virtual Player * clone() const;
 	void quit() { _quit = true; }
+
+	void setRenderOpenTiles(bool render);
+	void setRenderFrames(bool render);
 
 protected:
 	virtual void mousePressEvent (QGraphicsSceneMouseEvent * mouseEvent);

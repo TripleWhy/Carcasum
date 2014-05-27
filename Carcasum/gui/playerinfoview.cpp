@@ -16,7 +16,7 @@ ui(new Ui::PlayerInfoView)
 	
 	for (int i = 0; i < MEEPLE_COUNT; ++i)
 	{
-		meepleLabels[i] = new QLabel();
+		meepleLabels[i] = new PIVLabel();
 		ui->meepleLayout->insertWidget(i, meepleLabels[i]);
 	}
 }
@@ -40,19 +40,34 @@ void PlayerInfoView::setPlayer(int player, Game const * g, TileImageFactory * ti
 
 	ui->nameLabel->setText(imgFactory->getPlayerName(player));
 
+#if PLAYERINFOVIEW_SCALEABLE
+	int constexpr scaleBonus = 60;
+	QPixmap icon = imgFactory->generateMeepleStanding(scaleBonus * PINFO_ICON_SIZE, imgFactory->getPlayerColor(player));
+	QPixmap meeple = imgFactory->generateMeepleStanding(scaleBonus * PINFO_MEEPLE_SIZE, imgFactory->getPlayerColor(player));
+	ui->iconLabel->setPixmap(icon);
+	ui->iconLabel->setFixedSize(icon.size() / scaleBonus);
+	ui->iconLabel->setScaledContents(true);
+
+	for (int i = 0; i < MEEPLE_COUNT; ++i)
+	{
+		meepleLabels[i]->setFixedSize(meeple.size() / scaleBonus);
+		meepleLabels[i]->setScaledContents(true);
+		meepleLabels[i]->setVisible(true);
+		meepleLabels[i]->setPixmap(meeple);
+	}
+#else
 	QPixmap icon = imgFactory->generateMeepleStanding(PINFO_ICON_SIZE, imgFactory->getPlayerColor(player));
 	QPixmap meeple = imgFactory->generateMeepleStanding(PINFO_MEEPLE_SIZE, imgFactory->getPlayerColor(player));
-	
 	ui->iconLabel->setPixmap(icon);
-	ui->iconLabel->setMinimumSize(icon.size());
-	ui->iconLabel->setMaximumSize(icon.size());
+	ui->iconLabel->setFixedSize(icon.size());
+
 	for (int i = 0; i < MEEPLE_COUNT; ++i)
 	{
 		meepleLabels[i]->setPixmap(meeple);
-		meepleLabels[i]->setMinimumSize(meeple.size());
-		meepleLabels[i]->setMaximumSize(meeple.size());
+		meepleLabels[i]->setFixedSize(meeple.size());
 		meepleLabels[i]->setVisible(true);
 	}
+#endif
 
 	if (g->getNextPlayer() == playerIndex)
 		setPalette(hlPalette);
@@ -81,7 +96,13 @@ void PlayerInfoView::displayTile(int player, int tileType)
 	if (playerIndex == player)
 	{
 		QPixmap const & p = imgFactory->getImage((TileTypeType)tileType);
+#if PLAYERINFOVIEW_SCALEABLE
+		ui->tileLabel->setPixmap(p);
+		ui->tileLabel->setFixedSize(RTILE_TILE_SIZE, RTILE_TILE_SIZE);
+		ui->tileLabel->setScaledContents(true);
+#else
 		ui->tileLabel->setPixmap( p.scaled(RTILE_TILE_SIZE, RTILE_TILE_SIZE, Qt::KeepAspectRatio, Qt::SmoothTransformation) );
+#endif
 	}
 	else
 		ui->tileLabel->clear();

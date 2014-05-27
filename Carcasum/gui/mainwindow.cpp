@@ -138,11 +138,10 @@ void MainWindow::newGame(int player, const Game * game)
 
 	qDeleteAll(playerInfos);
 	playerInfos.clear();
-	QVBoxLayout * l = ui->playerInfoLayout;
 	for (uint i = 0; i < game->getPlayerCount(); ++i)
 	{
 		PlayerInfoView * pi = new PlayerInfoView(i, game, &imgFactory);
-		l->insertWidget(i, pi);
+		ui->playerInfoLayout->insertWidget(i, pi);
 		connect(this, SIGNAL(updateNeeded()), pi, SLOT(updateView()));
 		connect(this, SIGNAL(tileDrawn(int,int)), pi, SLOT(displayTile(int,int)));
 		playerInfos.push_back(pi);
@@ -353,28 +352,6 @@ void MainWindow::closeEvent(QCloseEvent * event)
 }
 
 #if MAINWINDOW_GAME_ON_STARTUP
-class TmpProvider : public NextTileProvider
-{
-private:
-	NextTileProvider * ntp;
-	std::vector<int> tiles;
-
-public:
-	TmpProvider(NextTileProvider * ntp, std::vector<int> tiles)
-	    : ntp(ntp), tiles(tiles)
-	{
-	}
-
-	virtual int nextTile(Game const * game)
-	{
-		if (tiles.size() == 0)
-			return ntp->nextTile(game);
-		int r = tiles.back();
-		tiles.pop_back();
-		return r;
-	}
-};
-
 #include "jcz/jczplayer.h"
 #include "player/simpleplayer.h"
 #include "player/simpleplayer2.h"
@@ -385,11 +362,11 @@ bool MainWindow::event(QEvent * event)
 		std::vector<MoveHistoryEntry> history;
 
 //		ui->actionChoose_Tiles->setChecked(true);
-//		history = Game::loadFromFile("../../Carcasum/bads2_2");
+//		history = Game::loadFromFile("../../Carcasum/states/state01");
 //		if (history.size() > 0)
 //		{
 //			//Remove last move.
-//			TmpProvider * tp = new TmpProvider(game->getNextTileProvider(), std::vector<int>{history.back().tileIndex});
+//			auto * tp = new HistoryProvider(game->getNextTileProvider(), history, history.size() - 1);
 //			game->setNextTileProvider(tp);
 //			history.pop_back();
 //		}

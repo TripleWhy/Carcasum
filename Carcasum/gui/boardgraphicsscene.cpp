@@ -424,6 +424,22 @@ Player *BoardGraphicsScene::clone() const
 	return 0;
 }
 
+void BoardGraphicsScene::setRenderOpenTiles(bool render)
+{
+	renderOpenTiles = render;
+	placeOpen();
+}
+
+void BoardGraphicsScene::setRenderFrames(bool render)
+{
+	renderFrames = render;
+	if (!render)
+	{
+		for (auto * frame : frames)
+			tileLayer->removeFromGroup(frame);
+	}
+}
+
 void BoardGraphicsScene::displayPlayerMoved(void * data, int callDepth)
 {
 	DPMData * d = static_cast<DPMData *>(data);
@@ -490,7 +506,8 @@ void BoardGraphicsScene::displayPlayerMoved(void * data, int callDepth)
 	QGraphicsRectItem * frame = frames[d->player];
 	frame->setPos(item->pos());
 	tileLayer->removeFromGroup(frame);
-	tileLayer->addToGroup(frame);
+	if (renderFrames)
+		tileLayer->addToGroup(frame);
 
 	if (!meepleMove.isNull())
 	{
@@ -789,6 +806,9 @@ void BoardGraphicsScene::placeOpen()
 {
 	qDeleteAll(openLayer->childItems());
 	openTiles.clear();
+
+	if (!renderOpenTiles)
+		return;
 
 	const Board * board = game->getBoard();
 	QList<QPoint> const & openPlaces = board->getOpenPlaces();
