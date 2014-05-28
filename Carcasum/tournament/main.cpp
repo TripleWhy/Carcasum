@@ -9,6 +9,7 @@
 //#include "player/mctsplayermt.h"
 #include "player/simpleplayer.h"
 #include "player/simpleplayer2.h"
+#include "player/simpleplayer3.h"
 #include "jcz/jczplayer.h"
 #include <QCoreApplication>
 #include <QElapsedTimer>
@@ -347,7 +348,7 @@ int main(int /*argc*/, char */*argv*/[])
 			doTest(players, tileFactory);
 		}
 	}
-	if (true)
+	if (false)
 	{
 		qDebug("\n\nMonteCarloPlayer vs MCTSPlayer");
 		players.push_back(new MonteCarloPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
@@ -372,22 +373,37 @@ int main(int /*argc*/, char */*argv*/[])
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
 		doTest(players, tileFactory);
 	}
-	if (false)
+	if (true)
 	{
 		qDebug();
 		players.push_back(new SimplePlayer());
 		players.push_back(new SimplePlayer2());
-		doTest(players, tileFactory, 100000, false);
+		doTest(players, tileFactory, true, 10000, false);
+
+		qDebug();
+		players.push_back(new SimplePlayer());
+		players.push_back(new SimplePlayer3());
+		doTest(players, tileFactory, true, 10000, false);
 
 		qDebug();
 		players.push_back(new SimplePlayer());
 		players.push_back(new jcz::JCZPlayer(tileFactory));
-		doTest(players, tileFactory, 10000, false);
+		doTest(players, tileFactory, true, 1000, false);
+
+		qDebug();
+		players.push_back(new SimplePlayer2());
+		players.push_back(new SimplePlayer3());
+		doTest(players, tileFactory, true, 10000, false);
 
 		qDebug();
 		players.push_back(new SimplePlayer2());
 		players.push_back(new jcz::JCZPlayer(tileFactory));
-		doTest(players, tileFactory, 10000, false);
+		doTest(players, tileFactory, true, 1000, false);
+
+		qDebug();
+		players.push_back(new SimplePlayer3());
+		players.push_back(new jcz::JCZPlayer(tileFactory));
+		doTest(players, tileFactory, true, 1000, false);
 	}
 //	if (false)
 //	{

@@ -9,7 +9,7 @@
 #define APP_ORGANIZATION "YMSolutions"
 
 // Some numbers
-#define TIMEOUT                       2500
+#define TIMEOUT                       500
 // Game
 #define MAX_PLAYERS                   6
 #define MEEPLE_COUNT                  7
@@ -26,7 +26,7 @@
 #define PINFO_MEEPLE_SIZE            10
 #define RTILE_TILE_SIZE              40
 #define REMAINING_TILES_COLUMNS       4
-#define PLAYER_GAP_TIMEOUT          100
+#define PLAYER_GAP_TIMEOUT          0
 // Util
 #define LN_TABLE_SIZE           1000000
 
@@ -38,15 +38,6 @@
 #define USE_RESET                         0
 // RandomTable
 #define RANDOM_TABLE_SHARED_OFFSET        0
-// SimplePlayer2
-#define SIMPLE_PLAYER2_RULE_CLOISTER_1    1
-#define SIMPLE_PLAYER2_RULE_CLOISTER_2    1
-#define SIMPLE_PLAYER2_RULE_ROAD_CITY     1
-#define SIMPLE_PLAYER2_RULE_FIELD         1
-#define SIMPLE_PLAYER2_USE_MEEPLE_PENALTY 1 // This flag only really matters if fields are enabled.
-#define SIMPLE_PLAYER2_USE_OPEN_PENALTY   1
-#define SIMPLE_PLAYER2_TILE_RANDOM        0 // probability in percent, not a flag
-#define SIMPLE_PLAYER2_MEEPLE_RANDOM      5 // probability in percent, not a flag
 // BoardGraphicsView
 #define BOARDGRAPHICSVIEW_ZOOM_SPEED      1.002
 #define BOARDGRAPHICSVIEW_MAX_ZOOM        2.0

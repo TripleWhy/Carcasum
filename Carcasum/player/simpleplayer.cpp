@@ -19,6 +19,7 @@ void SimplePlayer::undoneMove(const MoveHistoryEntry & /*move*/)
 #define SIMPLE_PLAYER_RULE_CLOISTER_2    1
 #define SIMPLE_PLAYER_RULE_ROAD_CITY     1
 #define SIMPLE_PLAYER_USE_MEEPLE_PENALTY 0
+
 TileMove SimplePlayer::getTileMove(int player, const Tile * tile, const MoveHistoryEntry & move, const TileMovesType & possible)
 {
 	static constexpr int dx[8] = {-1,  0, +1,  0, -1, +1, +1, -1};
