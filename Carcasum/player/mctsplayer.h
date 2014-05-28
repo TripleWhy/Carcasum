@@ -60,6 +60,18 @@ private:
 			}
 			delete this;
 		}
+		int deleteCounting(int d)
+		{
+			int r = d+1;
+			for (auto *& c : *castChildren())
+			{
+				if (c != 0)
+					r = qMax(r, c->deleteCounting(d+1));
+				c = 0;
+			}
+			delete this;
+			return r;
+		}
 
 		inline std::vector<MCTSMeepleNode *> * castChildren() { return reinterpret_cast<std::vector<MCTSMeepleNode *> *>(&(MCTSNode::children)); }
 		inline MCTSChanceNode * castParent() { return static_cast<MCTSChanceNode *>(MCTSNode::parent); }
@@ -87,6 +99,18 @@ private:
 			}
 			delete this;
 		}
+		int deleteCounting(int d)
+		{
+			int r = d+1;
+			for (auto *& c : *castChildren())
+			{
+				if (c != 0)
+					r = qMax(r, c->deleteCounting(d+1));
+				c = 0;
+			}
+			delete this;
+			return r;
+		}
 
 		inline std::vector<MCTSChanceNode *> * castChildren() { return reinterpret_cast<std::vector<MCTSChanceNode *> *>(&(MCTSNode::children)); }
 		inline MCTSTileNode * castParent() { return static_cast<MCTSTileNode *>(MCTSNode::parent); }
@@ -113,6 +137,18 @@ private:
 				c = 0;
 			}
 			delete this;
+		}
+		int deleteCounting(int d)
+		{
+			int r = d+1;
+			for (auto *& c : *castChildren())
+			{
+				if (c != 0)
+					r = qMax(r, c->deleteCounting(d+1));
+				c = 0;
+			}
+			delete this;
+			return r;
 		}
 
 		inline std::vector<MCTSTileNode *> * castChildren() { return reinterpret_cast<std::vector<MCTSTileNode *> *>(&(MCTSNode::children)); }
@@ -145,9 +181,9 @@ public:
 
 public:
 #ifdef TIMEOUT
-	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = true, int const m = TIMEOUT, bool const mIsTimeout = true, qreal const Cp = 0.5);
+	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, int const m = TIMEOUT, bool const mIsTimeout = true, qreal const Cp = 0.5);
 #else
-	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = true, int const m = 5000, bool const mIsTimeout = true, qreal const Cp = 0.5);
+	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, int const m = 5000, bool const mIsTimeout = true, qreal const Cp = 0.5);
 #endif
 
 	void applyChance(int action, Game & g);
@@ -170,6 +206,7 @@ public:
 
 	MCTSNode * treePolicy(MCTSNode * node);
 	MCTSNode * expand(MCTSNode * v);
+	MCTSTileNode * expandChance(MCTSNode * v, int a);
 	MCTSNode * bestChild(MCTSNode * v);
 	int bestChild0(MCTSNode * v);
 	RewardListType defaultPolicy(MCTSNode * v);

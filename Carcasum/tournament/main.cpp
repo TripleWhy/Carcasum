@@ -5,6 +5,7 @@
 #include "player/montecarloplayer2.h"
 #include "player/montecarloplayeruct.h"
 #include "player/mctsplayer.h"
+//#include "player/mctsplayer1.h"
 //#include "player/mctsplayermt.h"
 #include "player/simpleplayer.h"
 #include "player/simpleplayer2.h"
@@ -284,6 +285,13 @@ int main(int /*argc*/, char */*argv*/[])
 	jcz::TileFactory * tileFactory = new jcz::TileFactory(false);
 	std::vector<Player *> players;
 
+//	if (false)
+//	{
+//		qDebug("\n\nMCTSPlayer vs MCTSPlayer1");
+//		players.push_back(new MCTSPlayer<>(tileFactory));
+//		players.push_back(new MCTSPlayer1<>(tileFactory));
+//		doTest(players, tileFactory);
+//	}
 	if (false)
 	{
 		qDebug("\n\nComplexUtility vs SimpleUtility");

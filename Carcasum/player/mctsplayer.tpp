@@ -132,7 +132,11 @@ TileMove MCTSPlayer MCTS_TU::getTileMove(int player, const Tile * tile, const Mo
 	meepleMove = meepleNode->possible[b];
 
 	if (!reuseTree)
+	{
 		delete v0;
+//		int depth = v0->deleteCounting(0);
+//		qDebug() << "depth:" << depth;
+	}
 
 	return a;
 }
@@ -170,15 +174,35 @@ typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::treePolicy(MCTSNode 
 {
 	while (!simGame.isFinished())
 	{
-		if (v->notExpanded)
+		if (v->type == MCTSNode::TypeChance)
 		{
-			auto r = expand(v);
-			return r;
+			auto const & tiles = simGame.getTiles();
+			int tileIndex = r.nextInt(tiles.size());
+			Tile const * t = tiles[tileIndex];
+			int const a = t->tileType;
+			if (v->children[a] == 0)
+			{
+				auto r = expandChance(v, a);
+				return r;
+			}
+			else
+			{
+				v = v->children[a];
+				applyNode(v, simGame);
+			}
 		}
 		else
 		{
-			v = bestChild(v);
-			applyNode(v, simGame);
+			if (v->notExpanded)
+			{
+				auto r = expand(v);
+				return r;
+			}
+			else
+			{
+				v = bestChild(v);
+				applyNode(v, simGame);
+			}
 		}
 	}
 	Q_ASSERT(v != 0);
@@ -188,56 +212,36 @@ typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::treePolicy(MCTSNode 
 MCTS_T
 typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::expand(MCTSNode * v)
 {
+	Q_ASSERT(v->type != MCTSNode::TypeChance);
+
 	//TODO maybe store untried nodes somehow?
 	int a;
 	MCTSNode * vPrime;
-	if (v->type == MCTSNode::TypeChance)
+	do
 	{
-		Tile const * t;
-		auto const & tiles = simGame.getTiles();
-		int tileIndex;
-		do
-		{
-			tileIndex = r.nextInt(tiles.size());
-			t = tiles[tileIndex];
-			a = t->tileType;
-			vPrime = v->children[a];
-
+		a = r.nextInt((int)v->children.size());
+		vPrime = v->children[a];
 #if MCTS_COUNT_EXPAND_HITS
-			++miss;
+		++miss;
 #endif
-		} while (vPrime != 0);
-
-		vPrime = generateTileNode(v, a, simGame);
-	}
-	else
+	} while (vPrime != 0);
+	switch (v->type)
 	{
-		do
+		case MCTSNode::TypeTile:
 		{
-			a = r.nextInt((int)v->children.size());
-			vPrime = v->children[a];
-#if MCTS_COUNT_EXPAND_HITS
-			++miss;
-#endif
-		} while (vPrime != 0);
-		switch (v->type)
-		{
-			case MCTSNode::TypeTile:
-			{
-				MCTSTileNode * tn = static_cast<MCTSTileNode *>(v);
-				vPrime = generateMeepleNode(v, &tn->possible[a], simGame.getTileByType(tn->parentAction), simGame);
-				break;
-			}
-			case MCTSNode::TypeMeeple:
-			{
-				MCTSMeepleNode * mn = static_cast<MCTSMeepleNode *>(v);
-				vPrime = generateChanceNode(v, &mn->possible[a], simGame);
-				break;
-			}
-			case MCTSNode::TypeChance:
-				Q_UNREACHABLE();
-				break;
+			MCTSTileNode * tn = static_cast<MCTSTileNode *>(v);
+			vPrime = generateMeepleNode(v, &tn->possible[a], simGame.getTileByType(tn->parentAction), simGame);
+			break;
 		}
+		case MCTSNode::TypeMeeple:
+		{
+			MCTSMeepleNode * mn = static_cast<MCTSMeepleNode *>(v);
+			vPrime = generateChanceNode(v, &mn->possible[a], simGame);
+			break;
+		}
+		case MCTSNode::TypeChance:
+			Q_UNREACHABLE();
+			break;
 	}
 
 #if MCTS_COUNT_EXPAND_HITS
@@ -251,29 +255,34 @@ typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::expand(MCTSNode * v)
 }
 
 MCTS_T
+typename MCTSPlayer MCTS_TU::MCTSTileNode * MCTSPlayer MCTS_TU::expandChance(MCTSNode * v, int a)
+{
+	MCTSTileNode * vPrime = generateTileNode(v, a, simGame);
+	v->children[a] = vPrime;
+	--v->notExpanded;
+	return vPrime;
+}
+
+MCTS_T
 typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::bestChild(MCTSNode * v)
 {
+	Q_ASSERT(v->type != MCTSNode::TypeChance);
+
 	MCTSNode * best = 0;
-	if (v->type == MCTSNode::TypeChance)
+	qreal max = -std::numeric_limits<qreal>::infinity();
+	for (auto * vPrime : v->children)
 	{
-		QList<Tile *> const & tiles = simGame.getTiles();
-		best = v->children[tiles[r.nextInt(tiles.size())]->tileType];
-	}
-	else
-	{
-		qreal max = -std::numeric_limits<qreal>::infinity();
-		for (auto * vPrime : v->children)
+		Q_ASSERT(vPrime != 0);
+//			if (vPrime == 0)
+//				qFatal("vPrime == 0");
+		qreal val = (qreal(Q(vPrime)) / qreal(N(vPrime))) + Cp * (MCTSPlayer MCTS_TU::math).sqrt( math.ln( N(v) ) / N(vPrime) );
+		if (val > max)
 		{
-			if (vPrime == 0)
-				continue;
-			qreal val = (qreal(Q(vPrime)) / qreal(N(vPrime))) + Cp * (MCTSPlayer MCTS_TU::math).sqrt( math.ln( N(v) ) / N(vPrime) );
-			if (val > max)
-			{
-				max = val;
-				best = vPrime;
-			}
+			max = val;
+			best = vPrime;
 		}
 	}
+
 	Q_ASSERT(best != 0);
 	if ( Q_UNLIKELY(best == 0) )	//This should not happen. Used this for debugging, lets just keep it in case something goes wrong.
 	{

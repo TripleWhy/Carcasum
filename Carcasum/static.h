@@ -77,7 +77,7 @@
 #define MAINWINDOW_GAME_ON_STARTUP   1
 #define MAINWINDOW_ENABLE_UNDO       1	// Experimental, buggy, but only supposed for debugging.
 // main.cpp
-#define MAIN_USE_TEST_STATES         1
+#define MAIN_USE_TEST_STATES         0
 #define MAIN_RENDER_STATES           0
 // PlayerInfoView
 #define PLAYERINFOVIEW_SCALEABLE     0
