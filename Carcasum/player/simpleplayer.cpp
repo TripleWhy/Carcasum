@@ -126,7 +126,7 @@ TileMove SimplePlayer::getTileMove(int player, const Tile * tile, const MoveHist
 		int best = std::numeric_limits<int>::min();
 		for (TileMove const & tileMove : possible)
 		{
-			int points = 0;
+			int tilePoints = 0;
 			VarLengthArrayWrapper<MeepleMove, TILE_ARRAY_LENGTH>::type meepleMoves(1);
 			int bestNodePoints = 0; //std::numeric_limits<int>::min();
 			for (int i = 0; i < 4; ++i)
@@ -134,6 +134,7 @@ TileMove SimplePlayer::getTileMove(int player, const Tile * tile, const MoveHist
 				Tile const * t = board->getTile(tileMove.x + dx[i], tileMove.y + dy[i]);
 				if (t == 0)
 					continue;
+				int points = 0;
 
 				Tile::Side const & oppDirection = oppDir[i];
 				TerrainType const & type = t->getEdge(oppDirection);
@@ -210,17 +211,18 @@ TileMove SimplePlayer::getTileMove(int player, const Tile * tile, const MoveHist
 						Q_UNREACHABLE();
 						break;
 				}
+				tilePoints += points;
 			}
 
-			points += bestNodePoints;
-			if (points > best)
+			tilePoints += bestNodePoints;
+			if (tilePoints > best)
 			{
-				best = points;
+				best = tilePoints;
 				goodMoves.clear();
 				for (MeepleMove const & mm : meepleMoves)
 					goodMoves.push_back(Move{tileMove, mm});
 			}
-			else if (points == best)
+			else if (tilePoints == best)
 			{
 				for (MeepleMove const & mm : meepleMoves)
 					goodMoves.push_back(Move{tileMove, mm});

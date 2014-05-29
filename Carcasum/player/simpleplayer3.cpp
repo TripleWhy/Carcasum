@@ -69,6 +69,7 @@ TileMove SimplePlayer3::getTileMove(int player, const Tile * tile, const MoveHis
 		{
 			Node const * node = tile->getNode(nodeIndex);
 			TerrainType const & terrain = node->getTerrain();
+			int nodePoints = 0;
 
 			int score = node->getScore();
 			int meeples[MAX_PLAYERS] = {};
@@ -184,14 +185,14 @@ TileMove SimplePlayer3::getTileMove(int player, const Tile * tile, const MoveHis
 						if (meeples[p] != maxMeeples)
 							continue;
 						if (p == player)
-							points += myBonus * score;
+							nodePoints += myBonus * score;
 						else
-							points -= opponentBonus * score;
+							nodePoints -= opponentBonus * score;
 					}
 				}
 				else
 				{
-					points -= openPenalty * score;
+					nodePoints -= openPenalty * score;
 
 					if (hasMeeples)
 					{
@@ -209,7 +210,7 @@ TileMove SimplePlayer3::getTileMove(int player, const Tile * tile, const MoveHis
 					}
 				}
 			}
-			points *= terrainBonus[terrain];
+			points += nodePoints * terrainBonus[terrain];
 		}
 
 		points += bestMeeplePoints;
