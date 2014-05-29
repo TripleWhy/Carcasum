@@ -13,6 +13,7 @@
 #define SIMPLE_PLAYER3_USE_OPEN_PENALTY   0
 #define SIMPLE_PLAYER3_TILE_RANDOM        0 // probability in percent, not a flag
 #define SIMPLE_PLAYER3_MEEPLE_RANDOM      0 // probability in percent, not a flag
+#define SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT 1
 
 class SimplePlayer3 : public Player
 {
@@ -32,6 +33,31 @@ public:
 	virtual void endGame();
 	virtual QString getTypeName() const;
 	virtual Player * clone() const;
+
+
+
+	typedef VarLengthArrayWrapper<std::pair<Move, int>, TILE_ARRAY_LENGTH * NODE_ARRAY_LENGTH>::type RatingsEType;
+	static RatingsEType rateAllExpanded(int & sum, Game const * game, const int player, const Tile * tile, const TileMovesType & possible);
+
+	struct NestedMeepleRating
+	{
+		MeepleMove meepleMove;
+		int meepleRating;
+	};
+	typedef VarLengthArrayWrapper<NestedMeepleRating, NODE_ARRAY_LENGTH>::type RatingsNMeepleType;
+	struct NestedTileRating
+	{
+		TileMove tileMove;
+		int tileRating;
+
+		int meepleSum;
+#if SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT == 1
+		int meepleMin;
+#endif
+		RatingsNMeepleType meepleRatings;
+	};
+	typedef VarLengthArrayWrapper<NestedTileRating, TILE_ARRAY_LENGTH>::type RatingsNType;
+	static RatingsNType rateAllNested(int & sum, Game const * game, const int player, const Tile * tile, const TileMovesType & possible);
 };
 
 #endif // SIMPLEPLAYER3_H

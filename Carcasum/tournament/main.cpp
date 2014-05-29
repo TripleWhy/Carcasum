@@ -10,6 +10,7 @@
 #include "player/simpleplayer.h"
 #include "player/simpleplayer2.h"
 #include "player/simpleplayer3.h"
+#include "player/specialplayers.h"
 #include "jcz/jczplayer.h"
 #include <QCoreApplication>
 #include <QElapsedTimer>
@@ -277,6 +278,7 @@ void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory, boo
 	players.clear();
 }
 
+#include <iostream>
 int main(int /*argc*/, char */*argv*/[])
 {
 	qDebug() << "Qt build version:  " << QT_VERSION_STR;
@@ -373,7 +375,7 @@ int main(int /*argc*/, char */*argv*/[])
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
 		doTest(players, tileFactory);
 	}
-	if (true)
+	if (false)
 	{
 		qDebug();
 		players.push_back(new SimplePlayer());
@@ -404,6 +406,16 @@ int main(int /*argc*/, char */*argv*/[])
 		players.push_back(new SimplePlayer3());
 		players.push_back(new jcz::JCZPlayer(tileFactory));
 		doTest(players, tileFactory, true, 1000, false);
+
+		qDebug();
+		players.push_back(new SimplePlayer3());
+		players.push_back(new RouletteWheelPlayer());
+		doTest(players, tileFactory, true, 10000, false);
+
+		qDebug();
+		players.push_back(new SimplePlayer3());
+		players.push_back(new RouletteWheelPlayer2());
+		doTest(players, tileFactory, true, 10000, false);
 	}
 //	if (false)
 //	{
@@ -427,28 +439,41 @@ int main(int /*argc*/, char */*argv*/[])
 	{
 		qDebug("\n\nMCTSPlayer random vs MCTSPlayer simple2 20");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
-		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedyPlayer<20>>(tileFactory, false));
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedy<20>>(tileFactory, false));
 		doTest(players, tileFactory);
 
 		qDebug("\n\nMCTSPlayer random vs MCTSPlayer simple2 80");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
-		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedyPlayer<80>>(tileFactory, false));
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedy<80>>(tileFactory, false));
 		doTest(players, tileFactory);
 
 		qDebug("\n\nMCTSPlayer random vs MCTSPlayer simple2 50");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
-		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedyPlayer<50>>(tileFactory, false));
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedy<50>>(tileFactory, false));
 		doTest(players, tileFactory);
 
 		qDebug("\n\nMCTSPlayer random vs MCTSPlayer simple2 0");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
-		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedyPlayer<0>>(tileFactory, false));
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedy<0>>(tileFactory, false));
 		doTest(players, tileFactory);
 
 		qDebug("\n\nMCTSPlayer random vs MCTSPlayer simple2 100");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
-		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedyPlayer<100>>(tileFactory, false));
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedy<100>>(tileFactory, false));
 		doTest(players, tileFactory);
+	}
+	if (true)
+	{
+		qDebug() << "SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT" << SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT;
+		qDebug("\n\nMCTSPlayer random vs MCTSPlayer RWS1");
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::PlayerPlayout<RouletteWheelPlayer>>(tileFactory, false));
+		doTest(players, tileFactory, true);
+
+		qDebug("\n\nMCTSPlayer random vs MCTSPlayer RWS2");
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::PlayerPlayout<RouletteWheelPlayer2>>(tileFactory, false));
+		doTest(players, tileFactory, true);
 	}
 
 	delete tileFactory;

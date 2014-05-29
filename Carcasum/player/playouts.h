@@ -4,7 +4,8 @@
 #include "randomplayer.h"
 #include "core/tile.h"
 #include "core/game.h"
-#include "player/simpleplayer2.h"
+#include "player/simpleplayer3.h"
+#include "specialplayers.h"
 
 namespace Playouts
 {
@@ -84,17 +85,16 @@ template<int Cutoff>
 QString const Playouts::EarlyCutoff<Cutoff>::name = QString("EarlyCutoff<%1>").arg(Cutoff);
 
 
-template<int RndPercent, typename Pl = SimplePlayer2>
-class EGreedyPlayer
+template<int RndPercent, typename Pl = SimplePlayer3>
+class EGreedy
 {
 private:
 	Pl m_player;
 	RandomTable r;
-	int magic = -379;
 public:
 	const QString name = QString("EGreedyPlayer<%1, %2>").arg(RndPercent).arg(m_player.getTypeName());
-	constexpr EGreedyPlayer() {}
-	constexpr EGreedyPlayer(EGreedyPlayer &&) = default;
+	constexpr EGreedy() {}
+	constexpr EGreedy(EGreedy &&) = default;
 	inline void newGame(int player, Game const * g)
 	{
 		m_player.newGame(player, g);
@@ -210,6 +210,35 @@ public:
 };
 template<int RndPercent>
 QString const Playouts::EGreedy1Ply<RndPercent>::name = QString("EGreedy1Ply<%1>").arg(RndPercent);
+
+
+
+template<typename Pl = RouletteWheelPlayer2>
+class PlayerPlayout : public RandomPlayout
+{
+private:
+	Pl pl;
+
+public:
+	QString const name = QString("PlayerPlayout<%1>").arg(pl.getTypeName());
+	constexpr PlayerPlayout() {}
+
+	inline void newGame(int player, Game const * g)
+	{
+		pl.newGame(player, g);
+	}
+	inline int playout(Game & simGame)
+	{
+		int steps = 0;
+		if (!simGame.isFinished())
+		{
+			do
+				++steps;
+			while (simGame.simStep(&pl));
+		}
+		return steps;
+	}
+};
 
 }
 

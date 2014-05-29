@@ -109,7 +109,8 @@ SOURCES += core/tile.cpp \
     jcz/jczplayer.cpp \
     player/simpleplayer.cpp \
     player/simpleplayer2.cpp \
-    player/simpleplayer3.cpp
+    player/simpleplayer3.cpp \
+    player/specialplayers.cpp
 
 HEADERS += \
 	core/tile.h \
@@ -135,7 +136,8 @@ HEADERS += \
     jcz/jczplayer.h \
     player/simpleplayer.h \
     player/simpleplayer2.h \
-    player/simpleplayer3.h
+    player/simpleplayer3.h \
+    player/specialplayers.h
 
 RESOURCES += \
 	jcz/jcz.qrc
