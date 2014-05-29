@@ -29,9 +29,8 @@ TileMove SimplePlayer3::getTileMove(int player, const Tile * tile, const MoveHis
 	static constexpr Tile::Side oppDir[4] = {Tile::right, Tile::down,  Tile::left,  Tile::up  };
 	//                                                     { None = 0, Field, City, Road, Cloister }
 #if SIMPLE_PLAYER3_RULE_FIELD
-	static constexpr int terrainBonus[TERRAIN_TYPE_SIZE] = {        0,     1,    6,    2,        1 };
+	static constexpr int terrainBonus[TERRAIN_TYPE_SIZE] = {        0,     1,10000, 1000,     1000 };
 #else
-	// I don't understand why, but this works better, if fields are disabled.
 	static constexpr int terrainBonus[TERRAIN_TYPE_SIZE] = {        0,     0,    3,    1,        1 };
 #endif
 
