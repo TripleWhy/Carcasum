@@ -262,6 +262,10 @@ public:
 	{
 		return new RoadNode(parent, g, getRoadData()->open);
 	}
+	inline int getOpen() const
+	{
+		return getRoadData()->open;
+	}
 	
 	virtual bool equals(Node const & other, Game const * g) const
 	{

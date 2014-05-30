@@ -76,6 +76,7 @@ TileMove SimplePlayer3::getTileMove(int player, const Tile * tile, const MoveHis
 			int meeples[MAX_PLAYERS] = {};
 			int maxMeeples = 0;
 
+			int meeplePoints = 0;
 			switch (terrain)
 			{
 				case None:
@@ -88,6 +89,9 @@ TileMove SimplePlayer3::getTileMove(int player, const Tile * tile, const MoveHis
 						if (board->getTile(tileMove.x + dx[i], tileMove.y + dy[i]) != 0)
 							++score;
 					}
+					int const open = 9 - score;
+					meeplePoints = (myBonus * score  -  ((meeplePenalty * open)/9)) * terrainBonus[terrain];
+
 					break;
 #else
 					continue;
@@ -121,6 +125,9 @@ TileMove SimplePlayer3::getTileMove(int player, const Tile * tile, const MoveHis
 							}
 						}
 					}
+
+					meeplePoints = (myBonus * score - meeplePenalty) * terrainBonus[terrain];
+
 					break;
 #else
 					continue;
@@ -130,6 +137,12 @@ TileMove SimplePlayer3::getTileMove(int player, const Tile * tile, const MoveHis
 				case City:
 				{
 #if  SIMPLE_PLAYER3_RULE_ROAD_CITY
+					int open;
+					if (terrain == Road)
+						open = static_cast<RoadNode const *>(node)->getOpen();
+					else
+						open = static_cast<CityNode const *>(node)->getOpen();
+
 					for (int i = 0; i < 4; ++i)
 					{
 						Tile::Side const & direction = dir[i];
@@ -152,7 +165,14 @@ TileMove SimplePlayer3::getTileMove(int player, const Tile * tile, const MoveHis
 							if (meeples[p] > maxMeeples)
 								maxMeeples = meeples[p];
 						}
+						if (terrain == Road)
+							open += static_cast<RoadNode const *>(otherNode)->getOpen() - 2;
+						else
+							open += static_cast<CityNode const *>(otherNode)->getOpen() - 2;
 					}
+
+					meeplePoints = (myBonus * score  -  meeplePenalty * open) * terrainBonus[terrain];
+
 					break;
 #else
 					continue;
@@ -164,7 +184,6 @@ TileMove SimplePlayer3::getTileMove(int player, const Tile * tile, const MoveHis
 			{
 				if (hasMeeples)
 				{
-					int const meeplePoints = (myBonus * score) * terrainBonus[terrain]; // no meeplePenalty
 					if (meeplePoints > bestMeeplePoints)
 					{
 						bestMeeplePoints = meeplePoints;
@@ -197,7 +216,6 @@ TileMove SimplePlayer3::getTileMove(int player, const Tile * tile, const MoveHis
 
 					if (hasMeeples)
 					{
-						int const meeplePoints = (myBonus * score - meeplePenalty) * terrainBonus[terrain];
 						if (meeplePoints > bestMeeplePoints)
 						{
 							bestMeeplePoints = meeplePoints;
@@ -309,6 +327,7 @@ SimplePlayer3::RatingsEType SimplePlayer3::rateAllExpanded(int & sum, Game const
 			int meeples[MAX_PLAYERS] = {};
 			int maxMeeples = 0;
 
+			int meeplePoints = 0;
 			switch (terrain)
 			{
 				case None:
@@ -321,6 +340,9 @@ SimplePlayer3::RatingsEType SimplePlayer3::rateAllExpanded(int & sum, Game const
 						if (board->getTile(tileMove.x + dx[i], tileMove.y + dy[i]) != 0)
 							++score;
 					}
+					int const open = 9 - score;
+					meeplePoints = (myBonus * score  -  ((meeplePenalty * open)/9)) * terrainBonus[terrain];
+
 					break;
 #else
 					continue;
@@ -354,6 +376,9 @@ SimplePlayer3::RatingsEType SimplePlayer3::rateAllExpanded(int & sum, Game const
 							}
 						}
 					}
+
+					meeplePoints = (myBonus * score - meeplePenalty) * terrainBonus[terrain];
+
 					break;
 #else
 					continue;
@@ -363,6 +388,12 @@ SimplePlayer3::RatingsEType SimplePlayer3::rateAllExpanded(int & sum, Game const
 				case City:
 				{
 #if  SIMPLE_PLAYER3_RULE_ROAD_CITY
+					int open;
+					if (terrain == Road)
+						open = static_cast<RoadNode const *>(node)->getOpen();
+					else
+						open = static_cast<CityNode const *>(node)->getOpen();
+
 					for (int i = 0; i < 4; ++i)
 					{
 						Tile::Side const & direction = dir[i];
@@ -385,7 +416,14 @@ SimplePlayer3::RatingsEType SimplePlayer3::rateAllExpanded(int & sum, Game const
 							if (meeples[p] > maxMeeples)
 								maxMeeples = meeples[p];
 						}
+						if (terrain == Road)
+							open += static_cast<RoadNode const *>(otherNode)->getOpen() - 2;
+						else
+							open += static_cast<CityNode const *>(otherNode)->getOpen() - 2;
 					}
+
+					meeplePoints = (myBonus * score  -  meeplePenalty * open) * terrainBonus[terrain];
+
 					break;
 #else
 					continue;
@@ -397,7 +435,6 @@ SimplePlayer3::RatingsEType SimplePlayer3::rateAllExpanded(int & sum, Game const
 			{
 				if (hasMeeples)
 				{
-					int const meeplePoints = (myBonus * score) * terrainBonus[terrain]; // no meeplePenalty
 					meepleMoves.push_back( {MeepleMove{nodeIndex}, meeplePoints} );
 				}
 			}
@@ -421,7 +458,6 @@ SimplePlayer3::RatingsEType SimplePlayer3::rateAllExpanded(int & sum, Game const
 
 					if (hasMeeples)
 					{
-						int const meeplePoints = (myBonus * score - meeplePenalty) * terrainBonus[terrain];
 						meepleMoves.push_back( {MeepleMove{nodeIndex}, meeplePoints} );
 					}
 				}
@@ -495,6 +531,7 @@ SimplePlayer3::RatingsNType SimplePlayer3::rateAllNested(int & sum, const Game *
 			int meeples[MAX_PLAYERS] = {};
 			int maxMeeples = 0;
 
+			int meeplePoints = 0;
 			switch (terrain)
 			{
 				case None:
@@ -507,6 +544,9 @@ SimplePlayer3::RatingsNType SimplePlayer3::rateAllNested(int & sum, const Game *
 						if (board->getTile(tileMove.x + dx[i], tileMove.y + dy[i]) != 0)
 							++score;
 					}
+					int const open = 9 - score;
+					meeplePoints = (myBonus * score  -  ((meeplePenalty * open)/9)) * terrainBonus[terrain];
+
 					break;
 #else
 					continue;
@@ -540,6 +580,9 @@ SimplePlayer3::RatingsNType SimplePlayer3::rateAllNested(int & sum, const Game *
 							}
 						}
 					}
+
+					meeplePoints = (myBonus * score - meeplePenalty) * terrainBonus[terrain];
+
 					break;
 #else
 					continue;
@@ -549,6 +592,12 @@ SimplePlayer3::RatingsNType SimplePlayer3::rateAllNested(int & sum, const Game *
 				case City:
 				{
 #if  SIMPLE_PLAYER3_RULE_ROAD_CITY
+					int open;
+					if (terrain == Road)
+						open = static_cast<RoadNode const *>(node)->getOpen();
+					else
+						open = static_cast<CityNode const *>(node)->getOpen();
+
 					for (int i = 0; i < 4; ++i)
 					{
 						Tile::Side const & direction = dir[i];
@@ -571,7 +620,14 @@ SimplePlayer3::RatingsNType SimplePlayer3::rateAllNested(int & sum, const Game *
 							if (meeples[p] > maxMeeples)
 								maxMeeples = meeples[p];
 						}
+						if (terrain == Road)
+							open += static_cast<RoadNode const *>(otherNode)->getOpen() - 2;
+						else
+							open += static_cast<CityNode const *>(otherNode)->getOpen() - 2;
 					}
+
+					meeplePoints = (myBonus * score  -  meeplePenalty * open) * terrainBonus[terrain];
+
 					break;
 #else
 					continue;
@@ -583,7 +639,6 @@ SimplePlayer3::RatingsNType SimplePlayer3::rateAllNested(int & sum, const Game *
 			{
 				if (hasMeeples)
 				{
-					int const meeplePoints = (myBonus * score) * terrainBonus[terrain]; // no meeplePenalty
 					Q_ASSERT(meeplePoints > 0);
 					meepleMoves.push_back( NestedMeepleRating{MeepleMove{nodeIndex}, meeplePoints} );
 
@@ -616,7 +671,6 @@ SimplePlayer3::RatingsNType SimplePlayer3::rateAllNested(int & sum, const Game *
 
 					if (hasMeeples)
 					{
-						int const meeplePoints = (myBonus * score - meeplePenalty) * terrainBonus[terrain];
 						meepleMoves.push_back( NestedMeepleRating{MeepleMove{nodeIndex}, meeplePoints} );
 
 #if SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT == 0

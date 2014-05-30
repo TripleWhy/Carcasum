@@ -106,6 +106,12 @@ namespace Util
 		return u;
 	}
 
+	template<typename Container, typename Content>
+	inline bool contains(Container container, Content item)
+	{
+		return std::find(container.cbegin(), container.cend(), item) != container.cend();
+	}
+
 	void syncGamesFast(Game const & from, Game & to);
 	void syncGames(Game const & from, Game & to);
 
