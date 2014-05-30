@@ -40,8 +40,6 @@ private:
 	struct MCTSTileNode : public MCTSNode
 	{
 		TileMovesType possible;
-//		QVarLengthArray<MCTSMeepleNode *, TILE_ARRAY_LENGTH> children;
-//		Tile const * tile; // Well, this is what I tried to avoid...
 		int parentAction;
 
 		MCTSTileNode(uchar player, TileMovesType && possible, MCTSNode * parent, int parentAction);
@@ -80,7 +78,6 @@ private:
 	struct MCTSMeepleNode : public MCTSNode
 	{
 		MeepleMovesType possible;
-//		QVarLengthArray<MCTSChanceNode *, NODE_ARRAY_LENGTH> children;
 		TileMove * parentAction;
 
 		MCTSMeepleNode(uchar player, MeepleMovesType && possible, MCTSNode * parent, TileMove * parentAction);

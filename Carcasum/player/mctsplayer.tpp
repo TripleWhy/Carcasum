@@ -43,9 +43,6 @@ MCTSPlayer MCTS_TU::MCTSChanceNode::MCTSChanceNode(uchar player, TileCountType c
       tileCounts(tileCounts),
       parentAction(parentAction)
 {
-	for (int c : tileCounts)
-		if (c == 0)
-			--MCTSChanceNode::notExpanded;
 }
 
 
