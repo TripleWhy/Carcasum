@@ -46,7 +46,7 @@ TileMove SimplePlayer2::getTileMove(int player, const Tile * tile, const MoveHis
 
 	int const playerCount = game->getPlayerCount();
 	int const myBonus = playerCount * 10;
-	int const opponentBonus = (myBonus - 1) * 10;
+	int const opponentBonus = (playerCount - 1) * 10;
 	int const meepleCount = game->getPlayerMeeples(player);
 	bool const hasMeeples = (meepleCount > 0);
 

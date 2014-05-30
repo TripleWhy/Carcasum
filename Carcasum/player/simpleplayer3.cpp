@@ -22,7 +22,7 @@ static constexpr Tile::Side dir[4]    = {Tile::left,  Tile::up,    Tile::right, 
 static constexpr Tile::Side oppDir[4] = {Tile::right, Tile::down,  Tile::left,  Tile::up  };
 //                                                     { None = 0, Field, City, Road, Cloister }
 #if SIMPLE_PLAYER3_RULE_FIELD
-static constexpr int terrainBonus[TERRAIN_TYPE_SIZE] = {        0,     1,10000, 1000,     1000 };
+static constexpr int terrainBonus[TERRAIN_TYPE_SIZE] = {        0,     1,   30,   10,       10 };
 #else
 static constexpr int terrainBonus[TERRAIN_TYPE_SIZE] = {        0,     0,    3,    1,        1 };
 #endif
@@ -45,7 +45,7 @@ TileMove SimplePlayer3::getTileMove(int player, const Tile * tile, const MoveHis
 
 	int const playerCount = game->getPlayerCount();
 	int const myBonus = playerCount * 10;
-	int const opponentBonus = (myBonus - 1) * 10;
+	int const opponentBonus = (playerCount - 1) * 10;
 	int const meepleCount = game->getPlayerMeeples(player);
 	bool const hasMeeples = (meepleCount > 0);
 
@@ -276,7 +276,7 @@ SimplePlayer3::RatingsEType SimplePlayer3::rateAllExpanded(int & sum, Game const
 {
 	int const playerCount = game->getPlayerCount();
 	int const myBonus = playerCount * 10;
-	int const opponentBonus = (myBonus - 1) * 10;
+	int const opponentBonus = (playerCount - 1) * 10;
 	int const meepleCount = game->getPlayerMeeples(player);
 	bool const hasMeeples = (meepleCount > 0);
 
@@ -458,7 +458,7 @@ SimplePlayer3::RatingsNType SimplePlayer3::rateAllNested(int & sum, const Game *
 {
 	int const playerCount = game->getPlayerCount();
 	int const myBonus = playerCount * 10;
-	int const opponentBonus = (myBonus - 1) * 10;
+	int const opponentBonus = (playerCount - 1) * 10;
 	int const meepleCount = game->getPlayerMeeples(player);
 	bool const hasMeeples = (meepleCount > 0);
 
