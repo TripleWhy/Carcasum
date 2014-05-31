@@ -1,5 +1,6 @@
 #include "util.h"
 #include "game.h"
+#include "player/randomplayer.h"
 
 Util::OffsetArray<qreal> Util::Math::lnTable = OffsetArray<qreal>();
 Util::Math const Util::Math::instance = Util::Math();
@@ -34,3 +35,10 @@ void Util::syncGames(const Game & from, Game & to)
 	syncGamesFast(from, to);
 }
 
+void Util::setupNewGame(const Game & from, Game & to, jcz::TileFactory * tileFactory)
+{
+	to.clearPlayers();
+	for (uint i = 0; i < from.getPlayerCount(); ++i)
+		to.addPlayer(&RandomPlayer::instance);
+	to.newGame(from.getTileSets(), tileFactory, from.getMoveHistory());
+}

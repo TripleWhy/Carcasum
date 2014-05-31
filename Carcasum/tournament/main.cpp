@@ -294,6 +294,8 @@ int main(int /*argc*/, char */*argv*/[])
 
 	jcz::TileFactory * tileFactory = new jcz::TileFactory(false);
 	std::vector<Player *> players;
+	QElapsedTimer totalTime;
+	totalTime.start();
 
 //	if (false)
 //	{
@@ -384,6 +386,48 @@ int main(int /*argc*/, char */*argv*/[])
 	}
 	if (false)
 	{
+		qDebug();
+		players.push_back(new UtilityPlayer1<Utilities::HeydensEvaluation>(tileFactory));
+		players.push_back(new SimplePlayer());
+		doTest(players, tileFactory, true, 10000, false);
+
+		qDebug();
+		players.push_back(new UtilityPlayer1<Utilities::HeydensEvaluation>(tileFactory));
+		players.push_back(new SimplePlayer2());
+		doTest(players, tileFactory, true, 10000, false);
+
+		qDebug();
+		players.push_back(new UtilityPlayer1<Utilities::HeydensEvaluation>(tileFactory));
+		players.push_back(new SimplePlayer3());
+		doTest(players, tileFactory, true, 10000, false);
+
+		qDebug();
+		players.push_back(new UtilityPlayer1<Utilities::HeydensEvaluation>(tileFactory));
+		players.push_back(new jcz::JCZPlayer(tileFactory));
+		doTest(players, tileFactory, true, 100, false);
+
+		qDebug();
+		players.push_back(new UtilityPlayer2<Utilities::HeydensEvaluation>(tileFactory));
+		players.push_back(new SimplePlayer());
+		doTest(players, tileFactory, true, 10000, false);
+
+		qDebug();
+		players.push_back(new UtilityPlayer2<Utilities::HeydensEvaluation>(tileFactory));
+		players.push_back(new SimplePlayer2());
+		doTest(players, tileFactory, true, 10000, false);
+
+		qDebug();
+		players.push_back(new UtilityPlayer2<Utilities::HeydensEvaluation>(tileFactory));
+		players.push_back(new SimplePlayer3());
+		doTest(players, tileFactory, true, 10000, false);
+
+		qDebug();
+		players.push_back(new UtilityPlayer2<Utilities::HeydensEvaluation>(tileFactory));
+		players.push_back(new jcz::JCZPlayer(tileFactory));
+		doTest(players, tileFactory, true, 100, false);
+
+		qDebug("-------------------");
+
 		qDebug();
 		players.push_back(new SimplePlayer());
 		players.push_back(new SimplePlayer2());
@@ -504,6 +548,8 @@ int main(int /*argc*/, char */*argv*/[])
 		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, TIMEOUT, true, 0.5, true));
 		doTest(players, tileFactory, true);
 	}
+
+	qDebug() << "\nTotal Time:" << totalTime.elapsed();
 
 	delete tileFactory;
 	return 0;

@@ -114,6 +114,7 @@ namespace Util
 
 	void syncGamesFast(Game const & from, Game & to);
 	void syncGames(Game const & from, Game & to);
+	void setupNewGame(Game const & from, Game & to, jcz::TileFactory * tileFactory);
 
 	template<typename T>
 	class OffsetArray
