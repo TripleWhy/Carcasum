@@ -98,6 +98,7 @@ private:
 	int simState = 0;
 #endif
 
+	int simReturnMeeples[MAX_PLAYERS] {};
 public:
 	MoveHistoryEntry simEntry;
 	Tile * simTile = 0;
@@ -221,7 +222,7 @@ private:
 
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
 	void assertTileCount();
-	void assertDetails();
+	void assertDetails() const;
 #else
 #define assertTileCount()
 #define assertDetails()
@@ -266,7 +267,7 @@ private:
 	void applyHistory(std::vector<MoveHistoryEntry> const & history, bool informPlayers = false);
 
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
-	void assertMeepleCount();
+	void assertMeepleCount() const;
 #else
  #define assertMeepleCount();
 #endif

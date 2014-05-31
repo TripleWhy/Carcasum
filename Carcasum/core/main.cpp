@@ -226,5 +226,72 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
+	if (false)
+	{
+		SimplePlayer3 s3;
+		game->addPlayer(&s3);
+		game->newGame(Tile::BaseGame, tileFactory);
+
+		forever
+		{
+			game->simStep(&RandomPlayer::instance);
+			if (game->getPlayerMeeples(0) <= 0)
+				break;
+		}
+		qDebug() << game->getPlayerMeeples(0);
+
+		forever
+		{
+			game->simStep(&s3);
+			if (game->getPlayerMeeples(0) > 0)
+				break;
+		}
+		qDebug() << game->getPlayerMeeples(0);
+
+		qDebug();
+		MoveHistoryEntry h = game->getMoveHistory().back();
+		game->undo();
+		qDebug() << "m" << game->getPlayerMeeples(0);
+		qDebug() << "r" << game->getPlayerReturnMeeples(0);
+		game->simStep(h);
+		qDebug() << "m" << game->getPlayerMeeples(0);
+		qDebug() << "r" << game->getPlayerReturnMeeples(0);
+		game->undo();
+		qDebug() << "m" << game->getPlayerMeeples(0);
+		qDebug() << "r" << game->getPlayerReturnMeeples(0);
+
+		qDebug();
+		qDebug("simPartStepChance");
+		game->simPartStepChance(h.tileIndex);
+		qDebug() << "m" << game->getPlayerMeeples(0);
+		qDebug() << "r" << game->getPlayerReturnMeeples(0);
+		qDebug("simPartStepTile");
+		game->simPartStepTile(h.move.tileMove);
+		qDebug() << "m" << game->getPlayerMeeples(0);
+		qDebug() << "r" << game->getPlayerReturnMeeples(0);
+		qDebug() << "placements" << game->getPossibleMeeplePlacements(0, game->simTile).size();
+		qDebug("simPartStepMeeple");
+		game->simPartStepMeeple(h.move.meepleMove);
+		qDebug() << "m" << game->getPlayerMeeples(0);
+		qDebug() << "r" << game->getPlayerReturnMeeples(0);
+
+		qDebug();
+		qDebug();
+		qDebug("simPartUndoMeeple");
+		game->simPartUndoMeeple();
+		qDebug() << "m" << game->getPlayerMeeples(0);
+		qDebug() << "r" << game->getPlayerReturnMeeples(0);
+		qDebug() << "placements" << game->getPossibleMeeplePlacements(0, game->simTile).size();
+		qDebug("simPartUndoTile");
+		game->simPartUndoTile();
+		qDebug() << "m" << game->getPlayerMeeples(0);
+		qDebug() << "r" << game->getPlayerReturnMeeples(0);
+		qDebug("simPartUndoChance");
+		game->simPartUndoChance();
+		qDebug() << "m" << game->getPlayerMeeples(0);
+		qDebug() << "r" << game->getPlayerReturnMeeples(0);
+
+	}
+
 	return 0;
 }
