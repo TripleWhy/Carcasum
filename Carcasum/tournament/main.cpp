@@ -237,7 +237,11 @@ void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory,
 
 void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory, bool const doIt = true, int const N=100, bool const printSteps = true)
 {
+#ifdef QT_NO_DEBUG
 	int const THREADS = 8;
+#else
+	int const THREADS = 1;
+#endif
 
 #ifdef TIMEOUT
 	qDebug() << "TIMEOUT" << TIMEOUT;
@@ -284,6 +288,9 @@ int main(int /*argc*/, char */*argv*/[])
 	qDebug() << "Qt build version:  " << QT_VERSION_STR;
 	qDebug() << "Qt runtime version:" << qVersion();
 	qDebug() << "Git revision:" << APP_REVISION_STR;
+#ifdef RANDOM_SEED
+	qDebug("WARNING: RANDOM_SEED is set: " STR(RANDOM_SEED));
+#endif
 
 	jcz::TileFactory * tileFactory = new jcz::TileFactory(false);
 	std::vector<Player *> players;
@@ -462,7 +469,7 @@ int main(int /*argc*/, char */*argv*/[])
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedy<100>>(tileFactory, false));
 		doTest(players, tileFactory);
 	}
-	if (true)
+	if (false)
 	{
 		qDebug() << "SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT" << SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT;
 		qDebug("\n\nMCTSPlayer random vs MCTSPlayer RWS1");
@@ -473,6 +480,28 @@ int main(int /*argc*/, char */*argv*/[])
 		qDebug("\n\nMCTSPlayer random vs MCTSPlayer RWS2");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::PlayerPlayout<RouletteWheelPlayer2>>(tileFactory, false));
+		doTest(players, tileFactory, true);
+	}
+	if (true)
+	{
+		qDebug("\n\n");
+		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>  (tileFactory, false));
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false));
+		doTest(players, tileFactory, true);
+
+		qDebug("\n\n");
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout> (tileFactory, false));
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false));
+		doTest(players, tileFactory, true);
+
+		qDebug("\n\n");
+		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, false));
+		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, true));
+		doTest(players, tileFactory, true);
+
+		qDebug("\n\n");
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout> (tileFactory, false, TIMEOUT, true, 0.5, false));
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, TIMEOUT, true, 0.5, true));
 		doTest(players, tileFactory, true);
 	}
 

@@ -47,13 +47,14 @@ MCTSPlayer MCTS_TU::MCTSChanceNode::MCTSChanceNode(uchar player, TileCountType c
 
 
 MCTS_T
-constexpr MCTSPlayer MCTS_TU::MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree, const int m, const bool mIsTimeout, qreal const Cp)
-	: tileFactory(tileFactory),
-	  typeName(QString("MCTSPlayer<%1, %2>(reuseTree=%3, m=%4, mIsTimeout=%5, Cp=%6)").arg(UtilityProvider::name).arg(playoutPolicy.name).arg(reuseTree).arg(m).arg(mIsTimeout).arg(Cp)),
-	  M(m),
-	  useTimeout(mIsTimeout),
-	  Cp(Cp),
-      reuseTree(reuseTree)
+constexpr MCTSPlayer MCTS_TU::MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree, const int m, const bool mIsTimeout, qreal const Cp, bool nodePriors)
+    : tileFactory(tileFactory),
+      typeName(QString("MCTSPlayer<%1, %2>(reuseTree=%3, m=%4, mIsTimeout=%5, Cp=%6, nodePriors=%7)").arg(UtilityProvider::name).arg(playoutPolicy.name).arg(reuseTree).arg(m).arg(mIsTimeout).arg(Cp).arg(nodePriors)),
+      M(m),
+      useTimeout(mIsTimeout),
+      Cp(Cp),
+      reuseTree(reuseTree),
+      nodePriors(nodePriors)
 {
 }
 
@@ -163,7 +164,7 @@ QString MCTSPlayer MCTS_TU::getTypeName() const
 MCTS_T
 Player * MCTSPlayer MCTS_TU::clone() const
 {
-	return new MCTSPlayer(tileFactory, reuseTree, M, useTimeout, Cp);
+	return new MCTSPlayer(tileFactory, reuseTree, M, useTimeout, Cp, nodePriors);
 }
 
 MCTS_T
@@ -267,18 +268,26 @@ typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::bestChild(MCTSNode *
 
 	MCTSNode * best = 0;
 	qreal max = -std::numeric_limits<qreal>::infinity();
+
+#if ASSERT_ENABLED
+	uint childNSum = 0;
+#endif
 	for (auto * vPrime : v->children)
 	{
 		Q_ASSERT(vPrime != 0);
 //			if (vPrime == 0)
 //				qFatal("vPrime == 0");
-		qreal val = (qreal(Q(vPrime)) / qreal(N(vPrime))) + Cp * (MCTSPlayer MCTS_TU::math).sqrt( math.ln( N(v) ) / N(vPrime) );
+#if ASSERT_ENABLED
+		childNSum += N(vPrime);
+#endif
+		qreal val = (qreal(Q(vPrime)) / qreal(N(vPrime))) + Cp * (MCTSPlayer MCTS_TU::math).sqrt( math.ln( NParent(v) ) / N(vPrime) );
 		if (val > max)
 		{
 			max = val;
 			best = vPrime;
 		}
 	}
+	Q_ASSERT((v->parent == rootNode && NParent(v) == childNSum) || (v->parent != rootNode && NParent(v) == childNSum + 1));
 
 	Q_ASSERT(best != 0);
 	if ( Q_UNLIKELY(best == 0) )	//This should not happen. Used this for debugging, lets just keep it in case something goes wrong.
@@ -288,9 +297,9 @@ typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::bestChild(MCTSNode *
 		for (MCTSNode * n = v; n->parent != 0; n = n->parent)
 			++level;
 		qWarning().nospace() << getTypeName() << "::bestChild: best == 0";
-		qWarning() << "\tlevel:" << level << "  children:" << v->children.size() << "  N:" << N(v);
+		qWarning() << "\tlevel:" << level << "  children:" << v->children.size() << "  NParent:" << NParent(v);
 		for (auto * vPrime : v->children)
-			qWarning() << "\tchild: " << vPrime << "  Q:" << Q(vPrime) << "  N:" << N(vPrime) << "  value:" << ((qreal(Q(vPrime)) / qreal(N(vPrime))) + Cp * (MCTSPlayer MCTS_TU::math).sqrt( math.ln( N(v) ) / N(vPrime) ));
+			qWarning() << "\tchild: " << vPrime << "  Q:" << Q(vPrime) << "  N:" << N(vPrime) << "  value:" << ((qreal(Q(vPrime)) / qreal(N(vPrime))) + Cp * (MCTSPlayer MCTS_TU::math).sqrt( math.ln( NParent(v) ) / N(vPrime) ));
 	}
 	return best;
 }
@@ -400,6 +409,7 @@ void MCTSPlayer MCTS_TU::backup(MCTSNode * v, RewardListType const & delta)
 	{
 		++N(v);
 		Q(v) += delta[v->player];
+		Q_ASSERT((v->parent == rootNode && NParent(v) == v->childNSum()) || (v->parent != rootNode && NParent(v) == v->childNSum() + 1));
 
 		if (v->parent == rootNode)
 			break;
@@ -501,6 +511,13 @@ typename MCTSPlayer MCTS_TU::MCTSTileNode * MCTSPlayer MCTS_TU::generateTileNode
 	if (possible.size() == 0)
 		possible.push_back(TileMove()); // I could probably add a null MeepleMove child here, too.
 	MCTSTileNode * node = new MCTSTileNode((uchar)player, std::move(possible), parent, parentAction);
+
+	if (nodePriors)
+	{
+		N(node) += nodePriorsInitiatPlayouts;
+		Q(node) += nodePriorsInitiatPlayouts * utilityProvider.utility(g.getScores(), g.getPlayerCount(), player, &g);
+	}
+
 	return node;
 }
 
@@ -514,6 +531,13 @@ typename MCTSPlayer MCTS_TU::MCTSMeepleNode * MCTSPlayer MCTS_TU::generateMeeple
 		MeepleMovesType && possible = getPossibleMeeples(player, parentAction, t, g);
 		node = new MCTSMeepleNode((uchar)player, std::move(possible), parent, parentAction);
 	}
+
+	if (nodePriors)
+	{
+		N(node) += nodePriorsInitiatPlayouts;
+		Q(node) += nodePriorsInitiatPlayouts * utilityProvider.utility(g.getScores(), g.getPlayerCount(), player, &g);
+	}
+
 	return node;
 }
 
@@ -524,6 +548,12 @@ typename MCTSPlayer MCTS_TU::MCTSChanceNode * MCTSPlayer MCTS_TU::generateChance
 	applyMeeple(parentAction, g);
 	TileCountType const & tileCounts = g.getTileCounts();
 	MCTSChanceNode * node = new MCTSChanceNode((uchar)player, tileCounts, parent, parentAction);
+
+	if (nodePriors)
+	{
+		N(node) += nodePriorsInitiatPlayouts;
+		Q(node) += nodePriorsInitiatPlayouts * utilityProvider.utility(g.getScores(), g.getPlayerCount(), player, &g);
+	}
 
 	return node;
 }

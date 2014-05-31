@@ -203,15 +203,19 @@ public:
 #endif
 	inline virtual int getScore() const
 	{
-		std::unordered_set<NodeData const *> closedCities;
-		for (CityNode * c : getFieldData()->cities)
-			if (c->isClosed())
-				closedCities.insert(c->getData());
-		return (int)closedCities.size() * 3;
+		return countClosedCities() * 3;
 	}
 	virtual Node * clone(Tile const * parent, Game const * g) const
 	{
 		return new FieldNode(parent, g);
+	}
+	inline int countClosedCities() const
+	{
+		std::unordered_set<NodeData const *> closedCities;
+		for (CityNode * c : getFieldData()->cities)
+			if (c->isClosed())
+				closedCities.insert(c->getData());
+		return (int)closedCities.size();
 	}
 	
 	virtual bool equals(Node const & other, Game const * g) const

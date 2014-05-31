@@ -479,7 +479,36 @@ SimplePlayer3::RatingsEType SimplePlayer3::rateAllExpanded(int & sum, Game const
 		}
 	}
 
-#if SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT == 1
+#if SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT == 0
+	if (sum <= 0)
+	{
+		int min = std::numeric_limits<int>::max();
+		for (auto const & rating : ratings)
+			if (rating.second < min)
+				min = rating.second;
+		--min;
+
+		sum = 0;
+		for (auto & rating : ratings)
+		{
+			rating.second -= min;
+			sum += rating.second;
+		}
+	}
+	else
+	{
+		for (auto & rating : ratings)
+		{
+			if (rating.second <= 0)
+			{
+				rating.second = SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT_0_FALLBACK;
+#if SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT_0_FALLBACK != 0
+				sum += SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT_0_FALLBACK;
+#endif
+			}
+		}
+	}
+#elif SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT == 1
 	--minRating;
 	for (auto & p : ratings)
 	{
@@ -705,7 +734,98 @@ SimplePlayer3::RatingsNType SimplePlayer3::rateAllNested(int & sum, const Game *
 #endif
 	}
 
-#if SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT == 1
+#if SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT == 0
+	if (sum <= 0)
+	{
+		int min = std::numeric_limits<int>::max();
+		for (auto const & rating : ratings)
+			if (rating.tileRating < min)
+				min = rating.tileRating;
+		--min;
+
+		sum = 0;
+		for (NestedTileRating & rating : ratings)
+		{
+			rating.tileRating -= min;
+			sum += rating.tileRating;
+
+
+			//Double code...
+			if (rating.meepleSum <= 0)
+			{
+				int mMin = std::numeric_limits<int>::max();
+				for (NestedMeepleRating const & mRating : rating.meepleRatings)
+					if (mRating.meepleRating < mMin)
+						mMin = mRating.meepleRating;
+				--mMin;
+
+				rating.meepleSum = 0;
+				for (NestedMeepleRating & mRating : rating.meepleRatings)
+				{
+					mRating.meepleRating -= mMin;
+					rating.meepleSum += mRating.meepleRating;
+				}
+			}
+			else
+			{
+				for (NestedMeepleRating & mRating : rating.meepleRatings)
+				{
+					if (mRating.meepleRating <= 0)
+					{
+						mRating.meepleRating = SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT_0_FALLBACK;
+#if SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT_0_FALLBACK != 0
+						rating.meepleSum += SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT_0_FALLBACK;
+#endif
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		for (NestedTileRating & rating : ratings)
+		{
+			if (rating.tileRating <= 0)
+			{
+				rating.tileRating = SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT_0_FALLBACK;
+#if SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT_0_FALLBACK != 0
+				sum += SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT_0_FALLBACK;
+#endif
+			}
+
+
+			//Double code...
+			if (rating.meepleSum <= 0)
+			{
+				int mMin = std::numeric_limits<int>::max();
+				for (NestedMeepleRating const & mRating : rating.meepleRatings)
+					if (mRating.meepleRating < mMin)
+						mMin = mRating.meepleRating;
+				--mMin;
+
+				rating.meepleSum = 0;
+				for (NestedMeepleRating & mRating : rating.meepleRatings)
+				{
+					mRating.meepleRating -= mMin;
+					rating.meepleSum += mRating.meepleRating;
+				}
+			}
+			else
+			{
+				for (NestedMeepleRating & mRating : rating.meepleRatings)
+				{
+					if (mRating.meepleRating <= 0)
+					{
+						mRating.meepleRating = SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT_0_FALLBACK;
+#if SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT_0_FALLBACK != 0
+						rating.meepleSum += SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT_0_FALLBACK;
+#endif
+					}
+				}
+			}
+		}
+	}
+#elif SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT == 1
 	--minRating;
 	for (auto & p : ratings)
 	{

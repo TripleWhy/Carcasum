@@ -29,6 +29,15 @@ private:
 		std::vector<MCTSNode *> children;
 		MCTSNode * parent;
 
+		uint childNSum()
+		{
+			uint sum = 0;
+			for (auto c : children)
+				if (c != 0)
+					sum += c->visitCount;
+			return sum;
+		}
+
 	protected:
 		MCTSNode(uchar player, Type type, int size, MCTSNode * parent);
 	};
@@ -168,7 +177,8 @@ private:
 	const bool useTimeout;
 	const qreal Cp;
 	const bool reuseTree;
-
+	const bool nodePriors;
+	static constexpr uint nodePriorsInitiatPlayouts = 10;
 
 #if MCTS_COUNT_EXPAND_HITS
 public:
@@ -178,9 +188,9 @@ public:
 
 public:
 #ifdef TIMEOUT
-	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, int const m = TIMEOUT, bool const mIsTimeout = true, qreal const Cp = 0.5);
+	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, int const m = TIMEOUT, bool const mIsTimeout = true, qreal const Cp = 0.5, bool nodePriors = false);
 #else
-	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, int const m = 5000, bool const mIsTimeout = true, qreal const Cp = 0.5);
+	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, int const m = 5000, bool const mIsTimeout = true, qreal const Cp = 0.5, bool nodePriors = false);
 #endif
 
 	void applyChance(int action, Game & g);
@@ -212,8 +222,14 @@ public:
 	void syncGame();
 	void fullSyncGame();
 
-	inline RewardType & Q(MCTSNode * v) { return v->reward; }
-	inline uint & N(MCTSNode * v) { return v->visitCount; }
+	inline constexpr RewardType & Q(MCTSNode * v) { return v->reward; }
+	inline constexpr uint & N(MCTSNode * v) { return v->visitCount; }
+	inline constexpr uint NParent(MCTSNode * v)
+	{
+		return nodePriors ?
+		            v->visitCount + (nodePriorsInitiatPlayouts * (uint)v->children.size()) - nodePriorsInitiatPlayouts
+		          : v->visitCount;
+	}
 
 private:
 	MCTSTileNode * generateTileNode(MCTSNode * parent, int parentAction, Game & g);

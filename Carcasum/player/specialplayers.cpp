@@ -79,31 +79,10 @@ TileMove RouletteWheelPlayer::getTileMove(int player, const Tile * tile, const M
 	int sum;
 	SimplePlayer3::RatingsEType && ratings = SimplePlayer3::rateAllExpanded(sum, game, player, tile, possible);
 
-#if SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT == 0
-	if (sum <= 0)
-	{
-		int min = std::numeric_limits<int>::max();
-		for (auto const & rating : ratings)
-			if (rating.second < min)
-				min = rating.second;
-		--min;
-
-		sum = 0;
-		for (auto & rating : ratings)
-		{
-			rating.second -= min;
-			sum += rating.second;
-		}
-	}
-#endif
-
 	int rnd = r.nextInt(sum);
 	for (auto const & rating : ratings)
 	{
-#if SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT == 0
-		if (rating.second <= 0)
-			continue;
-#endif
+		Q_ASSERT(rating.second >= 0);
 		rnd -= rating.second;
 		if (rnd < 0)
 		{
@@ -160,31 +139,10 @@ TileMove RouletteWheelPlayer2::getTileMove(int player, const Tile * tile, const 
 	int sum;
 	SimplePlayer3::RatingsNType && ratings = SimplePlayer3::rateAllNested(sum, game, player, tile, possible);
 
-#if SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT == 0
-	if (sum <= 0)
-	{
-		int min = std::numeric_limits<int>::max();
-		for (auto const & rating : ratings)
-			if (rating.tileRating < min)
-				min = rating.tileRating;
-		--min;
-
-		sum = 0;
-		for (auto & rating : ratings)
-		{
-			rating.tileRating -= min;
-			sum += rating.tileRating;
-		}
-	}
-#endif
-
 	int rnd = r.nextInt(sum);
 	for (auto const & rating : ratings)
 	{
-#if SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT == 0
-		if (rating.tileRating <= 0)
-			continue;
-#endif
+		Q_ASSERT(rating.tileRating >= 0);
 		rnd -= rating.tileRating;
 		if (rnd < 0)
 		{
@@ -206,10 +164,8 @@ MeepleMove RouletteWheelPlayer2::getMeepleMove(int /*player*/, const Tile * /*ti
 	{
 		if (std::find(possible.cbegin(), possible.cend(), (*it).meepleMove) == possible.cend())
 		{
-#if SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT == 0
-			if ((*it).meepleRating > 0)
-#endif
-				meepleSum -= (*it).meepleRating;
+			Q_ASSERT ((*it).meepleRating >= 0);
+			meepleSum -= (*it).meepleRating;
 			it = meepleRatings.erase(it);
 		}
 		else
@@ -217,31 +173,10 @@ MeepleMove RouletteWheelPlayer2::getMeepleMove(int /*player*/, const Tile * /*ti
 	}
 #endif
 
-#if SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT == 0
-	if (meepleSum <= 0)
-	{
-		int min = std::numeric_limits<int>::max();
-		for (auto const & rating : meepleRatings)
-			if (rating.meepleRating < min)
-				min = rating.meepleRating;
-		--min;
-
-		meepleSum = 0;
-		for (auto & rating : meepleRatings)
-		{
-			rating.meepleRating -= min;
-			meepleSum += rating.meepleRating;
-		}
-	}
-#endif
-
 	int rnd = r.nextInt(meepleSum);
 	for (auto const & rating : meepleRatings)
 	{
-#if SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT == 0
-		if (rating.meepleRating <= 0)
-			continue;
-#endif
+		Q_ASSERT(rating.meepleRating >= 0);
 		rnd -= rating.meepleRating;
 		if (rnd < 0)
 			return rating.meepleMove;

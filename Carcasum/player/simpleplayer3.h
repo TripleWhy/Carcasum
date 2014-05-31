@@ -14,6 +14,7 @@
 #define SIMPLE_PLAYER3_TILE_RANDOM        0 // probability in percent, not a flag
 #define SIMPLE_PLAYER3_MEEPLE_RANDOM      0 // probability in percent, not a flag
 #define SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT 1
+#define SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT_0_FALLBACK 0
 
 class SimplePlayer3 : public Player
 {

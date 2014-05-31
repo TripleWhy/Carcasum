@@ -9,7 +9,7 @@
 #define APP_ORGANIZATION "YMSolutions"
 
 // Some numbers
-#define TIMEOUT                       500
+#define TIMEOUT                       2500
 // Game
 #define MAX_PLAYERS                   6
 #define MEEPLE_COUNT                  7
@@ -26,7 +26,7 @@
 #define PINFO_MEEPLE_SIZE            10
 #define RTILE_TILE_SIZE              40
 #define REMAINING_TILES_COLUMNS       4
-#define PLAYER_GAP_TIMEOUT          0
+#define PLAYER_GAP_TIMEOUT          100
 // Util
 #define LN_TABLE_SIZE           1000000
 
@@ -76,6 +76,8 @@
 #define DISPLAY_WHILE_LOADING        0
 #define REPLACE_VARLENGTH_ARRAY      0
 
+
+#define ASSERT_ENABLED   !(defined(QT_NO_DEBUG) && !defined(QT_FORCE_ASSERTS))
 
 
 #if REPLACE_VARLENGTH_ARRAY
