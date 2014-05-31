@@ -602,7 +602,7 @@ public:
 
 
 template<typename Utility>
-class Normalized
+class NormalizedOld
 {
 public:
 	static QString const name;
@@ -644,7 +644,109 @@ public:
 	}
 };
 template<typename Utility>
+QString const Utilities::NormalizedOld<Utility>::name = QString("NormalizedOld<%1>").arg(Utility::name);
+
+template<typename Utility>
+class Normalized
+{
+public:
+	static QString const name;
+	typedef qreal RewardType;
+	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
+private:
+	typedef typename Utility::RewardType uRewardType;
+	typedef typename Utility::RewardListType uRewardListType;
+
+private:
+	Utility util;
+	uRewardType uBound = -1;
+	uRewardType lBound = 0;
+	qreal range = 0;
+
+public:
+	inline void newGame(int player, Game const * g)
+	{
+		util.newGame(player, g);
+		const int upperScoreBound = g->getUpperScoreBound();
+		const int playerCount = g->getPlayerCount();
+		uBound = utilityUpperBound(util, playerCount, upperScoreBound, g);
+		lBound = utilityLowerBound(util, playerCount, upperScoreBound, g);
+		range = (qreal)(uBound - lBound);
+	}
+
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * g) const
+	{
+		auto r = qreal(util.utility(scores, playerCount, myIndex, g) - lBound) / range;
+		if (r >= 1 || r <= 0 || r >= 0.55 || r <= 0.44)
+			qDebug() << r;
+		return r;
+	}
+
+	RewardListType utilities(const int * scores, const int playerCount, Game const * g) const
+	{
+		auto const & u = util.utilities(scores, playerCount, g);
+		RewardListType r(u.size());
+		for (int i = 0; i < u.size(); ++i)
+		{
+			r[i] = qreal(u[i] - lBound) / range;
+			qDebug() << r[i];
+		}
+		return r;
+	}
+};
+template<typename Utility>
 QString const Utilities::Normalized<Utility>::name = QString("Normalized<%1>").arg(Utility::name);
+
+template<typename Utility>
+class NormalizedNeg
+{
+public:
+	static QString const name;
+	typedef qreal RewardType;
+	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
+private:
+	typedef typename Utility::RewardType uRewardType;
+	typedef typename Utility::RewardListType uRewardListType;
+
+private:
+	Utility util;
+	uRewardType uBound = -1;
+	uRewardType lBound = 0;
+	qreal range = 0;
+
+public:
+	inline void newGame(int player, Game const * g)
+	{
+		util.newGame(player, g);
+		const int upperScoreBound = g->getUpperScoreBound();
+		const int playerCount = g->getPlayerCount();
+		uBound = utilityUpperBound(util, playerCount, upperScoreBound, g);
+		lBound = utilityLowerBound(util, playerCount, upperScoreBound, g);
+		range = (qreal)(uBound - lBound);
+	}
+
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * g) const
+	{
+		auto r = (qreal(util.utility(scores, playerCount, myIndex, g) - lBound) / range) - 0.5;
+		if (r >= 1 || r <= 0 || r >= 0.55 || r <= 0.44)
+			qDebug() << r;
+		return r;
+	}
+
+	RewardListType utilities(const int * scores, const int playerCount, Game const * g) const
+	{
+		auto const & u = util.utilities(scores, playerCount, g);
+		RewardListType r(u.size());
+		for (int i = 0; i < u.size(); ++i)
+		{
+			r[i] = (qreal(u[i] - lBound) / range) - 0.5;
+			qDebug() << r[i];
+		}
+		return r;
+	}
+};
+template<typename Utility>
+QString const Utilities::NormalizedNeg<Utility>::name = QString("NormalizedNeg<%1>").arg(Utility::name);
 
 
 template<typename Utility>
@@ -724,6 +826,7 @@ template<typename Utility>
 QString const Utilities::EC<Utility>::name = QString("EC<%1>").arg(Utility::name);
 typedef EC<ComplexUtility> ComplexUtilityEC;
 typedef EC<HeydensUtility> HeydensUtilityEC;
+
 
 class ComplexUtilityNormalizedEC
 {

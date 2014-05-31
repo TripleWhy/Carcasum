@@ -337,7 +337,7 @@ int MCTSPlayer MCTS_TU::bestChild0(MCTSNode * v)
 		auto * vPrime = v->children[i];
 		if (vPrime == 0)
 			continue;
-		qreal val = Q(vPrime) / qreal(N(vPrime));
+		qreal val = qreal(Q(vPrime)) / qreal(N(vPrime));
 		if (val > max)
 		{
 			max = val;
