@@ -498,17 +498,41 @@ public:
 						}
 						case Field:
 						{
-							int cities = static_cast<FieldNode const *>(n)->countClosedCities();
-							if (cities >= 3)
-								break;
-							for (int i = 0; i < playerCount; ++i)
+							int const score = n->getScore();
+							int const cities = static_cast<FieldNode const *>(n)->countClosedCities();
+							if (cities < 3)
 							{
-								if (data->meeples[i] != data->maxMeples)
-									continue;
-								if (i == myIndex)
-									++badFields;
-								else
-									--badFields;
+								for (int i = 0; i < playerCount; ++i)
+								{
+									if (data->meeples[i] != data->maxMeples)
+										continue;
+									if (i == myIndex)
+									{
+										incompleteDifference += score;
+										++badFields;
+									}
+									else
+									{
+										incompleteDifference += score;
+										--badFields;
+									}
+								}
+							}
+							else
+							{
+								for (int i = 0; i < playerCount; ++i)
+								{
+									if (data->meeples[i] != data->maxMeples)
+										continue;
+									if (i == myIndex)
+									{
+										incompleteDifference += score;
+									}
+									else
+									{
+										incompleteDifference += score;
+									}
+								}
 							}
 							break;
 						}
