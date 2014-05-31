@@ -626,11 +626,11 @@ void Game::simUndo()
 		--playerMeeplesPlacedDetailCurrent[n->getTerrain()][playerIndex];
 		--playerMeeplesPlacedDetailAll[n->getTerrain()][playerIndex];
 		++playerMeeples[playerIndex];
-		Q_ASSERT(playerMeeples[playerIndex] <= MEEPLE_COUNT);
 	}
 
 	board->removeTile(tileMove);
 	returnMeeplesToPlayers();
+	Q_ASSERT(playerMeeples[playerIndex] <= MEEPLE_COUNT);
 
 	tiles.insert(entry.tileIndex, tile);
 	++tileCount[tile->tileType];
