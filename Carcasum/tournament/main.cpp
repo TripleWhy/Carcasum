@@ -526,26 +526,42 @@ int main(int /*argc*/, char */*argv*/[])
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::PlayerPlayout<RouletteWheelPlayer2>>(tileFactory, false));
 		doTest(players, tileFactory, true);
 	}
-	if (true)
+	if (false)
 	{
+		QElapsedTimer t;
 		qDebug("\n\n");
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>  (tileFactory, false));
 		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false));
+		t.start();
 		doTest(players, tileFactory, true);
+		qDebug() << "Time:" <<t.elapsed();
 
 		qDebug("\n\n");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout> (tileFactory, false));
 		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false));
+		t.start();
 		doTest(players, tileFactory, true);
+		qDebug() << "Time:" <<t.elapsed();
 
 		qDebug("\n\n");
 		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, false));
 		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, true));
+		t.start();
 		doTest(players, tileFactory, true);
+		qDebug() << "Time:" <<t.elapsed();
 
 		qDebug("\n\n");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout> (tileFactory, false, TIMEOUT, true, 0.5, false));
 		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, TIMEOUT, true, 0.5, true));
+		t.start();
+		doTest(players, tileFactory, true);
+		qDebug() << "Time:" <<t.elapsed();
+	}
+	if (true)
+	{
+		qDebug("\n\nProgressive Widening");
+		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, false, false));
+		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, false, true));
 		doTest(players, tileFactory, true);
 	}
 

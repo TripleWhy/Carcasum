@@ -51,6 +51,9 @@ private:
 		TileMovesType possible;
 		int parentAction;
 
+		//needed only for progressive widening...
+		std::vector<SimplePlayer3::RatingsNMeepleType> meepleRatings;
+
 		MCTSTileNode(uchar player, TileMovesType && possible, MCTSNode * parent, int parentAction);
 		~MCTSTileNode()
 		{
@@ -179,6 +182,7 @@ private:
 	const bool reuseTree;
 	const bool nodePriors;
 	static constexpr uint nodePriorsInitiatPlayouts = 10;
+	const bool progressiveWidening;
 
 #if MCTS_COUNT_EXPAND_HITS
 public:
@@ -188,9 +192,9 @@ public:
 
 public:
 #ifdef TIMEOUT
-	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, int const m = TIMEOUT, bool const mIsTimeout = true, qreal const Cp = 0.5, bool nodePriors = false);
+	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, int const m = TIMEOUT, bool const mIsTimeout = true, qreal const Cp = 0.5, bool nodePriors = false, bool progressiveWidening = false);
 #else
-	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, int const m = 5000, bool const mIsTimeout = true, qreal const Cp = 0.5, bool nodePriors = false);
+	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, int const m = 5000, bool const mIsTimeout = true, qreal const Cp = 0.5, bool nodePriors = false, bool progressiveWidening = false);
 #endif
 
 	void applyChance(int action, Game & g);
@@ -230,10 +234,17 @@ public:
 		            v->visitCount + (nodePriorsInitiatPlayouts * (uint)v->children.size()) - nodePriorsInitiatPlayouts
 		          : v->visitCount;
 	}
+	inline constexpr bool expansionCandidate(MCTSNode * v)
+	{
+		return progressiveWidening ?
+//		            (v->notExpanded > 0) && ((int)v->visitCount >= ((1 << (v->children.size() - v->notExpanded)) / 4))
+		            (v->notExpanded > 0) && ((int)v->visitCount >= ((1 << (v->children.size() - v->notExpanded)) - 1))
+		          : v->notExpanded;
+	}
 
 private:
 	MCTSTileNode * generateTileNode(MCTSNode * parent, int parentAction, Game & g);
-	MCTSMeepleNode * generateMeepleNode(MCTSNode * parent, TileMove * parentAction, const Tile * t, Game & g);
+	MCTSMeepleNode * generateMeepleNode(MCTSNode * parent, TileMove * parentAction, const Tile * t, Game & g, int parentA);
 	MCTSChanceNode * generateChanceNode(MCTSNode * parent, MeepleMove * parentAction, Game & g);
 
 	RewardListType utilities(int const * scores, int const playerCount, Game const * g);

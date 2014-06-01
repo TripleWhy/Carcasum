@@ -47,14 +47,15 @@ MCTSPlayer MCTS_TU::MCTSChanceNode::MCTSChanceNode(uchar player, TileCountType c
 
 
 MCTS_T
-constexpr MCTSPlayer MCTS_TU::MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree, const int m, const bool mIsTimeout, qreal const Cp, bool nodePriors)
+constexpr MCTSPlayer MCTS_TU::MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree, const int m, const bool mIsTimeout, qreal const Cp, bool nodePriors, bool progressiveWidening)
     : tileFactory(tileFactory),
-      typeName(QString("MCTSPlayer<%1, %2>(reuseTree=%3, m=%4, mIsTimeout=%5, Cp=%6, nodePriors=%7)").arg(UtilityProvider::name).arg(playoutPolicy.name).arg(reuseTree).arg(m).arg(mIsTimeout).arg(Cp).arg(nodePriors)),
+      typeName(QString("MCTSPlayer<%1, %2>(reuseTree=%3, m=%4, mIsTimeout=%5, Cp=%6, nodePriors=%7, progressiveWidening=%8)").arg(UtilityProvider::name).arg(playoutPolicy.name).arg(reuseTree).arg(m).arg(mIsTimeout).arg(Cp).arg(nodePriors).arg(progressiveWidening)),
       M(m),
       useTimeout(mIsTimeout),
       Cp(Cp),
       reuseTree(reuseTree),
-      nodePriors(nodePriors)
+      nodePriors(nodePriors),
+      progressiveWidening(progressiveWidening)
 {
 }
 
@@ -164,7 +165,7 @@ QString MCTSPlayer MCTS_TU::getTypeName() const
 MCTS_T
 Player * MCTSPlayer MCTS_TU::clone() const
 {
-	return new MCTSPlayer(tileFactory, reuseTree, M, useTimeout, Cp, nodePriors);
+	return new MCTSPlayer(tileFactory, reuseTree, M, useTimeout, Cp, nodePriors, progressiveWidening);
 }
 
 MCTS_T
@@ -191,7 +192,7 @@ typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::treePolicy(MCTSNode 
 		}
 		else
 		{
-			if (v->notExpanded)
+			if (expansionCandidate(v))
 			{
 				auto r = expand(v);
 				return r;
@@ -215,20 +216,28 @@ typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::expand(MCTSNode * v)
 	//TODO maybe store untried nodes somehow?
 	int a;
 	MCTSNode * vPrime;
-	do
+	if (progressiveWidening)
 	{
-		a = r.nextInt((int)v->children.size());
+		a = (int)(v->children.size() - v->notExpanded);
 		vPrime = v->children[a];
+	}
+	else
+	{
+		do
+		{
+			a = r.nextInt((int)v->children.size());
+			vPrime = v->children[a];
 #if MCTS_COUNT_EXPAND_HITS
-		++miss;
+			++miss;
 #endif
-	} while (vPrime != 0);
+		} while (vPrime != 0);
+	}
 	switch (v->type)
 	{
 		case MCTSNode::TypeTile:
 		{
 			MCTSTileNode * tn = static_cast<MCTSTileNode *>(v);
-			vPrime = generateMeepleNode(v, &tn->possible[a], simGame.getTileByType(tn->parentAction), simGame);
+			vPrime = generateMeepleNode(v, &tn->possible[a], simGame.getTileByType(tn->parentAction), simGame, a);
 			break;
 		}
 		case MCTSNode::TypeMeeple:
@@ -274,9 +283,14 @@ typename MCTSPlayer MCTS_TU::MCTSNode * MCTSPlayer MCTS_TU::bestChild(MCTSNode *
 #endif
 	for (auto * vPrime : v->children)
 	{
-		Q_ASSERT(vPrime != 0);
-//			if (vPrime == 0)
-//				qFatal("vPrime == 0");
+		if (progressiveWidening)
+		{
+			if (vPrime == 0)
+				break;
+		}
+		else
+			Q_ASSERT(vPrime != 0);
+
 #if ASSERT_ENABLED
 		childNSum += N(vPrime);
 #endif
@@ -409,7 +423,7 @@ void MCTSPlayer MCTS_TU::backup(MCTSNode * v, RewardListType const & delta)
 	{
 		++N(v);
 		Q(v) += delta[v->player];
-		Q_ASSERT((v->parent == rootNode && NParent(v) == v->childNSum()) || (v->parent != rootNode && NParent(v) == v->childNSum() + 1));
+		Q_ASSERT((v->parent == rootNode && NParent(v) == v->childNSum()) || (v->parent != rootNode && NParent(v) == v->childNSum() + 1) || simGame.isFinished());
 
 		if (v->parent == rootNode)
 			break;
@@ -506,11 +520,36 @@ typename MCTSPlayer MCTS_TU::MCTSTileNode * MCTSPlayer MCTS_TU::generateTileNode
 {
 	int player = g.getNextPlayer();
 	Tile const * t = g.getTileByType(parentAction);
+	MCTSTileNode * node;
 	applyChance(parentAction, g);
-	TileMovesType && possible = g.getPossibleTilePlacements(t);
-	if (possible.size() == 0)
-		possible.push_back(TileMove()); // I could probably add a null MeepleMove child here, too.
-	MCTSTileNode * node = new MCTSTileNode((uchar)player, std::move(possible), parent, parentAction);
+	{
+		TileMovesType && possible = g.getPossibleTilePlacements(t);
+		if (possible.size() == 0)
+			possible.push_back(TileMove()); // I could probably add a null MeepleMove child here, too.
+		node = new MCTSTileNode((uchar)player, std::move(possible), parent, parentAction);
+	}
+
+	if (progressiveWidening && !node->possible[0].isNull())
+	{
+		//sort possible
+		int sum;
+		auto const & ratings = SimplePlayer3::rateAllNested(sum, &g, player, g.simTile, node->possible);
+		Q_ASSERT(ratings.size() == node->possible.size());;
+
+		std::multimap<int, SimplePlayer3::NestedTileRating const *> map;
+		for (auto const & rating : ratings)
+		{
+			map.insert( {rating.tileRating, &rating} );
+		}
+
+		int index = 0;
+		for (auto it = map.rbegin(); it != map.rend(); ++it)
+		{
+			node->possible[index] = it->second->tileMove;
+			node->meepleRatings.push_back(std::move(it->second->meepleRatings));
+			++index;
+		}
+	}
 
 	if (nodePriors)
 	{
@@ -522,13 +561,34 @@ typename MCTSPlayer MCTS_TU::MCTSTileNode * MCTSPlayer MCTS_TU::generateTileNode
 }
 
 MCTS_T
-typename MCTSPlayer MCTS_TU::MCTSMeepleNode * MCTSPlayer MCTS_TU::generateMeepleNode(MCTSNode * parent, TileMove * parentAction, const Tile * t, Game & g)
+typename MCTSPlayer MCTS_TU::MCTSMeepleNode * MCTSPlayer MCTS_TU::generateMeepleNode(MCTSNode * parent, TileMove * parentAction, const Tile * t, Game & g, int parentA)
 {
 	int player = g.getNextPlayer();
 	applyTile(parentAction, g);
 	MCTSMeepleNode * node;
 	{
 		MeepleMovesType && possible = getPossibleMeeples(player, parentAction, t, g);
+		if (progressiveWidening && possible.size() > 1)
+		{
+			//sort possible
+			SimplePlayer3::RatingsNMeepleType & meepleRatings = static_cast<MCTSTileNode *>(parent)->meepleRatings[parentA];
+
+			std::multimap<int, MeepleMove const *> map;
+			for (SimplePlayer3::NestedMeepleRating const & rating : meepleRatings)
+			{
+#if SIMPLE_PLAYER3_RULE_FIELD
+				if (Util::contains(possible, rating.meepleMove))
+#endif
+					map.insert( {rating.meepleRating, &rating.meepleMove} );
+			}
+			Q_ASSERT(map.size() == (uint)possible.size());
+
+			int index = 0;
+			for (auto it = map.rbegin(); it != map.rend(); ++it)
+			{
+				possible[index++] = *it->second;
+			}
+		}
 		node = new MCTSMeepleNode((uchar)player, std::move(possible), parent, parentAction);
 	}
 
