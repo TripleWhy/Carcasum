@@ -563,6 +563,11 @@ int main(int /*argc*/, char */*argv*/[])
 		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, false, false));
 		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, false, true));
 		doTest(players, tileFactory, true);
+
+		qDebug("\n\nProgressive Bias");
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, 100, true, 0.5, false, false, false));
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, 100, true, 0.5, false, false, true));
+		doTest(players, tileFactory, true, 50);
 	}
 
 	qDebug() << "\nTotal Time:" << totalTime.elapsed();

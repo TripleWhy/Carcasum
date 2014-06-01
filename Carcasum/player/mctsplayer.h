@@ -29,6 +29,9 @@ private:
 		std::vector<MCTSNode *> children;
 		MCTSNode * parent;
 
+		//needed only for progressive bias
+		RewardType heuristicValue;
+
 		uint childNSum()
 		{
 			uint sum = 0;
@@ -183,6 +186,7 @@ private:
 	const bool nodePriors;
 	static constexpr uint nodePriorsInitiatPlayouts = MCTS_NODE_PRIORS_PLAYOUTS;
 	const bool progressiveWidening;
+	const bool progressiveBias;
 
 #if MCTS_COUNT_EXPAND_HITS
 public:
@@ -192,9 +196,9 @@ public:
 
 public:
 #ifdef TIMEOUT
-	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, int const m = TIMEOUT, bool const mIsTimeout = true, qreal const Cp = 0.5, bool nodePriors = false, bool progressiveWidening = false);
+	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, int const m = TIMEOUT, bool const mIsTimeout = true, qreal const Cp = 0.5, bool nodePriors = false, bool progressiveWidening = false, bool progressiveBias = false);
 #else
-	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, int const m = 5000, bool const mIsTimeout = true, qreal const Cp = 0.5, bool nodePriors = false, bool progressiveWidening = false);
+	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, int const m = 5000, bool const mIsTimeout = true, qreal const Cp = 0.5, bool nodePriors = false, bool progressiveWidening = false, bool progressiveBias = false);
 #endif
 
 	void applyChance(int action, Game & g);
@@ -227,19 +231,27 @@ public:
 	void fullSyncGame();
 
 	inline constexpr RewardType & Q(MCTSNode * v) { return v->reward; }
+	inline constexpr RewardType Q(MCTSNode const * v) const { return v->reward; }
 	inline constexpr uint & N(MCTSNode * v) { return v->visitCount; }
-	inline constexpr uint NParent(MCTSNode * v)
+	inline constexpr uint N(MCTSNode const * v) const { return v->visitCount; }
+	inline constexpr uint NParent(MCTSNode const * v) const
 	{
 		return nodePriors ?
 		            v->visitCount + (nodePriorsInitiatPlayouts * (uint)v->children.size()) - nodePriorsInitiatPlayouts
 		          : v->visitCount;
 	}
-	inline constexpr bool expansionCandidate(MCTSNode * v)
+	inline constexpr bool expansionCandidate(MCTSNode * v) const
 	{
 		return progressiveWidening ?
 //		            (v->notExpanded > 0) && ((int)v->visitCount >= ((1 << (v->children.size() - v->notExpanded)) / 4))
 		            (v->notExpanded > 0) && ((int)v->visitCount >= ((1 << (v->children.size() - v->notExpanded)) - 1))
 		          : v->notExpanded;
+	}
+	inline constexpr qreal UCB(MCTSNode const * v, MCTSNode const * vPrime) const
+	{
+		return progressiveBias ?
+		            (qreal(Q(vPrime)) / qreal(N(vPrime)))  +  Cp * math.sqrt( math.ln( NParent(v) ) / N(vPrime) )  +  (vPrime->heuristicValue / (N(vPrime) + 1))
+		          : (qreal(Q(vPrime)) / qreal(N(vPrime)))  +  Cp * math.sqrt( math.ln( NParent(v) ) / N(vPrime) );
 	}
 
 private:
