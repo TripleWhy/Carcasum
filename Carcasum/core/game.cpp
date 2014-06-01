@@ -766,7 +766,11 @@ void Game::storeToFile(const QString & path)
 void Game::storeToFile(const QString & path, const std::vector<MoveHistoryEntry> & history)
 {
 	QFile file(path);
-	file.open(QIODevice::WriteOnly | QIODevice::Truncate);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+	{
+		qWarning() << "Opening file" << path << "failed.";
+		return;
+	}
 
 	QDataStream out(&file);
 

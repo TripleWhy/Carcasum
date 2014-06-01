@@ -15,12 +15,55 @@
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QVarLengthArray>
+#include <QDir>
+#include <QDateTime>
 #include <array>
 #include <thread>
 
 #if MAIN_USE_TEST_STATES
 #include <QDir>
 #endif
+
+struct TestSetup
+{
+	QString text;
+	std::vector<Player *> players;
+	jcz::TileFactory * tileFactory;
+	bool doIt;
+	int N;
+	bool printSteps;
+
+	TestSetup(QString const text, std::vector<Player *> && players, jcz::TileFactory * tileFactory, bool const doIt = true, int const N = 100, bool const printSteps = true)
+	    : text(text),
+	      players(std::move(players)),
+	      tileFactory(tileFactory),
+	      doIt(doIt),
+	      N(N),
+	      printSteps(printSteps)
+	{
+	}
+
+	TestSetup (TestSetup && other)
+	    : text(other.text),
+	      players(std::move(other.players)),
+	      tileFactory(other.tileFactory),
+	      doIt(other.doIt),
+	      N(other.N),
+	      printSteps(other.printSteps)
+	{
+	}
+
+	TestSetup (const TestSetup & other) = delete;
+
+	~TestSetup()
+	{
+		qDeleteAll(players);
+		players.clear();
+	}
+
+	TestSetup & operator=(TestSetup && other) = default;
+	TestSetup & operator=(TestSetup const & other) = delete;
+};
 
 struct Result
 {
@@ -115,7 +158,7 @@ void printResult(T const & results, int const playerCount, size_t index)
 	}
 }
 
-void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory, std::vector<Result> & results, int const N, int const threadId, int const threadCount, bool const printSteps)
+void run(TestSetup const & setup, std::vector<Result> & results, int const threadId, int const threadCount, QString storeDir)
 {
 #ifdef Q_OS_UNIX
 	// The follwing code ties one thread to one core on linux.
@@ -138,7 +181,7 @@ void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory,
 #endif
 
 	std::vector<Player *> players;
-	for (Player const * p : players_)
+	for (Player const * p : setup.players)
 		players.push_back(p->clone());
 
 	RandomNextTileProvider rntp;
@@ -155,8 +198,8 @@ void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory,
 	QVarLengthArray<int, MAX_PLAYERS> playerAt(playerCount);
 	for (int offset = 0; offset < playerCount; ++offset)
 	{
-		size_t from = threadId * N / threadCount + offset * N;
-		size_t to = (threadId+1) * N / threadCount + offset * N;
+		size_t from = threadId * setup.N / threadCount + offset * setup.N;
+		size_t to = (threadId+1) * setup.N / threadCount + offset * setup.N;
 		for (size_t j = from; j < to; ++j)
 		{
 			game.clearPlayers();
@@ -183,7 +226,7 @@ void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory,
 			history.pop_back();
 			game.newGame(Tile::BaseGame, tileFactory, history, true);
 #else
-			game.newGame(Tile::BaseGame, tileFactory);
+			game.newGame(Tile::BaseGame, setup.tileFactory);
 #endif
 			int i = 0;
 			for (bool cont = true; cont; ++i)
@@ -208,7 +251,7 @@ void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory,
 				}
 				else
 				{
-					if (printSteps)
+					if (setup.printSteps)
 						qDebug() << i << "skipped tile";
 				}
 			}
@@ -227,15 +270,18 @@ void run(std::vector<Player *> const & players_, jcz::TileFactory * tileFactory,
 
 			results[j] = result;
 
-			if (printSteps)
+			if (setup.printSteps)
 				printResult(results, playerCount, j);
+
+			QString file = QString("%1/%2_%3").arg(storeDir).arg(j, 3, 10, QLatin1Char('0')).arg(QDateTime::currentMSecsSinceEpoch());
+			game.storeToFile(file);
 		}
 	}
 
 	qDeleteAll(players);
 }
 
-void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory, bool const doIt = true, int const N=100, bool const printSteps = true)
+void doTest(TestSetup const & setup, int setupIndex)
 {
 #ifdef QT_NO_DEBUG
 	int const THREADS = 8;
@@ -246,45 +292,45 @@ void doTest(std::vector<Player *> & players, jcz::TileFactory * tileFactory, boo
 #ifdef TIMEOUT
 	qDebug() << "TIMEOUT" << TIMEOUT;
 #endif
-	qDebug() << "N" << N;
+	qDebug() << "N" << setup.N;
 	qDebug() << "THREADS" << THREADS;
 
 	// feedback in case clone() does not work correctly:
-	for (Player * p : players)
+	for (Player * p : setup.players)
 	{
 		auto clone = p->clone();
 		qDebug() << clone->getTypeName();
 		delete clone;
 	}
 
-	if (doIt)
+	QString dir = QString("%1_games/setup_%2_%3").arg(qApp->applicationFilePath()).arg(setupIndex+1, 2, 10, QLatin1Char('0')).arg(setup.text);;
+	QDir(dir).mkpath(".");
+	if (setup.doIt)
 	{
 		std::vector<Result> results;
-		results.resize(N * players.size());
+		results.resize(setup.N * setup.players.size());
 
 		if (THREADS == 1)
 		{
-			run(players, tileFactory, std::ref(results), N, 0, THREADS, printSteps);
+			run(setup, results, 0, THREADS, dir);
 		}
 		else
 		{
 			std::thread * threads[THREADS];
 			for (int i = 0; i < THREADS; ++i)
-				threads[i] = new std::thread(run, players, tileFactory, std::ref(results), N, i, THREADS, printSteps);
+				threads[i] = new std::thread(run, std::ref(setup), std::ref(results), i, THREADS, dir);
 			for (int i = 0; i < THREADS; ++i)
 				threads[i]->join();
 		}
-		printResults(results, (int)players.size());
+		printResults(results, (int)setup.players.size());
 		qDebug("\n");
 	}
-
-	qDeleteAll(players);
-	players.clear();
 }
 
 #include <iostream>
-int main(int /*argc*/, char */*argv*/[])
+int main(int argc, char *argv[])
 {
+	QCoreApplication app(argc, argv);
 	qDebug() << "Qt build version:  " << QT_VERSION_STR;
 	qDebug() << "Qt runtime version:" << qVersion();
 	qDebug() << "Git revision:" << APP_REVISION_STR;
@@ -292,284 +338,282 @@ int main(int /*argc*/, char */*argv*/[])
 	qDebug("WARNING: RANDOM_SEED is set: " STR(RANDOM_SEED));
 #endif
 
+	std::vector<TestSetup> setups;
 	jcz::TileFactory * tileFactory = new jcz::TileFactory(false);
 	std::vector<Player *> players;
-	QElapsedTimer totalTime;
-	totalTime.start();
 
 //	if (false)
 //	{
-//		qDebug("\n\nMCTSPlayer vs MCTSPlayer1");
 //		players.push_back(new MCTSPlayer<>(tileFactory));
 //		players.push_back(new MCTSPlayer1<>(tileFactory));
-//		doTest(players, tileFactory);
+//		setups.emplace_back( "MCTSPlayer vs MCTSPlayer1", std::move(players), tileFactory );
 //	}
 	if (false)
 	{
-		qDebug("\n\nComplexUtility vs SimpleUtility");
 		players.push_back(new MCTSPlayer<Utilities::ComplexUtility, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-		doTest(players, tileFactory);
+		setups.emplace_back( "ComplexUtility vs SimpleUtility", std::move(players), tileFactory );
 
-		qDebug("\n\nComplexUtilityNormalized vs SimpleUtility");
 		players.push_back(new MCTSPlayer<Utilities::ComplexUtilityNormalized, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-		doTest(players, tileFactory);
+		setups.emplace_back( "ComplexUtilityNormalized vs SimpleUtility", std::move(players), tileFactory );
 
-		qDebug("\n\nNormalized<ComplexUtility> vs SimpleUtility");
 		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::ComplexUtility>, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-		doTest(players, tileFactory);
+		setups.emplace_back( "Normalized<ComplexUtility> vs SimpleUtility", std::move(players), tileFactory );
 
-		qDebug("\n\nHeydensUtility vs SimpleUtility");
 		players.push_back(new MCTSPlayer<Utilities::HeydensUtility, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-		doTest(players, tileFactory);
+		setups.emplace_back( "HeydensUtility vs SimpleUtility", std::move(players), tileFactory );
 
-		qDebug("\n\nNormalized<HeydensUtility> vs SimpleUtility");
 		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensUtility>, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-		doTest(players, tileFactory);
+		setups.emplace_back( "Normalized<HeydensUtility> vs SimpleUtility", std::move(players), tileFactory );
 
-		qDebug("\n\nPortionUtility vs SimpleUtility");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-		doTest(players, tileFactory);
+		setups.emplace_back( "PortionUtility vs SimpleUtility", std::move(players), tileFactory );
 
-		qDebug("\n\nBonus<PortionUtility, 100> vs SimpleUtility");
 		players.push_back(new MCTSPlayer<Utilities::Bonus<Utilities::PortionUtility, 100>, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-		doTest(players, tileFactory);
+		setups.emplace_back( "Bonus<PortionUtility, 100> vs SimpleUtility", std::move(players), tileFactory );
 
-		qDebug("\n\nBonus<ComplexUtility, 1> vs SimpleUtility");
 		players.push_back(new MCTSPlayer<Utilities::Bonus<Utilities::ComplexUtility, 1>, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-		doTest(players, tileFactory);
+		setups.emplace_back( "Bonus<ComplexUtility, 1> vs SimpleUtility", std::move(players), tileFactory );
 	}
 	if (false)
 	{
-		qDebug("\n\nTest 2");
-		for (int i = 14; i < 15; ++i)
+		for (int i = 0; i < 15; ++i)
 		{
 			int p1 = (1 << i);
 			int p2 = (2 << i);
-			qDebug() << "\n" << p1 << "vs" << p2;
 			players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory, p1, false, 1.0));
 			players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory, p2, false, 1.0));
-			doTest(players, tileFactory);
+			setups.emplace_back( QString("Test 2: %1 vs %2").arg(p1).arg(p2), std::move(players), tileFactory );
 		}
 	}
 	if (false)
 	{
-		qDebug("\n\nMonteCarloPlayer vs MCTSPlayer");
 		players.push_back(new MonteCarloPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
-		doTest(players, tileFactory);
+		setups.emplace_back( "MonteCarloPlayer vs MCTSPlayer", std::move(players), tileFactory );
 
-		qDebug("\n\nMonteCarloPlayer2 vs MCTSPlayer");
 		players.push_back(new MonteCarloPlayer2<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
-		doTest(players, tileFactory);
+		setups.emplace_back( "MonteCarloPlayer2 vs MCTSPlayer", std::move(players), tileFactory );
 
-		qDebug("\n\nMonteCarloPlayerUCT vs MCTSPlayer");
 		players.push_back(new MonteCarloPlayerUCT<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
-		doTest(players, tileFactory);
+		setups.emplace_back( "MonteCarloPlayerUCT vs MCTSPlayer", std::move(players), tileFactory );
 	}
 	if (false)
 	{
-		qDebug("\n\nMCTSPlayer reuseTree vs MCTSPlayer plain ");
-
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, true));
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
-		doTest(players, tileFactory);
+		setups.emplace_back( "MCTSPlayer reuseTree vs MCTSPlayer plain", std::move(players), tileFactory );
 	}
 	if (false)
 	{
-		qDebug();
 		players.push_back(new UtilityPlayer1<Utilities::HeydensEvaluation>(tileFactory));
 		players.push_back(new SimplePlayer());
-		doTest(players, tileFactory, true, 10000, false);
+		setups.emplace_back( "", std::move(players), tileFactory, true, 10000, false );
 
-		qDebug();
 		players.push_back(new UtilityPlayer1<Utilities::HeydensEvaluation>(tileFactory));
 		players.push_back(new SimplePlayer2());
-		doTest(players, tileFactory, true, 10000, false);
+		setups.emplace_back( "", std::move(players), tileFactory, true, 10000, false );
 
-		qDebug();
 		players.push_back(new UtilityPlayer1<Utilities::HeydensEvaluation>(tileFactory));
 		players.push_back(new SimplePlayer3());
-		doTest(players, tileFactory, true, 10000, false);
+		setups.emplace_back( "", std::move(players), tileFactory, true, 10000, false );
 
-		qDebug();
 		players.push_back(new UtilityPlayer1<Utilities::HeydensEvaluation>(tileFactory));
 		players.push_back(new jcz::JCZPlayer(tileFactory));
-		doTest(players, tileFactory, true, 100, false);
+		setups.emplace_back( "", std::move(players), tileFactory, true, 100, false );
 
-		qDebug();
 		players.push_back(new UtilityPlayer2<Utilities::HeydensEvaluation>(tileFactory));
 		players.push_back(new SimplePlayer());
-		doTest(players, tileFactory, true, 10000, false);
+		setups.emplace_back( "", std::move(players), tileFactory, true, 10000, false );
 
-		qDebug();
 		players.push_back(new UtilityPlayer2<Utilities::HeydensEvaluation>(tileFactory));
 		players.push_back(new SimplePlayer2());
-		doTest(players, tileFactory, true, 10000, false);
+		setups.emplace_back( "", std::move(players), tileFactory, true, 10000, false );
 
-		qDebug();
 		players.push_back(new UtilityPlayer2<Utilities::HeydensEvaluation>(tileFactory));
 		players.push_back(new SimplePlayer3());
-		doTest(players, tileFactory, true, 10000, false);
+		setups.emplace_back( "", std::move(players), tileFactory, true, 10000, false );
 
-		qDebug();
 		players.push_back(new UtilityPlayer2<Utilities::HeydensEvaluation>(tileFactory));
 		players.push_back(new jcz::JCZPlayer(tileFactory));
-		doTest(players, tileFactory, true, 100, false);
-
-		qDebug("-------------------");
-
-		qDebug();
+		setups.emplace_back( "", std::move(players), tileFactory, true, 100, false );
+	}
+	if (false)
+	{
 		players.push_back(new SimplePlayer());
 		players.push_back(new SimplePlayer2());
-		doTest(players, tileFactory, true, 10000, false);
+		setups.emplace_back( "", std::move(players), tileFactory, true, 10000, false );
 
-		qDebug();
 		players.push_back(new SimplePlayer());
 		players.push_back(new SimplePlayer3());
-		doTest(players, tileFactory, true, 10000, false);
+		setups.emplace_back( "", std::move(players), tileFactory, true, 10000, false );
 
-		qDebug();
 		players.push_back(new SimplePlayer());
 		players.push_back(new jcz::JCZPlayer(tileFactory));
-		doTest(players, tileFactory, true, 1000, false);
+		setups.emplace_back( "", std::move(players), tileFactory, true, 1000, false );
 
-		qDebug();
 		players.push_back(new SimplePlayer2());
 		players.push_back(new SimplePlayer3());
-		doTest(players, tileFactory, true, 10000, false);
+		setups.emplace_back( "", std::move(players), tileFactory, true, 10000, false );
 
-		qDebug();
 		players.push_back(new SimplePlayer2());
 		players.push_back(new jcz::JCZPlayer(tileFactory));
-		doTest(players, tileFactory, true, 1000, false);
+		setups.emplace_back( "", std::move(players), tileFactory, true, 1000, false );
 
-		qDebug();
 		players.push_back(new SimplePlayer3());
 		players.push_back(new jcz::JCZPlayer(tileFactory));
-		doTest(players, tileFactory, true, 1000, false);
+		setups.emplace_back( "", std::move(players), tileFactory, true, 1000, false );
 
-		qDebug();
 		players.push_back(new SimplePlayer3());
 		players.push_back(new RouletteWheelPlayer());
-		doTest(players, tileFactory, true, 10000, false);
+		setups.emplace_back( "", std::move(players), tileFactory, true, 10000, false );
 
-		qDebug();
 		players.push_back(new SimplePlayer3());
 		players.push_back(new RouletteWheelPlayer2());
-		doTest(players, tileFactory, true, 10000, false);
+		setups.emplace_back( "", std::move(players), tileFactory, true, 10000, false );
 	}
 //	if (false)
 //	{
-//		qDebug("\n\nMCTSPlayer vs MCTSPlayerMT");
 //		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
 //		players.push_back(new MCTSPlayerMT<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
-//		doTest(players, tileFactory);
+//		setup.emplace_back( "MCTSPlayer vs MCTSPlayerMT", std::move(players, tileFactory) );
 //	}
 	if (false)
 	{
 		qreal const Cps[] = {0.0, 0.25, 0.50, 0.75, 1.0, 2.0, 3.0};
 		for (qreal const Cp : Cps)
 		{
-			qDebug() << "\n\nCp" << Cp;
 			players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false, TIMEOUT, true, Cp));
 			players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false, TIMEOUT, true, 0.5));
-			doTest(players, tileFactory);
+			setups.emplace_back( QString("Cp %1").arg(Cp), std::move(players), tileFactory );
 		}
 	}
 	if (false)
 	{
-		qDebug("\n\nMCTSPlayer random vs MCTSPlayer simple2 20");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedy<20>>(tileFactory, false));
-		doTest(players, tileFactory);
+		setups.emplace_back( "MCTSPlayer random vs MCTSPlayer simple2 20", std::move(players), tileFactory );
 
-		qDebug("\n\nMCTSPlayer random vs MCTSPlayer simple2 80");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedy<80>>(tileFactory, false));
-		doTest(players, tileFactory);
+		setups.emplace_back( "MCTSPlayer random vs MCTSPlayer simple2 80", std::move(players), tileFactory );
 
-		qDebug("\n\nMCTSPlayer random vs MCTSPlayer simple2 50");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedy<50>>(tileFactory, false));
-		doTest(players, tileFactory);
+		setups.emplace_back( "MCTSPlayer random vs MCTSPlayer simple2 50", std::move(players), tileFactory );
 
-		qDebug("\n\nMCTSPlayer random vs MCTSPlayer simple2 0");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedy<0>>(tileFactory, false));
-		doTest(players, tileFactory);
+		setups.emplace_back( "MCTSPlayer random vs MCTSPlayer simple2 0", std::move(players), tileFactory );
 
-		qDebug("\n\nMCTSPlayer random vs MCTSPlayer simple2 100");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedy<100>>(tileFactory, false));
-		doTest(players, tileFactory);
+		setups.emplace_back( "MCTSPlayer random vs MCTSPlayer simple2 100", std::move(players), tileFactory );
 	}
 	if (false)
 	{
 		qDebug() << "SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT" << SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT;
-		qDebug("\n\nMCTSPlayer random vs MCTSPlayer RWS1");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::PlayerPlayout<RouletteWheelPlayer>>(tileFactory, false));
-		doTest(players, tileFactory, true);
+		setups.emplace_back( "MCTSPlayer random vs MCTSPlayer RWS1", std::move(players), tileFactory, true );
 
-		qDebug("\n\nMCTSPlayer random vs MCTSPlayer RWS2");
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::PlayerPlayout<RouletteWheelPlayer2>>(tileFactory, false));
-		doTest(players, tileFactory, true);
-	}
-	if (false)
-	{
-		QElapsedTimer t;
-		qDebug("\n\n");
-		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>  (tileFactory, false));
-		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false));
-		t.start();
-		doTest(players, tileFactory, true);
-		qDebug() << "Time:" <<t.elapsed();
-
-		qDebug("\n\n");
-		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout> (tileFactory, false));
-		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false));
-		t.start();
-		doTest(players, tileFactory, true);
-		qDebug() << "Time:" <<t.elapsed();
-
-		qDebug("\n\n");
-		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, false));
-		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, true));
-		t.start();
-		doTest(players, tileFactory, true);
-		qDebug() << "Time:" <<t.elapsed();
-
-		qDebug("\n\n");
-		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout> (tileFactory, false, TIMEOUT, true, 0.5, false));
-		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, TIMEOUT, true, 0.5, true));
-		t.start();
-		doTest(players, tileFactory, true);
-		qDebug() << "Time:" <<t.elapsed();
+		setups.emplace_back( "MCTSPlayer random vs MCTSPlayer RWS2", std::move(players), tileFactory, true );
 	}
 	if (true)
 	{
-		qDebug("\n\nProgressive Widening");
+		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>  (tileFactory, false));
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false));
+		setups.emplace_back( "", std::move(players), tileFactory );
+
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout> (tileFactory, false));
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false));
+		setups.emplace_back( "", std::move(players), tileFactory );
+
+		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, false));
+		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, true));
+		setups.emplace_back( "", std::move(players), tileFactory );
+
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout> (tileFactory, false, TIMEOUT, false, 0.5, false));
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, TIMEOUT, false, 0.5, false));
+		setups.emplace_back( "", std::move(players), tileFactory );
+	}
+	if (false)
+	{
 		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, false, false));
 		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, false, true));
-		doTest(players, tileFactory, true);
+		setups.emplace_back( "Progressive Widening", std::move(players), tileFactory, true );
 
-		qDebug("\n\nProgressive Bias");
 		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, 100, true, 0.5, false, false, false));
 		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, 100, true, 0.5, false, false, true));
-		doTest(players, tileFactory, true, 50);
+		setups.emplace_back( "Progressive Bias", std::move(players), tileFactory, true, 50 );
 	}
 
+	if (setups.size() == 0)
+	{
+		qDebug("nothing to do");
+		return 0;
+	}
+
+	int from = 0;
+	int to = (int)setups.size() - 1;
+
+	QStringList const & args = app.arguments();
+	if (args.size() > 1)
+	{
+		bool ok;
+		int i = args[1].toInt(&ok);
+		if (ok)
+		{
+			from = i - 1;
+			to =  from;
+			if (args.size() > 2)
+			{
+				i = args[2].toInt(&ok);
+				if (ok)
+					to = i - 1;
+			}
+		}
+	}
+	if (from < 0)
+		from = 0;
+	if (from > (int)setups.size() -1)
+		from = (int)setups.size() -1;
+	if (to < 0)
+		to = 0;
+	if (to > (int)setups.size() -1)
+		to = (int)setups.size() -1;
+	if (to < from)
+		to = from;
+
+	qDebug() << "Running tests" << (from+1) << "-" << (to+1) << "of" << setups.size();
+
+	setups.erase(setups.begin() + to + 1, setups.end());
+	setups.erase(setups.begin(), setups.begin() + from);
+
+	QElapsedTimer totalTime;
+	QElapsedTimer time;
+	totalTime.start();
+
+	int index = from;
+	for (auto const & setup : setups)
+	{
+		time.start();
+		qDebug("\n");
+		qDebug() << setup.text;
+		doTest(setup, index++);
+		qDebug() << "Time:" << time.elapsed();
+	}
 	qDebug() << "\nTotal Time:" << totalTime.elapsed();
 
 	delete tileFactory;
