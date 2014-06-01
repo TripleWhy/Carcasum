@@ -677,8 +677,6 @@ public:
 	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * g) const
 	{
 		auto r = qreal(util.utility(scores, playerCount, myIndex, g) - lBound) / range;
-		if (r >= 1 || r <= 0 || r >= 0.55 || r <= 0.44)
-			qDebug() << r;
 		return r;
 	}
 
@@ -689,7 +687,6 @@ public:
 		for (int i = 0; i < u.size(); ++i)
 		{
 			r[i] = qreal(u[i] - lBound) / range;
-			qDebug() << r[i];
 		}
 		return r;
 	}
@@ -728,8 +725,6 @@ public:
 	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * g) const
 	{
 		auto r = (qreal(util.utility(scores, playerCount, myIndex, g) - lBound) / range) - 0.5;
-		if (r >= 1 || r <= 0 || r >= 0.55 || r <= 0.44)
-			qDebug() << r;
 		return r;
 	}
 
@@ -740,7 +735,6 @@ public:
 		for (int i = 0; i < u.size(); ++i)
 		{
 			r[i] = (qreal(u[i] - lBound) / range) - 0.5;
-			qDebug() << r[i];
 		}
 		return r;
 	}
