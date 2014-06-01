@@ -9,39 +9,41 @@
 #define APP_ORGANIZATION "YMSolutions"
 
 // Some numbers
-#define TIMEOUT                       2500
+#define TIMEOUT                           2500
 // Game
-#define MAX_PLAYERS                   6
-#define MEEPLE_COUNT                  7
-#define TILE_COUNT_ARRAY_LENGTH      32
+#define MAX_PLAYERS                          6
+#define MEEPLE_COUNT                         7
+#define TILE_COUNT_ARRAY_LENGTH             32
 // Player
-#define TILE_ARRAY_LENGTH           256
-#define NODE_ARRAY_LENGTH            16
+#define TILE_ARRAY_LENGTH                  256
+#define NODE_ARRAY_LENGTH                   16
 // GUI
-#define BOARD_TILE_SIZE             300
-#define BOARD_MEEPLE_SIZE            75
-#define BOARD_TILE_FRAME_WIDTH       15
-#define BOARDVIEW_INITIAL_TILE_SIZE  50
-#define PINFO_ICON_SIZE              40
-#define PINFO_MEEPLE_SIZE            10
-#define RTILE_TILE_SIZE              40
-#define REMAINING_TILES_COLUMNS       4
-#define PLAYER_GAP_TIMEOUT          100
+#define BOARD_TILE_SIZE                    300
+#define BOARD_MEEPLE_SIZE                   75
+#define BOARD_TILE_FRAME_WIDTH              15
+#define BOARDVIEW_INITIAL_TILE_SIZE         50
+#define PINFO_ICON_SIZE                     40
+#define PINFO_MEEPLE_SIZE                   10
+#define RTILE_TILE_SIZE                     40
+#define REMAINING_TILES_COLUMNS              4
+#define PLAYER_GAP_TIMEOUT                 100
 // Util
-#define LN_TABLE_SIZE           1000000
+#define LN_TABLE_SIZE                  1000000
+// BoardGraphicsView
+#define BOARDGRAPHICSVIEW_ZOOM_SPEED         1.002
+#define BOARDGRAPHICSVIEW_MAX_ZOOM           2.0
+#define BOARDGRAPHICSVIEW_MIN_ZOOM           0.05
+// MCTSPlayer
+#define MCTS_NODE_PRIORS_PLAYOUTS           20
 
 
 // Options
 // Tile
-#define NODE_VARIANT                      2
+#define NODE_VARIANT                 2
 // Game/MonteCarloPlayer
-#define USE_RESET                         0
+#define USE_RESET                    0
 // RandomTable
-#define RANDOM_TABLE_SHARED_OFFSET        0
-// BoardGraphicsView
-#define BOARDGRAPHICSVIEW_ZOOM_SPEED      1.002
-#define BOARDGRAPHICSVIEW_MAX_ZOOM        2.0
-#define BOARDGRAPHICSVIEW_MIN_ZOOM        0.05
+#define RANDOM_TABLE_SHARED_OFFSET   0
 
 
 // Debug options

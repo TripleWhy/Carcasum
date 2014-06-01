@@ -181,7 +181,7 @@ private:
 	const qreal Cp;
 	const bool reuseTree;
 	const bool nodePriors;
-	static constexpr uint nodePriorsInitiatPlayouts = 10;
+	static constexpr uint nodePriorsInitiatPlayouts = MCTS_NODE_PRIORS_PLAYOUTS;
 	const bool progressiveWidening;
 
 #if MCTS_COUNT_EXPAND_HITS
