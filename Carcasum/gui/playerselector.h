@@ -18,7 +18,7 @@ class PlayerSelector : public QDialog
 
 private:
 	enum PlayerType { PlayerTypeRandom, PlayerTypeMonteCarlo, PlayerTypeMonteCarlo2, PlayerTypeMonteCarloUCT, PlayerTypeMCTS, PlayerTypeJCZ, PlayerSimple, PlayerSimple2, PlayerSimple3 };
-	enum UtilityType { UtilityTypeSimple, UtilityTypeHeyden, UtilityTypeComplex, UtilityTypeComplexNormalized };
+	enum UtilityType { UtilityTypeSimple, UtilityTypeHeyden, UtilityTypeComplex, UtilityTypeComplexNormalized, UtilityTypePortion };
 	enum PlayoutType { PlayoutTypeRandom, PlayoutTypeEarlyCutoff };
 
 	struct PlayerData
@@ -50,10 +50,12 @@ private:
 	                                                {PlayerTypeMonteCarloUCT, "Monte Carlo UCB1", ""},
 	                                                {PlayerTypeMCTS, "MCTS", ""}
 	                                              }};
-	const std::array<UtilityData, 4> utilityData = {{ {UtilityTypeSimple, "Simple", ""},
-	                                                  {UtilityTypeHeyden, "Heyden", ""},
-	                                                  {UtilityTypeComplex, "Complex", ""},
-	                                                  {UtilityTypeComplexNormalized, "Complex Normalized", ""}
+	const std::array<UtilityData, 5> utilityData = {{
+	                                                    {UtilityTypePortion, "Portion", ""},
+	                                                    {UtilityTypeSimple, "Simple", ""},
+	                                                    {UtilityTypeHeyden, "Heyden", ""},
+	                                                    {UtilityTypeComplex, "Complex", ""},
+	                                                    {UtilityTypeComplexNormalized, "Complex Normalized", ""},
 	                                                }};
 	const std::array<PlayoutData, 2> playoutData = {{ {PlayoutTypeRandom, "Random", ""},
 	                                                  {PlayoutTypeEarlyCutoff, "Early Cutoff", ""}

@@ -100,6 +100,16 @@ Player *PlayerSelector::createPlayer()
 							return new MonteCarloPlayer<Utilities::ComplexUtilityNormalizedEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
 					}
 				}
+				case UtilityTypePortion:
+				{
+					switch (playout)
+					{
+						case PlayoutTypeRandom:
+							return new MonteCarloPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout);
+						case PlayoutTypeEarlyCutoff:
+							return new MonteCarloPlayer<Utilities::EC<Utilities::PortionUtility>, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
+					}
+				}
 			}
 			break;
 		}
@@ -145,6 +155,16 @@ Player *PlayerSelector::createPlayer()
 							return new MonteCarloPlayer2<Utilities::ComplexUtilityNormalized, Playouts::RandomPlayout>(tileFactory, limit, useTimeout);
 						case PlayoutTypeEarlyCutoff:
 							return new MonteCarloPlayer2<Utilities::ComplexUtilityNormalizedEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
+					}
+				}
+				case UtilityTypePortion:
+				{
+					switch (playout)
+					{
+						case PlayoutTypeRandom:
+							return new MonteCarloPlayer2<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout);
+						case PlayoutTypeEarlyCutoff:
+							return new MonteCarloPlayer2<Utilities::EC<Utilities::PortionUtility>, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
 					}
 				}
 			}
@@ -194,6 +214,16 @@ Player *PlayerSelector::createPlayer()
 							return new MonteCarloPlayerUCT<Utilities::ComplexUtilityNormalizedEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
 					}
 				}
+				case UtilityTypePortion:
+				{
+					switch (playout)
+					{
+						case PlayoutTypeRandom:
+							return new MonteCarloPlayerUCT<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout);
+						case PlayoutTypeEarlyCutoff:
+							return new MonteCarloPlayerUCT<Utilities::EC<Utilities::PortionUtility>, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
+					}
+				}
 			}
 			break;
 		}
@@ -239,6 +269,16 @@ Player *PlayerSelector::createPlayer()
 							return new MCTSPlayer<Utilities::ComplexUtilityNormalized, Playouts::RandomPlayout>(tileFactory, false, limit, useTimeout, Cp);
 						case PlayoutTypeEarlyCutoff:
 							return new MCTSPlayer<Utilities::ComplexUtilityNormalizedEC, Playouts::EarlyCutoff<>>(tileFactory, false, limit, useTimeout, Cp);
+					}
+				}
+				case UtilityTypePortion:
+				{
+					switch (playout)
+					{
+						case PlayoutTypeRandom:
+							return new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false, limit, useTimeout, Cp);
+						case PlayoutTypeEarlyCutoff:
+							return new MCTSPlayer<Utilities::EC<Utilities::PortionUtility>, Playouts::EarlyCutoff<>>(tileFactory, false, limit, useTimeout, Cp);
 					}
 				}
 			}
