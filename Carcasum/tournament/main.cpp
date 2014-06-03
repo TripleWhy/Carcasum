@@ -526,8 +526,8 @@ int main(int argc, char *argv[])
 		{
 			int p1 = (1 << i);
 			int p2 = (2 << i);
-			players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory, p1, false, 1.0));
-			players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory, p2, false, 1.0));
+			players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory, false, p1, false, 1.0));
+			players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory, false, p2, false, 1.0));
 			setups.emplace_back( QString("Test 2: %1 vs %2").arg(p1).arg(p2), std::move(players), tileFactory );
 		}
 	}
