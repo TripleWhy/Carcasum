@@ -689,7 +689,7 @@ void MainWindow::renderBoard(std::vector<MoveHistoryEntry> history, QString outF
 
 	RandomNextTileProvider rntp;
 	HistoryProvider hp(&rntp, history, history.size() - removeLast);
-	Game g(&rntp, false);
+	Game g(&hp, false);
 	g.addPlayer(&RandomPlayer::instance);
 	g.addPlayer(&RandomPlayer::instance);
 
@@ -767,6 +767,120 @@ void MainWindow::renderBoard(std::vector<MoveHistoryEntry> history, QString outF
 	bgs.render(painter, QRectF(offset, size));
 
 	image.save(outFile);
+
+	delete painter;
+}
+
+void MainWindow::renderBoardCompleteGame(std::vector<MoveHistoryEntry> history, QString outDir, bool renderOpenTiles, bool renderFrames, bool renderPlayers, bool renderNextTile, int playerCount)
+{
+	//TODO correct backgrounds
+
+	QDir(outDir).mkpath(".");
+
+	jcz::TileFactory tileFactory(false);
+	TileImageFactory imgFactory(&tileFactory);
+
+	QImage image;
+	QPainter * painter = 0;
+
+	RandomNextTileProvider rntp;
+	HistoryProvider hp(&rntp, history, 0);
+	Game g(&hp, false);
+
+	for (int i = 0; i < playerCount; ++i)
+		g.addPlayer(&RandomPlayer::instance);
+
+	BoardGraphicsScene bgs(&tileFactory, &imgFactory);
+	bgs.setRenderOpenTiles(renderOpenTiles);
+	bgs.setRenderFrames(renderFrames);
+	bgs.setGame(&g);
+	g.addWatchingPlayer(&bgs);
+
+	g.newGame(Tile::BaseGame, &tileFactory, history, true);
+
+	bgs.clearSelection();
+	QRectF sceneRect = bgs.itemsBoundingRect();
+
+	int const spacing = 50;
+	int constexpr pivScale = 4;
+	QSize sceneSize = sceneRect.size().toSize();
+	QSize size = sceneSize;
+	if (renderPlayers)
+	{
+		QLabel remainingLabel(QString("%1 tiles left").arg(g.getTileCount() - 1));
+		remainingLabel.updateGeometry();
+		int nextTileType = g.getTile(hp.nextTile(&g))->tileType;
+
+		QSize pivSize;
+		{
+			PlayerInfoView piv(0, &g, &imgFactory);
+			piv.updateView();
+			if (renderNextTile)
+				piv.displayTile(g.getNextPlayer(), nextTileType);
+			piv.updateGeometry();
+
+			pivSize = piv.size() * pivScale;
+			pivSize.rheight() *= g.getPlayerCount();
+
+			QSize remSize = remainingLabel.sizeHint() * pivScale;
+
+			size.rwidth() += pivSize.width() + spacing;
+			size.rheight() = qMax(size.height(), pivSize.height() + spacing + remSize.height());
+		}
+	}
+
+
+
+	std::vector<MoveHistoryEntry> applyHistory;
+	for (int i = -1; i < (int)history.size(); ++i)
+	{
+		// oh well, this is ugly. If only there was a Game::step(MoveHistoryEntry)...
+		if (i >= 0)
+			applyHistory.push_back(history[i]);
+		g.newGame(Tile::BaseGame, &tileFactory, applyHistory, true);
+
+		delete painter;
+		image = QImage(size, QImage::Format_ARGB32);
+		image.fill(Qt::transparent);
+		painter = new QPainter(&image);
+		painter->setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform | QPainter::HighQualityAntialiasing);
+
+		QPoint offset(0, 0);
+		if (renderPlayers)
+		{
+			QLabel remainingLabel(QString("%1 tiles left").arg(g.getTileCount() - 1));
+			remainingLabel.updateGeometry();
+			int nextTileType = g.getTile(hp.nextTile(&g))->tileType;
+
+			QSize pivSize;
+			painter->scale(pivScale, pivScale);
+			for (uint p = 0; p < g.getPlayerCount(); ++p)
+			{
+				PlayerInfoView piv(p, &g, &imgFactory);
+				piv.updateView();
+				if (renderNextTile)
+					piv.displayTile(g.getNextPlayer(), nextTileType);
+				piv.updateGeometry();
+
+				piv.render(painter, offset);
+
+				offset.ry() += piv.size().height();
+			}
+			offset.setX(0);
+			offset.setY((pivSize.height() + spacing) / pivScale);
+
+			remainingLabel.render(painter, offset);
+
+			offset.setX(pivSize.width() + spacing);
+			offset.setY(0);
+			painter->resetTransform();
+		}
+
+		bgs.setSceneRect(sceneRect);
+		bgs.render(painter, QRectF(offset, size));
+
+		image.save(QString("%1/%2.png").arg(outDir).arg(i+1, 3, 10, QLatin1Char('0')));
+	}
 
 	delete painter;
 }

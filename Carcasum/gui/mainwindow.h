@@ -117,6 +117,7 @@ private slots:
 public:
 	static void renderBoard(QString infile, QString outFile, int removeLast, bool renderOpenTiles, bool renderFrames, bool renderPlayers, bool renderNextTile);
 	static void renderBoard(std::vector<MoveHistoryEntry> history, QString outFile, int removeLast, bool renderOpenTiles, bool renderFrames, bool renderPlayers, bool renderNextTile);
+	static void renderBoardCompleteGame(std::vector<MoveHistoryEntry> history, QString outDir, bool renderOpenTiles, bool renderFrames, bool renderPlayers, bool renderNextTile, int playerCount = 2);
 
 private:
 	Ui::MainWindow *ui;

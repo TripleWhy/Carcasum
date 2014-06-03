@@ -84,8 +84,12 @@ int main(int argc, char *argv[])
 	qDebug() << "Git revision:" << APP_REVISION_STR;
 	qDebug() << "QStandardPaths::DataLocation:" << QStandardPaths::writableLocation(QStandardPaths::DataLocation);
 
-	jcz::TileFactory tileFactory;
-	TileImageFactory imgFactory(&tileFactory);
+	if (false)
+	{
+		auto history = Game::loadFromFile("game1");
+		MainWindow::renderBoardCompleteGame(history, "./game1-render/", false, false, false, false, 3);
+		return 0;
+	}
 
 	QDir dir("../../Carcasum/states/");
 	dir.mkdir("render");
