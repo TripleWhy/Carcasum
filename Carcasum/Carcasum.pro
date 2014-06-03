@@ -47,7 +47,8 @@ core {
 		gui/remainingtilesview.cpp \
 		gui/remainingtileview.cpp \
 		gui/downloader.cpp \
-		gui/playerselector.cpp
+		gui/playerselector.cpp \
+		gui/renderoptionsdialog.cpp
 
 	HEADERS  += gui/mainwindow.h \
 		gui/tileimagefactory.h \
@@ -58,14 +59,16 @@ core {
 		gui/remainingtileview.h \
 		gui/guiIncludes.h \
 		gui/downloader.h \
-		gui/playerselector.h
+		gui/playerselector.h \
+		gui/renderoptionsdialog.h
 
 	FORMS    += gui/mainwindow.ui \
 		gui/playerinfoview.ui \
 		gui/remainingtilesview.ui \
 		gui/remainingtileview.ui \
 		gui/downloader.ui \
-		gui/playerselector.ui
+		gui/playerselector.ui \
+		gui/renderoptionsdialog.ui
 
 	classicTiles {
 		DEFINES += CLASSIC_TILES

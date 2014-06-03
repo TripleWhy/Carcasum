@@ -112,6 +112,11 @@ private slots:
 	void on_boardFileButton_clicked();
 	void on_actionControls_triggered();
 	void on_actionUndo_triggered();
+	void on_actionRender_to_file_triggered();
+
+public:
+	static void renderBoard(QString infile, QString outFile, int removeLast, bool renderOpenTiles, bool renderFrames, bool renderPlayers, bool renderNextTile);
+	static void renderBoard(std::vector<MoveHistoryEntry> history, QString outFile, int removeLast, bool renderOpenTiles, bool renderFrames, bool renderPlayers, bool renderNextTile);
 
 private:
 	Ui::MainWindow *ui;

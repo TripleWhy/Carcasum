@@ -198,8 +198,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>100</width>
-                  <height>30</height>
+                  <width>16</width>
+                  <height>16</height>
                  </rect>
                 </property>
                </widget>
@@ -254,6 +254,7 @@
     <addaction name="actionNew_Game"/>
     <addaction name="separator"/>
     <addaction name="actionStore_board"/>
+    <addaction name="actionRender_to_file"/>
     <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
@@ -305,6 +306,9 @@
    </property>
   </action>
   <action name="actionNew_Game">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>New Game</string>
    </property>
@@ -330,6 +334,11 @@
   <action name="actionUndo">
    <property name="text">
     <string>Undo</string>
+   </property>
+  </action>
+  <action name="actionRender_to_file">
+   <property name="text">
+    <string>Render to file</string>
    </property>
   </action>
  </widget>

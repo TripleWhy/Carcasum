@@ -3,6 +3,7 @@
 #include "playerinfoview.h"
 #include "jcz/tilefactory.h"
 #include "player/randomplayer.h"
+#include "renderoptionsdialog.h"
 #include <QSettings>
 #include <QFileDialog>
 #include <QStandardPaths>
@@ -645,4 +646,127 @@ void MainWindow::on_actionUndo_triggered()
 #if MAINWINDOW_ENABLE_UNDO
 	gameThread->undo();
 #endif
+}
+
+void MainWindow::on_actionRender_to_file_triggered()
+{
+	QString path = QFileDialog::getSaveFileName(this, tr("Render Board"));
+	if (path.isEmpty())
+		return;
+
+	RenderOptionsDialog renderOptions(this);
+	if (renderOptions.exec() != QDialog::Accepted)
+		return;
+
+	renderBoard(
+	            game->getMoveHistory(),
+	            path,
+	            renderOptions.getRemoveLast(),
+	            renderOptions.getRenderOpenTiles(),
+	            renderOptions.getRenderFrames(),
+	            renderOptions.getRenderPlayers(),
+	            renderOptions.getRenderNextTile()
+	            );
+}
+
+void MainWindow::renderBoard(QString inFile, QString outFile, int removeLast, bool renderOpenTiles, bool renderFrames, bool renderPlayers, bool renderNextTile)
+{
+	auto && history = Game::loadFromFile(inFile);
+	if (history.size() == 0)
+		return;
+	return renderBoard(history, outFile, removeLast, renderOpenTiles, renderFrames, renderPlayers, renderNextTile);
+}
+
+void MainWindow::renderBoard(std::vector<MoveHistoryEntry> history, QString outFile, int removeLast, bool renderOpenTiles, bool renderFrames, bool renderPlayers, bool renderNextTile)
+{
+	//TODO correct backgrounds
+
+	jcz::TileFactory tileFactory(false);
+	TileImageFactory imgFactory(&tileFactory);
+
+	QImage image;
+	QPainter * painter = 0;
+
+	RandomNextTileProvider rntp;
+	HistoryProvider hp(&rntp, history, history.size() - removeLast);
+	Game g(&rntp, false);
+	g.addPlayer(&RandomPlayer::instance);
+	g.addPlayer(&RandomPlayer::instance);
+
+	BoardGraphicsScene bgs(&tileFactory, &imgFactory);
+	bgs.setRenderOpenTiles(renderOpenTiles);
+	bgs.setRenderFrames(renderFrames);
+	bgs.setGame(&g);
+	g.addWatchingPlayer(&bgs);
+
+	history.erase(history.end() - removeLast, history.end());
+	g.newGame(Tile::BaseGame, &tileFactory, history, true);
+
+	bgs.clearSelection();
+	bgs.setSceneRect(bgs.itemsBoundingRect());
+
+	int const spacing = 50;
+	int constexpr pivScale = 4;
+	QSize sceneSize = bgs.sceneRect().size().toSize();
+	QSize size = sceneSize;
+	QPoint offset(0, 0);
+	if (renderPlayers)
+	{
+		QLabel remainingLabel(QString("%1 tiles left").arg(g.getTileCount() - 1));
+		remainingLabel.updateGeometry();
+		int nextTileType = g.getTile(hp.nextTile(&g))->tileType;
+
+		QSize pivSize;
+		for (uint p = 0; p < g.getPlayerCount(); ++p)
+		{
+			PlayerInfoView piv(p, &g, &imgFactory);
+			piv.updateView();
+			if (renderNextTile)
+				piv.displayTile(g.getNextPlayer(), nextTileType);
+			piv.updateGeometry();
+
+			if (p == 0)
+			{
+				pivSize = piv.size() * pivScale;
+				pivSize.rheight() *= g.getPlayerCount();
+
+				QSize remSize = remainingLabel.sizeHint() * pivScale;
+
+				size.rwidth() += pivSize.width() + spacing;
+				size.rheight() = qMax(size.height(), pivSize.height() + spacing + remSize.height());
+
+				image = QImage(size, QImage::Format_ARGB32);
+				image.fill(Qt::transparent);
+				painter = new QPainter(&image);
+				painter->setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform | QPainter::HighQualityAntialiasing);
+
+				painter->scale(pivScale, pivScale);
+			}
+
+			piv.render(painter, offset);
+
+			offset.ry() += piv.size().height();
+		}
+		offset.setX(0);
+		offset.setY((pivSize.height() + spacing) / pivScale);
+
+		remainingLabel.render(painter, offset);
+
+		offset.setX(pivSize.width() + spacing);
+		offset.setY(0);
+		painter->resetTransform();
+	}
+	else
+	{
+		image = QImage(size, QImage::Format_ARGB32);
+		image.fill(Qt::transparent);
+		painter = new QPainter(&image);
+		painter->setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform | QPainter::HighQualityAntialiasing);
+	}
+
+	bgs.render(painter, QRectF(offset, size));
+
+	image.save(outFile);
+
+	delete painter;
 }

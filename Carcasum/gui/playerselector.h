@@ -40,7 +40,7 @@ private:
 		QString toolTip;
 	};
 
-	const std::array<PlayerData, 8> playerData = {{ {PlayerTypeRandom, "Random", ""},
+	const std::array<PlayerData, 9> playerData = {{ {PlayerTypeRandom, "Random", ""},
 	                                                {PlayerSimple, "SimplePlayer v1", ""},
 	                                                {PlayerSimple2, "SimplePlayer v2", ""},
 	                                                {PlayerSimple3, "SimplePlayer v3", ""},
