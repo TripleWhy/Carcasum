@@ -610,7 +610,7 @@ int main(int argc, char *argv[])
 		setups.emplace_back( "Node Priors", std::move(players), tileFactory );
 
 		players.push_back(new MCTSPlayer<>                                                   (tileFactory, false, TIMEOUT, false, 0.5, false));
-		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, TIMEOUT, false, 0.5, false));
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, TIMEOUT, false, 0.5, true));
 		setups.emplace_back( "Node Priors using HeydensEvaluation", std::move(players), tileFactory );
 	}
 	if (false) // progressive widening
