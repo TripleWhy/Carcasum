@@ -488,21 +488,21 @@ int main(int argc, char *argv[])
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
 		setups.emplace_back( "Normalized<ComplexUtility> vs SimpleUtility", std::move(players), tileFactory );
 
-		players.push_back(new MCTSPlayer<Utilities::HeydensUtility, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::ScoreDifferenceUtility, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-		setups.emplace_back( "HeydensUtility vs SimpleUtility", std::move(players), tileFactory );
+		setups.emplace_back( "ScoreDifferenceUtility vs SimpleUtility", std::move(players), tileFactory );
 
-		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensUtility>, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::ScoreDifferenceUtility>, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-		setups.emplace_back( "Normalized<HeydensUtility> vs SimpleUtility", std::move(players), tileFactory );
+		setups.emplace_back( "Normalized<ScoreDifferenceUtility> vs SimpleUtility", std::move(players), tileFactory );
 
-		players.push_back(new MCTSPlayer<Utilities::NormalizedOld<Utilities::HeydensUtility>, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::NormalizedOld<Utilities::ScoreDifferenceUtility>, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-		setups.emplace_back( "NormalizedOld<HeydensUtility> vs SimpleUtility", std::move(players), tileFactory );
+		setups.emplace_back( "NormalizedOld<ScoreDifferenceUtility> vs SimpleUtility", std::move(players), tileFactory );
 
-		players.push_back(new MCTSPlayer<Utilities::NormalizedNeg<Utilities::HeydensUtility>, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::NormalizedNeg<Utilities::ScoreDifferenceUtility>, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-		setups.emplace_back( "NormalizedNeg<HeydensUtility> vs SimpleUtility", std::move(players), tileFactory );
+		setups.emplace_back( "NormalizedNeg<ScoreDifferenceUtility> vs SimpleUtility", std::move(players), tileFactory );
 
 		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));

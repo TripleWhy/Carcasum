@@ -150,13 +150,6 @@ void Node::disconnect(Node * n, Game * g)	//only works in reverse order of conne
 		for (auto const & t : n->d->tiles)
 			d->tiles.erase(d->tiles.find(t));
 		
-	//	for (Node ** & p : n->pointers)
-	//	{
-	//		*p = n;
-	//		pointers.pop_back();
-	////		p = ?;
-	//	}
-		
 #if PRINT_CONNECTIONS
 	//	qDebug() << "  disconnect:" << n->id() << "->" << id();
 #endif

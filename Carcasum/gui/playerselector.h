@@ -18,7 +18,7 @@ class PlayerSelector : public QDialog
 
 private:
 	enum PlayerType { PlayerTypeRandom, PlayerTypeMonteCarlo, PlayerTypeMonteCarlo2, PlayerTypeMonteCarloUCT, PlayerTypeMCTS, PlayerTypeJCZ, PlayerSimple, PlayerSimple2, PlayerSimple3 };
-	enum UtilityType { UtilityTypeSimple, UtilityTypeHeyden, UtilityTypeComplex, UtilityTypeComplexNormalized, UtilityTypePortion };
+	enum UtilityType { UtilityTypeSimple, UtilityTypeScoreDiff, UtilityTypeComplex, UtilityTypeComplexNormalized, UtilityTypePortion };
 	enum PlayoutType { PlayoutTypeRandom, PlayoutTypeEarlyCutoff };
 
 	struct PlayerData
@@ -53,7 +53,7 @@ private:
 	const std::array<UtilityData, 5> utilityData = {{
 	                                                    {UtilityTypePortion, "Portion", ""},
 	                                                    {UtilityTypeSimple, "Simple", ""},
-	                                                    {UtilityTypeHeyden, "Heyden", ""},
+	                                                    {UtilityTypeScoreDiff, "Score Difference", ""},
 	                                                    {UtilityTypeComplex, "Complex", ""},
 	                                                    {UtilityTypeComplexNormalized, "Complex Normalized", ""},
 	                                                }};

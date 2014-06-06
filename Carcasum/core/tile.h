@@ -36,10 +36,9 @@ public:
 	{
 		TerrainType t;
 		TilesType tiles;
-//		PointersType pointers;
 		uchar * const meeples; // Number of meeples on this node per player.
-		uchar maxMeples = 0;
-		void * dd = 0;
+		uchar maxMeples = 0; // argmax(meeples[player])
+		void * dd = 0; // Used by derived classes to store type specific data.
 		Scored scored = NotScored;
 		std::unordered_multiset<Node *> nodes; // This may actually also work faster in a linked version.
 #if DEBUG_IDS

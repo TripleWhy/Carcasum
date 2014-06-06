@@ -386,10 +386,10 @@ public:
 	}
 };
 
-class HeydensUtility
+class ScoreDifferenceUtility
 {
 public:
-	constexpr static char const * name = "HeydensUtility";
+	constexpr static char const * name = "ScoreDifferenceUtility";
 	typedef int RewardType;
 	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
 	inline void newGame(int /*player*/, Game const * /*g*/) {}
@@ -819,7 +819,7 @@ public:
 template<typename Utility>
 QString const Utilities::EC<Utility>::name = QString("EC<%1>").arg(Utility::name);
 typedef EC<ComplexUtility> ComplexUtilityEC;
-typedef EC<HeydensUtility> HeydensUtilityEC;
+typedef EC<ScoreDifferenceUtility> ScoreDifferenceUtilityEC;
 
 
 class ComplexUtilityNormalizedEC
