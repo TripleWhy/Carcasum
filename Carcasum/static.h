@@ -72,6 +72,7 @@
 // main.cpp
 #define MAIN_USE_TEST_STATES         0
 #define MAIN_RENDER_STATES           0
+#define MAIN_STORE_STATES            0
 // PlayerInfoView
 #define PLAYERINFOVIEW_SCALEABLE     MAIN_RENDER_STATES
 

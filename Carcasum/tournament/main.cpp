@@ -273,8 +273,12 @@ void run(TestSetup const & setup, std::vector<Result> & results, int const threa
 			if (setup.printSteps)
 				printResult(results, playerCount, j);
 
+#if MAIN_STORE_STATES
 			QString file = QString("%1/%2_%3").arg(storeDir).arg(j, 3, 10, QLatin1Char('0')).arg(QDateTime::currentMSecsSinceEpoch());
 			game.storeToFile(file);
+#else
+			Q_UNUSED(storeDir);
+#endif
 		}
 	}
 
@@ -609,8 +613,8 @@ int main(int argc, char *argv[])
 		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, true));
 		setups.emplace_back( "Node Priors", std::move(players), tileFactory );
 
-		players.push_back(new MCTSPlayer<>                                                   (tileFactory, false, TIMEOUT, false, 0.5, false));
-		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, TIMEOUT, false, 0.5, true));
+		players.push_back(new MCTSPlayer<>                                                   (tileFactory, false, TIMEOUT, true, 0.5, false));
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, TIMEOUT, true, 0.5, true));
 		setups.emplace_back( "Node Priors using HeydensEvaluation", std::move(players), tileFactory );
 	}
 	if (false) // progressive widening
@@ -621,8 +625,8 @@ int main(int argc, char *argv[])
 	}
 	if (false)	// progressive bias
 	{
-		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, 100, true, 0.5, false, false, false));
-		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, 100, true, 0.5, false, false, true));
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, TIMEOUT, true, 0.5, false, false, false));
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, TIMEOUT, true, 0.5, false, false, true));
 		setups.emplace_back( "Progressive Bias", std::move(players), tileFactory );
 	}
 
