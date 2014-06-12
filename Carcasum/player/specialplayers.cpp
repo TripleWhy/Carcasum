@@ -26,7 +26,7 @@ void EGreedyPlayer EG_TU::undoneMove(const MoveHistoryEntry & move)
 EG_T
 TileMove EGreedyPlayer EG_TU::getTileMove(int player, const Tile * tile, const MoveHistoryEntry & move, const TileMovesType & possible)
 {
-	if (RndPercent >= 0 && (RndPercent >= 100 || (r.nextInt(100) < RndPercent)) )
+	if ( RndPercent > 0 && (RndPercent >= 100 || (r.nextInt(100) < RndPercent)) )
 		return RandomPlayer::instance.getTileMove(player, tile, move, possible);
 	else
 		return m_player.getTileMove(player, tile, move, possible);
@@ -35,7 +35,7 @@ TileMove EGreedyPlayer EG_TU::getTileMove(int player, const Tile * tile, const M
 EG_T
 MeepleMove EGreedyPlayer EG_TU::getMeepleMove(int player, const Tile * tile, const MoveHistoryEntry & move, const MeepleMovesType & possible)
 {
-	if (RndPercent >= 0 && (RndPercent >= 100 || (r.nextInt(100) < RndPercent)) )
+	if ( RndPercent > 0 && (RndPercent >= 100 || (r.nextInt(100) < RndPercent)) )
 		return RandomPlayer::instance.getMeepleMove(player, tile, move, possible);
 	else
 		return m_player.getMeepleMove(player, tile, move, possible);

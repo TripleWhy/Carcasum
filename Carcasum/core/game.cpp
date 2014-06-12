@@ -1069,6 +1069,8 @@ void Game::moveTile(Tile * tile, const TileMove & tileMove)
 
 int Game::calcUpperScoreBound(QList<Tile *> const & tiles)
 {
+	// I calculated a higher bound in my thesis, but lets be honest: Even this score is impossible.
+
 	int roads = 0;
 	int cities = 0;
 	int tinyCities = 0;

@@ -92,7 +92,7 @@ private:
 	Pl m_player;
 	RandomTable r;
 public:
-	const QString name = QString("EGreedyPlayer<%1, %2>").arg(RndPercent).arg(m_player.getTypeName());
+	const QString name = QString("EGreedy<%1, %2>").arg(RndPercent).arg(m_player.getTypeName());
 	constexpr EGreedy() {}
 	constexpr EGreedy(EGreedy &&) = default;
 	inline void newGame(int player, Game const * g)
@@ -101,14 +101,14 @@ public:
 	}
 	inline TileMove chooseTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & possibleTiles)
 	{
-		if (RndPercent >= 0 && (RndPercent >= 100 || (r.nextInt(100) < RndPercent)) )
+		if ( RndPercent > 0 && (RndPercent >= 100 || (r.nextInt(100) < RndPercent)) )
 			return RandomPlayer::instance.getTileMove(player, tile, move, possibleTiles);
 		else
 			return m_player.getTileMove(player, tile, move, possibleTiles);
 	}
 	inline MeepleMove chooseMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possibleMeeples)
 	{
-		if (RndPercent >= 0 && (RndPercent >= 100 || (r.nextInt(100) < RndPercent)) )
+		if ( RndPercent > 0 && (RndPercent >= 100 || (r.nextInt(100) < RndPercent)) )
 			return RandomPlayer::instance.getMeepleMove(player, tile, move, possibleMeeples);
 		else
 			return m_player.getMeepleMove(player, tile, move, possibleMeeples);
@@ -122,7 +122,7 @@ public:
 			do
 			{
 				++steps;
-				if (RndPercent >= 0 && (RndPercent >= 100 || (r.nextInt(100) < RndPercent)) )
+				if ( RndPercent > 0 && (RndPercent >= 100 || (r.nextInt(100) < RndPercent)) )
 					cont = simGame.simStep(&RandomPlayer::instance);
 				else
 					cont = simGame.simStep(&m_player);
@@ -155,7 +155,7 @@ public:
 			do
 			{
 				++steps;
-				if (RndPercent >= 0 && (RndPercent >= 100 || (r.nextInt(100) < RndPercent)) )
+				if ( RndPercent > 0 && (RndPercent >= 100 || (r.nextInt(100) < RndPercent)) )
 				{
 					cont = simGame.simStep(&RandomPlayer::instance);
 				}

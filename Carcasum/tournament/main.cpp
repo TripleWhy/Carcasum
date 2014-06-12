@@ -33,7 +33,7 @@ struct TestSetup
 	int N;
 	bool printSteps;
 
-	TestSetup(QString const text, std::vector<Player *> && players, jcz::TileFactory * tileFactory, bool const doIt = true, int const N = 100, bool const printSteps = true)
+	TestSetup(QString const text, std::vector<Player *> && players, jcz::TileFactory * tileFactory, bool const doIt = true, int const N = 104, bool const printSteps = true)
 	    : text(text),
 	      players(std::move(players)),
 	      tileFactory(tileFactory),
@@ -464,8 +464,12 @@ int main(int argc, char *argv[])
 		players.push_back(new MonteCarloPlayerUCT<>(tileFactory));
 		setups.emplace_back( "MonteCarloPlayer vs MonteCarloPlayerUCT", std::move(players), tileFactory );
 	}
-	if (false) // Monte Carlo vs MCTS
+	if (false) // Monte Carlo vs others
 	{
+		players.push_back(new jcz::JCZPlayer(tileFactory));
+		players.push_back(new MCTSPlayer<>(tileFactory));
+		setups.emplace_back( "MonteCarloPlayer vs MCTSPlayer", std::move(players), tileFactory );
+
 		players.push_back(new MonteCarloPlayer<>(tileFactory));
 		players.push_back(new MCTSPlayer<>(tileFactory));
 		setups.emplace_back( "MonteCarloPlayer vs MCTSPlayer", std::move(players), tileFactory );
