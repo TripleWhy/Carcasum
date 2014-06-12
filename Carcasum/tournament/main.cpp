@@ -307,8 +307,13 @@ void doTest(TestSetup const & setup, int setupIndex)
 		delete clone;
 	}
 
-	QString dir = QString("%1_games/setup_%2_%3").arg(qApp->applicationFilePath()).arg(setupIndex+1, 2, 10, QLatin1Char('0')).arg(setup.text);;
+#if MAIN_STORE_STATES
+	QString dir = QString("%1_games/setup_%2_%3").arg(qApp->applicationFilePath()).arg(setupIndex+1, 2, 10, QLatin1Char('0')).arg(setup.text);
 	QDir(dir).mkpath(".");
+#else
+	Q_UNUSED(setupIndex);
+	QString dir;
+#endif
 	if (setup.doIt)
 	{
 		std::vector<Result> results;
@@ -440,11 +445,11 @@ int main(int argc, char *argv[])
 		players.push_back(new jcz::JCZPlayer(tileFactory));
 		setups.emplace_back( "", std::move(players), tileFactory, true, 1000, false );
 	}
-	if (false) // Monte Carlo vs simple players
+	if (true) // Monte Carlo vs simple players
 	{
 		players.push_back(new MonteCarloPlayer<>(tileFactory, 50, true));
 		players.push_back(new RandomPlayer());
-		setups.emplace_back( " MonteCarloPlayer_50ms vs RandomPlayer", std::move(players), tileFactory );
+		setups.emplace_back( "MonteCarloPlayer_50ms vs RandomPlayer", std::move(players), tileFactory );
 
 		players.push_back(new MonteCarloPlayer<>(tileFactory));
 		players.push_back(new SimplePlayer3);
@@ -454,8 +459,16 @@ int main(int argc, char *argv[])
 		players.push_back(new jcz::JCZPlayer(tileFactory));
 		setups.emplace_back( "MonteCarloPlayer vs JCZPlayer", std::move(players), tileFactory );
 	}
-	if (false) // Monte Carlo variants
+	if (true) // Monte Carlo variants
 	{
+		players.push_back(new MonteCarloPlayer<>(tileFactory));
+		players.push_back(new MonteCarloPlayer<Utilities::ComplexUtility>(tileFactory));
+		setups.emplace_back( "MonteCarloPlayer vs MonteCarloPlayer<ComplexUtility>", std::move(players), tileFactory );
+
+		players.push_back(new MonteCarloPlayer<>(tileFactory));
+		players.push_back(new MonteCarloPlayer<Utilities::ScoreDifferenceUtility>(tileFactory));
+		setups.emplace_back( "MonteCarloPlayer vs MonteCarloPlayer<ScoreDifferenceUtility>", std::move(players), tileFactory );
+
 		players.push_back(new MonteCarloPlayer<>(tileFactory));
 		players.push_back(new MonteCarloPlayer2<>(tileFactory));
 		setups.emplace_back( "MonteCarloPlayer vs MonteCarloPlayer2", std::move(players), tileFactory );
@@ -464,7 +477,7 @@ int main(int argc, char *argv[])
 		players.push_back(new MonteCarloPlayerUCT<>(tileFactory));
 		setups.emplace_back( "MonteCarloPlayer vs MonteCarloPlayerUCT", std::move(players), tileFactory );
 	}
-	if (false) // Monte Carlo vs others
+	if (true) // MCTS vs others
 	{
 		players.push_back(new jcz::JCZPlayer(tileFactory));
 		players.push_back(new MCTSPlayer<>(tileFactory));
@@ -482,19 +495,19 @@ int main(int argc, char *argv[])
 		players.push_back(new MCTSPlayer<>(tileFactory));
 		setups.emplace_back( "MonteCarloPlayerUCT vs MCTSPlayer", std::move(players), tileFactory );
 	}
-	if (false) // different utilities
+	if (true) // different utilities
 	{
-		players.push_back(new MCTSPlayer<Utilities::ComplexUtility, Playouts::RandomPlayout>(tileFactory));
-		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-		setups.emplace_back( "ComplexUtility vs SimpleUtility", std::move(players), tileFactory );
+//		players.push_back(new MCTSPlayer<Utilities::ComplexUtility, Playouts::RandomPlayout>(tileFactory));
+//		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
+//		setups.emplace_back( "ComplexUtility vs SimpleUtility", std::move(players), tileFactory );
 
-		players.push_back(new MCTSPlayer<Utilities::ComplexUtilityNormalized, Playouts::RandomPlayout>(tileFactory));
-		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-		setups.emplace_back( "ComplexUtilityNormalized vs SimpleUtility", std::move(players), tileFactory );
+//		players.push_back(new MCTSPlayer<Utilities::ComplexUtilityNormalized, Playouts::RandomPlayout>(tileFactory));
+//		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
+//		setups.emplace_back( "ComplexUtilityNormalized vs SimpleUtility", std::move(players), tileFactory );
 
-		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::ComplexUtility>, Playouts::RandomPlayout>(tileFactory));
-		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-		setups.emplace_back( "Normalized<ComplexUtility> vs SimpleUtility", std::move(players), tileFactory );
+//		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::ComplexUtility>, Playouts::RandomPlayout>(tileFactory));
+//		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
+//		setups.emplace_back( "Normalized<ComplexUtility> vs SimpleUtility", std::move(players), tileFactory );
 
 		players.push_back(new MCTSPlayer<Utilities::ScoreDifferenceUtility, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
@@ -516,6 +529,10 @@ int main(int argc, char *argv[])
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
 		setups.emplace_back( "Normalized<HeydensEvaluation> vs SimpleUtility", std::move(players), tileFactory );
 
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluationOld>, Playouts::RandomPlayout>(tileFactory));
+		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
+		setups.emplace_back( "Normalized<HeydensEvaluationOld> vs SimpleUtility", std::move(players), tileFactory );
+
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory));
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
 		setups.emplace_back( "PortionUtility vs SimpleUtility", std::move(players), tileFactory );
@@ -524,9 +541,9 @@ int main(int argc, char *argv[])
 		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
 		setups.emplace_back( "Bonus<PortionUtility, 100> vs SimpleUtility", std::move(players), tileFactory );
 
-		players.push_back(new MCTSPlayer<Utilities::Bonus<Utilities::ComplexUtility, 1>, Playouts::RandomPlayout>(tileFactory));
-		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
-		setups.emplace_back( "Bonus<ComplexUtility, 1> vs SimpleUtility", std::move(players), tileFactory );
+//		players.push_back(new MCTSPlayer<Utilities::Bonus<Utilities::ComplexUtility, 1>, Playouts::RandomPlayout>(tileFactory));
+//		players.push_back(new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory));
+//		setups.emplace_back( "Bonus<ComplexUtility, 1> vs SimpleUtility", std::move(players), tileFactory );
 	}
 	if (false) // Test 2
 	{
@@ -539,7 +556,7 @@ int main(int argc, char *argv[])
 			setups.emplace_back( QString("Test 2: %1 vs %2").arg(p1).arg(p2), std::move(players), tileFactory );
 		}
 	}
-	if (false) // Cp values
+	if (true) // Cp values
 	{
 		qreal const Cp2 = 0.5;
 		qreal const Cps[] = {0.0, 0.25, 0.50, 0.75, 1.0, 2.0, 3.0};
@@ -552,7 +569,7 @@ int main(int argc, char *argv[])
 	}
 
 	// playout policies
-	if (false) // early cutoff value
+	if (true) // early cutoff value
 	{
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
 		players.push_back(new MCTSPlayer<Utilities::EC<Utilities::PortionUtility>, Playouts::EarlyCutoff<0>>(tileFactory, false));
@@ -569,8 +586,24 @@ int main(int argc, char *argv[])
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
 		players.push_back(new MCTSPlayer<Utilities::EC<Utilities::PortionUtility>, Playouts::EarlyCutoff<16>>(tileFactory, false));
 		setups.emplace_back( "Early Cutoff 16", std::move(players), tileFactory );
+
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
+		players.push_back(new MCTSPlayer<Utilities::EC<Utilities::HeydensEvaluation>, Playouts::EarlyCutoff<0>>(tileFactory, false));
+		setups.emplace_back( "Early Cutoff HE 0", std::move(players), tileFactory );
+
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
+		players.push_back(new MCTSPlayer<Utilities::EC<Utilities::HeydensEvaluation>, Playouts::EarlyCutoff<4>>(tileFactory, false));
+		setups.emplace_back( "Early Cutoff HE 4", std::move(players), tileFactory );
+
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
+		players.push_back(new MCTSPlayer<Utilities::EC<Utilities::HeydensEvaluation>, Playouts::EarlyCutoff<8>>(tileFactory, false));
+		setups.emplace_back( "Early Cutoff HE 8", std::move(players), tileFactory );
+
+		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
+		players.push_back(new MCTSPlayer<Utilities::EC<Utilities::HeydensEvaluation>, Playouts::EarlyCutoff<16>>(tileFactory, false));
+		setups.emplace_back( "Early Cutoff HE 16", std::move(players), tileFactory );
 	}
-	if (false) // e-greedy value
+	if (true) // e-greedy value
 	{
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedy<20>>(tileFactory, false));
@@ -592,7 +625,7 @@ int main(int argc, char *argv[])
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::EGreedy<100>>(tileFactory, false));
 		setups.emplace_back( "MCTSPlayer vs MCTSPlayer greedy s3 100", std::move(players), tileFactory );
 	}
-	if (false) // roulette wheel selection
+	if (true) // roulette wheel selection
 	{
 		qDebug() << "SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT" << SIMPLE_PLAYER3_NEGATIVE_SCORE_HANDLE_VARIANT;
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>    (tileFactory, false));
@@ -605,13 +638,13 @@ int main(int argc, char *argv[])
 	}
 
 	// MCTS enhancements
-	if (false) // tree reusage
+	if (true) // tree reusage
 	{
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, true));
 		players.push_back(new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false));
 		setups.emplace_back( "MCTSPlayer reuseTree vs MCTSPlayer plain", std::move(players), tileFactory );
 	}
-	if (false) // node priors
+	if (true) // node priors
 	{
 		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, false));
 		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, true));
@@ -621,17 +654,23 @@ int main(int argc, char *argv[])
 		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, TIMEOUT, true, 0.5, true));
 		setups.emplace_back( "Node Priors using HeydensEvaluation", std::move(players), tileFactory );
 	}
-	if (false) // progressive widening
+	if (true) // progressive widening
 	{
 		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, false, false));
 		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, false, true));
 		setups.emplace_back( "Progressive Widening", std::move(players), tileFactory );
 	}
-	if (false)	// progressive bias
+	if (true)	// progressive bias
 	{
 		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, TIMEOUT, true, 0.5, false, false, false));
 		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, TIMEOUT, true, 0.5, false, false, true));
 		setups.emplace_back( "Progressive Bias", std::move(players), tileFactory );
+	}
+	if (true) // node priors revisited (fixed playout count)
+	{
+		players.push_back(new MCTSPlayer<>                                                   (tileFactory, false, TIMEOUT*8, false, 0.5, false));
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, TIMEOUT*8, false, 0.5, true));
+		setups.emplace_back( "Node Priors using HeydensEvaluation, both fixed playouts", std::move(players), tileFactory );
 	}
 
 

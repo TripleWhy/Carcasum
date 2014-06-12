@@ -8,7 +8,7 @@
 #include "core/player.h"
 #include "jcz/tilefactory.h"
 
-template<class UtilityProvider = Utilities::ComplexUtility, class Playout = Playouts::RandomPlayout>
+template<class UtilityProvider = Utilities::PortionUtility, class Playout = Playouts::RandomPlayout>
 class MonteCarloPlayer2 : public Player
 {
 #ifndef TIMEOUT

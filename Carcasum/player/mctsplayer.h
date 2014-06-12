@@ -250,7 +250,7 @@ public:
 	inline constexpr qreal UCB(MCTSNode const * v, MCTSNode const * vPrime) const
 	{
 		return progressiveBias ?
-		            (qreal(Q(vPrime)) / qreal(N(vPrime)))  +  Cp * math.sqrt( math.ln( NParent(v) ) / N(vPrime) )  +  (vPrime->heuristicValue / (N(vPrime) + 1))
+		            (qreal(Q(vPrime)) / qreal(N(vPrime)))  +  Cp * math.sqrt( math.ln( NParent(v) ) / N(vPrime) )  +  (qreal(vPrime->heuristicValue) / (N(vPrime) + 1))
 		          : (qreal(Q(vPrime)) / qreal(N(vPrime)))  +  Cp * math.sqrt( math.ln( NParent(v) ) / N(vPrime) );
 	}
 

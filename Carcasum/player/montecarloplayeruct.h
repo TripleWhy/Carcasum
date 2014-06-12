@@ -8,7 +8,7 @@
 #include "core/player.h"
 #include "jcz/tilefactory.h"
 
-template<class UtilityProvider = Utilities::ComplexUtilityNormalized, class Playout = Playouts::RandomPlayout>
+template<class UtilityProvider = Utilities::PortionUtility, class Playout = Playouts::RandomPlayout>
 class MonteCarloPlayerUCT : public Player
 {
 	constexpr static qreal Cp = 0.5;
