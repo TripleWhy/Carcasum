@@ -415,13 +415,156 @@ public:
 	}
 };
 
-class HeydensEvaluation
+class HeydensEvaluationOld
 {
 	static constexpr qint64 scoreWeight          = 10000;
 	static constexpr qint64 meepleeWeight        =  1000;
 	static constexpr qint64 incompleteWeight     =  1000;
 	static constexpr qint64 incompleteCityWeight =   125;
 	static constexpr qint64 badFieldWeight       = -4000;
+
+public:
+	constexpr static char const * name = "HeydensEvaluationOld";
+	typedef qint64 RewardType;
+	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
+	inline void newGame(int /*player*/, Game const * /*g*/) {}
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * g) const
+	{
+		qint64 scoreDifference = 0;
+		qint64 meepleDifference = 0;
+		qint64 incompleteDifference = 0;
+		qint64 incompleteCityDifference = 0;
+		qint64 badFields = 0;
+
+		for (int i = 0; i < playerCount; ++i)
+		{
+			if (i == myIndex)
+			{
+				scoreDifference += scores[i];
+				meepleDifference += g->getPlayerMeeples(i);
+			}
+			else
+			{
+				scoreDifference -= scores[i];
+				meepleDifference -= g->getPlayerMeeples(i);
+			}
+		}
+
+		std::unordered_set<Node::NodeData const *> scored;
+		for (Tile const * tile : g->getBoard()->getTiles())
+		{
+			for (Node const * const * np = tile->getNodes(), * const * end = np + tile->getNodeCount(); np < end; ++np)
+			{
+				Node const * n = *np;
+				if (n->isOccupied() && n->getScored() == NotScored )
+				{
+					Node::NodeData const * data = n->getData();
+					if (scored.find(data) != scored.end())
+						continue;
+					scored.insert(data);
+
+					switch (n->getTerrain())
+					{
+						case None:
+							break;
+						case Cloister:
+						case Road:
+						{
+							int score = n->getScore();
+							for (int i = 0; i < playerCount; ++i)
+							{
+								if (data->meeples[i] != data->maxMeples)
+									continue;
+								if (i == myIndex)
+									incompleteDifference += score;
+								else
+									incompleteDifference -= score;
+							}
+							break;
+						}
+						case City:
+						{
+							int score = n->getScore();
+							for (int i = 0; i < playerCount; ++i)
+							{
+								if (data->meeples[i] != data->maxMeples)
+									continue;
+								if (i == myIndex)
+									incompleteCityDifference += score;
+								else
+									incompleteCityDifference -= score;
+							}
+							break;
+						}
+						case Field:
+						{
+							int const score = n->getScore();
+							int const cities = static_cast<FieldNode const *>(n)->countClosedCities();
+							if (cities < 3)
+							{
+								for (int i = 0; i < playerCount; ++i)
+								{
+									if (data->meeples[i] != data->maxMeples)
+										continue;
+									if (i == myIndex)
+									{
+										incompleteDifference += score;
+										++badFields;
+									}
+									else
+									{
+										incompleteDifference += score;
+										--badFields;
+									}
+								}
+							}
+							else
+							{
+								for (int i = 0; i < playerCount; ++i)
+								{
+									if (data->meeples[i] != data->maxMeples)
+										continue;
+									if (i == myIndex)
+									{
+										incompleteDifference += score;
+									}
+									else
+									{
+										incompleteDifference += score;
+									}
+								}
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		return scoreDifference * scoreWeight
+		        + meepleDifference * meepleeWeight
+		        + incompleteDifference * incompleteWeight
+		        + incompleteCityDifference * incompleteCityWeight
+		        + badFields * badFieldWeight;
+	}
+	RewardListType utilities(const int * scores, const int playerCount, Game const * g) const
+	{
+		//TODO I can't think about something much more efficient right now...
+		RewardListType reward(playerCount);
+		for (int i = 0; i < playerCount; ++i)
+			reward[i] = utility(scores, playerCount, i, g);
+		return reward;
+	}
+};
+
+// The description of this evaluation function is not completely clear... This probably makes more sense.
+class HeydensEvaluation
+{
+	static constexpr qint64 scoreWeight          = 1000;
+	static constexpr qint64 meepleeWeight        =  100;
+	static constexpr qint64 incompleteWeight     =  100;
+	static constexpr qint64 incompleteCityWeight =  125;
+	static constexpr qint64 badFieldWeight       = -400;
 
 public:
 	constexpr static char const * name = "HeydensEvaluation";
