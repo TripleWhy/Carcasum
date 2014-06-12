@@ -16,6 +16,12 @@
 #include <chrono>
 #include <atomic>
 
+#if USE_BOOST_THREAD_TIMER
+#include <boost/chrono/thread_clock.hpp>
+#else
+#include <QElapsedTimer>
+#endif
+
 namespace Util
 {
 	inline bool isGUIThread()
@@ -32,12 +38,6 @@ namespace Util
 	{
 		if (isGUIThread())
 			QCoreApplication::processEvents();
-	}
-
-	inline bool isNodeFree(Node const * n)
-	{
-//		return true;
-		return !n->isOccupied();
 	}
 
 	inline void sleep(int millis)
@@ -263,6 +263,40 @@ namespace Util
 	    unsigned mFlags;
 	    unsigned mFlag;
 	};
+
+#if USE_BOOST_THREAD_TIMER
+	class ThreadTimer
+	{
+	private:
+		boost::chrono::thread_clock::time_point begin;
+
+	public:
+		constexpr ThreadTimer() = default;
+
+		void start()
+		{
+			begin = boost::chrono::thread_clock::now();
+		}
+
+		boost::chrono::thread_clock::duration elapsedDuration() const BOOST_NOEXCEPT
+		{
+			return boost::chrono::thread_clock::now() - begin;
+		}
+
+		typename boost::chrono::milliseconds elapsed() const BOOST_NOEXCEPT
+		{
+			return (boost::chrono::duration_cast<boost::chrono::milliseconds>(elapsedDuration()));
+		}
+
+		bool hasExpired(qint64 timeout) const BOOST_NOEXCEPT
+		{
+			return elapsedDuration() > boost::chrono::milliseconds(timeout);
+		}
+	};
+	typedef ThreadTimer ExpireTimer;
+#else
+	typedef QElapsedTimer ExpireTimer;
+#endif
 }
 
 #endif // UTIL_H

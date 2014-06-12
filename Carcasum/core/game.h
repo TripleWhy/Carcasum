@@ -3,9 +3,7 @@
 
 #include "static.h"
 #include "tile.h"
-#include "util.h"
 #include "player.h"
-#include "util.h"
 #include "random.h"
 #include "nexttileprovider.h"
 
@@ -188,7 +186,7 @@ public:
 
 		auto nodes = tile->getNodes();
 		for (uchar i = 0, end = tile->getNodeCount(); i < end; ++i)
-			if (Util::isNodeFree(nodes[i]))
+			if (!nodes[i]->isOccupied())
 				possibleMeeples.push_back(MeepleMove(i));
 		Q_ASSERT_X(possibleMeeples.size() <= NODE_ARRAY_LENGTH, "Game::step()", "possibleMeeples initial size too low");
 		return possibleMeeples;

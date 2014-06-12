@@ -1,6 +1,6 @@
 #include "montecarloplayer2.h"
 #include "randomplayer.h"
-#include <QElapsedTimer>
+#include "core/util.h"
 
 #define MC2_T template<class UtilityProvider, class Playout>
 #define MC2_TU <UtilityProvider, Playout>
@@ -37,7 +37,7 @@ void MonteCarloPlayer2 MC2_TU::undoneMove(const MoveHistoryEntry & /*move*/)
 MC2_T
 TileMove MonteCarloPlayer2 MC2_TU::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & possible)
 {
-	QElapsedTimer timer;
+	Util::ExpireTimer timer;
 	if (useTimeout)
 		timer.start();
 

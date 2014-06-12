@@ -1,7 +1,6 @@
 #include "boardgraphicsscene.h"
-
+#include "core/util.h"
 #include "core/board.h"
-
 #include <QGraphicsPixmapItem>
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsColorizeEffect>

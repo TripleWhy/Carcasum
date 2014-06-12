@@ -180,3 +180,5 @@ QMAKE_LFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops
 #
 #QMAKE_EXTRA_COMPILERS += updateqm
 #PRE_TARGETDEPS += compiler_updateqm_make_all
+
+unix|win32: LIBS += -lboost_system -lboost_timer -lboost_chrono

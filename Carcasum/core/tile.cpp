@@ -1,8 +1,7 @@
 #include "tile.h"
-
 #include "game.h"
-
 #include <unordered_map>
+#include <typeinfo>
 
 #if PRINT_CONNECTIONS
 #include <QDebug>

@@ -1,6 +1,6 @@
 #include "tileimagefactory.h"
 #include "boardgraphicsscene.h"
-
+#include "core/util.h"
 #include <QtSvg/QSvgRenderer>
 #include <QPainter>
 #include <QDir>

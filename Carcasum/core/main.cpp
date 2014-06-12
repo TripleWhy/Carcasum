@@ -8,7 +8,6 @@
 #include "player/mctsplayer.h"
 #include "player/simpleplayer.h"
 #include "jcz/jczplayer.h"
-#include "util.h"
 
 #define CONTROL_GAME 1
 #include <iostream>

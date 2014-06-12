@@ -1,5 +1,6 @@
 #include "jczplayer.h"
 #include "player/randomplayer.h"
+#include "core/util.h"
 
 constexpr std::array<std::pair<Tile::Side, QPoint>, 4> jcz::JCZPlayer::ADJACENT;
 constexpr std::array<QPoint, 8> jcz::JCZPlayer::ADJACENT_AND_DIAGONAL;

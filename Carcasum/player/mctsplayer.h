@@ -179,7 +179,7 @@ private:
 	Playout playoutPolicy;
 	UtilityProvider utilityProvider;
 	QString typeName;
-	const int M;
+	const uint M;
 	const bool useTimeout;
 	const qreal Cp;
 	const bool reuseTree;
@@ -196,9 +196,9 @@ public:
 
 public:
 #ifdef TIMEOUT
-	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, int const m = TIMEOUT, bool const mIsTimeout = true, qreal const Cp = 0.5, bool nodePriors = false, bool progressiveWidening = false, bool progressiveBias = false);
+	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, uint const m = TIMEOUT, bool const mIsTimeout = true, qreal const Cp = 0.5, bool nodePriors = false, bool progressiveWidening = false, bool progressiveBias = false);
 #else
-	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, int const m = 5000, bool const mIsTimeout = true, qreal const Cp = 0.5, bool nodePriors = false, bool progressiveWidening = false, bool progressiveBias = false);
+	constexpr MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree = false, uint const m = 5000, bool const mIsTimeout = true, qreal const Cp = 0.5, bool nodePriors = false, bool progressiveWidening = false, bool progressiveBias = false);
 #endif
 
 	void applyChance(int action, Game & g);

@@ -1,7 +1,7 @@
 #include "mctsplayer.h"
 #include "randomplayer.h"
 #include "core/board.h"
-#include <QElapsedTimer>
+#include "core/util.h"
 
 #define MCTS_T template<class UtilityProvider, class Playout>
 #define MCTS_TU <UtilityProvider, Playout>
@@ -47,7 +47,7 @@ MCTSPlayer MCTS_TU::MCTSChanceNode::MCTSChanceNode(uchar player, TileCountType c
 
 
 MCTS_T
-constexpr MCTSPlayer MCTS_TU::MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree, const int m, const bool mIsTimeout, qreal const Cp, bool nodePriors, bool progressiveWidening, bool progressiveBias)
+constexpr MCTSPlayer MCTS_TU::MCTSPlayer(jcz::TileFactory * tileFactory, bool reuseTree, const uint m, const bool mIsTimeout, qreal const Cp, bool nodePriors, bool progressiveWidening, bool progressiveBias)
     : tileFactory(tileFactory),
       typeName(QString("MCTSPlayer<%1, %2>(reuseTree=%3, m=%4, mIsTimeout=%5, Cp=%6, nodePriors=%7, progressiveWidening=%8, progressiveBias=%9)").arg(UtilityProvider::name).arg(playoutPolicy.name).arg(reuseTree).arg(m).arg(mIsTimeout).arg(Cp).arg(nodePriors).arg(progressiveWidening).arg(progressiveBias)),
       M(m),
@@ -75,7 +75,7 @@ void MCTSPlayer MCTS_TU::undoneMove(const MoveHistoryEntry & /*move*/)
 MCTS_T
 TileMove MCTSPlayer MCTS_TU::getTileMove(int player, const Tile * tile, const MoveHistoryEntry & /*move*/, const TileMovesType & /*placements*/)
 {
-	QElapsedTimer t;
+	Util::ExpireTimer t;
 	if (useTimeout)
 		t.start();
 
@@ -108,7 +108,7 @@ TileMove MCTSPlayer MCTS_TU::getTileMove(int player, const Tile * tile, const Mo
 	}
 
 	{
-		int i = 0;
+		uint i = 0;
 		do
 		{
 //			qDebug() << i;

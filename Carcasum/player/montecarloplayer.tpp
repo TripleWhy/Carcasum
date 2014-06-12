@@ -1,6 +1,6 @@
 #include "montecarloplayer.h"
 #include "randomplayer.h"
-#include <QElapsedTimer>
+#include "core/util.h"
 
 #define MC_T template<class UtilityProvider, class Playout>
 #define MC_TU <UtilityProvider, Playout>
@@ -34,7 +34,7 @@ void MonteCarloPlayer MC_TU::undoneMove(const MoveHistoryEntry & /*move*/)
 MC_T
 TileMove MonteCarloPlayer MC_TU::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & possible)
 {
-	QElapsedTimer timer;
+	Util::ExpireTimer timer;
 	if (useTimeout)
 		timer.start();
 
@@ -115,7 +115,7 @@ TileMove MonteCarloPlayer MC_TU::getTileMove(int player, const Tile * /*tile*/, 
 MC_T
 MeepleMove MonteCarloPlayer MC_TU::getMeepleMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const MeepleMovesType & possible)
 {
-	QElapsedTimer timer;
+	Util::ExpireTimer timer;
 	if (useTimeout)
 		timer.start();
 

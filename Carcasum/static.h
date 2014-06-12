@@ -44,6 +44,8 @@
 #define USE_RESET                    0
 // RandomTable
 #define RANDOM_TABLE_SHARED_OFFSET   0
+// Util
+#define USE_BOOST_THREAD_TIMER       1
 
 
 // Debug options

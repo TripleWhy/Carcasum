@@ -1,6 +1,7 @@
 #include "game.h"
 #include "board.h"
 #include "player.h"
+#include "util.h"
 #include "jcz/tilefactory.h"
 #include <QFile>
 #include <QFileInfo>

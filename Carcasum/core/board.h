@@ -3,10 +3,12 @@
 
 #include "tile.h"
 #include "game.h"
-#include "util.h"
 #include "player.h"
 #include <QHash>
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
 #include <QPoint>
+#pragma GCC diagnostic pop
 
 class Game;
 struct TileMove;

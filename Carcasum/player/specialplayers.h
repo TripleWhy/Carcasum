@@ -5,6 +5,7 @@
 #include "core/game.h"
 #include "core/random.h"
 #include "player/simpleplayer3.h"
+#include "core/util.h"
 
 template<int RndPercent, typename Pl = SimplePlayer3>
 class EGreedyPlayer : public Player
