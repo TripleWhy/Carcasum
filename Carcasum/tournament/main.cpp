@@ -646,6 +646,7 @@ int main(int argc, char *argv[])
 	}
 	if (true) // node priors
 	{
+		qDebug() << "MCTS_NODE_PRIORS_PLAYOUTS" << MCTS_NODE_PRIORS_PLAYOUTS;
 		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, false));
 		players.push_back(new MCTSPlayer<>(tileFactory, false, TIMEOUT, true, 0.5, true));
 		setups.emplace_back( "Node Priors", std::move(players), tileFactory );
@@ -668,8 +669,9 @@ int main(int argc, char *argv[])
 	}
 	if (true) // node priors revisited (fixed playout count)
 	{
-		players.push_back(new MCTSPlayer<>                                                   (tileFactory, false, TIMEOUT*8, false, 0.5, false));
-		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, TIMEOUT*8, false, 0.5, true));
+		qDebug() << "MCTS_NODE_PRIORS_PLAYOUTS" << MCTS_NODE_PRIORS_PLAYOUTS;
+		players.push_back(new MCTSPlayer<>                                                   (tileFactory, false, 37880, false, 0.5, false));
+		players.push_back(new MCTSPlayer<Utilities::Normalized<Utilities::HeydensEvaluation>>(tileFactory, false, 37880, false, 0.5, true));
 		setups.emplace_back( "Node Priors using HeydensEvaluation, both fixed playouts", std::move(players), tileFactory );
 	}
 
