@@ -1,7 +1,23 @@
+/*
+	This file is part of Carcasum.
+
+	Carcasum is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Carcasum is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "boardgraphicsscene.h"
-
+#include "core/util.h"
 #include "core/board.h"
-
 #include <QGraphicsPixmapItem>
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsColorizeEffect>
@@ -30,10 +46,15 @@ BoardGraphicsScene::BoardGraphicsScene(jcz::TileFactory * tileFactory, TileImage
 	openLayer->setOpacity(0.1);
 	placementLayer->setOpacity(0.7);
 	
-#if DRAW_TILE_POSITION_TEXT
+#if DRAW_TILE_POSITION_TEXT || DRAW_NODE_ID_TEXT
 	textOverlayLayer = new QGraphicsItemGroup();
 	addItem(textOverlayLayer);
 	textOverlayLayer->setOpacity(0.8);
+#endif
+#if DRAW_NODE_ID_TEXT && DEBUG_IDS
+	textNodeOverlayLayer = new QGraphicsItemGroup();
+	addItem(textNodeOverlayLayer);
+	textNodeOverlayLayer->setOpacity(0.8);
 #endif
 
 	placementTile = new QGraphicsPixmapItem();
@@ -68,6 +89,12 @@ TileMove BoardGraphicsScene::getTileMove(int /*player*/, const Tile * tile, cons
 		return TileMove();
 
 	std::unique_lock<std::mutex> lck(lock);
+	while (running == -1)
+	{
+		lck.unlock();
+		Util::sleep(100);
+		lck.lock();
+	}
 	if (running != 0)
 		return TileMove();
 	running = 1;
@@ -79,6 +106,12 @@ TileMove BoardGraphicsScene::getTileMove(int /*player*/, const Tile * tile, cons
 	TileMove m;
 	while (!_quit)
 	{
+		auto * thread = Util::InterruptableThread::currentInterruptableThread();
+		if (thread != 0 && thread->isInterrupted())
+		{
+			break;
+		}
+
 		lck.lock();
 		if (userMoveReady)
 		{
@@ -160,6 +193,12 @@ MeepleMove BoardGraphicsScene::getMeepleMove(int player, const Tile * tile, cons
 		return MeepleMove();
 
 	std::unique_lock<std::mutex> lck(lock);
+	while (running == -1)
+	{
+		lck.unlock();
+		Util::sleep(100);
+		lck.lock();
+	}
 	if (running != 0)
 		return MeepleMove();
 	running = 2;
@@ -173,6 +212,12 @@ MeepleMove BoardGraphicsScene::getMeepleMove(int player, const Tile * tile, cons
 	MeepleMove m;
 	while (!_quit)
 	{
+		auto * thread = Util::InterruptableThread::currentInterruptableThread();
+		if (thread != 0 && thread->isInterrupted())
+		{
+			break;
+		}
+
 		lck.lock();
 		if (userMoveReady)
 		{
@@ -277,14 +322,12 @@ void BoardGraphicsScene::displayNewGame(int callDepth)
 	frames.clear();
 
 	qDeleteAll(tileLayer->childItems());
-	qDeleteAll(openLayer->childItems());
 	qDeleteAll(meepleLayer->childItems());
 	qDeleteAll(meeplePlacementLayer->childItems());
-#if DRAW_TILE_POSITION_TEXT
+#if DRAW_TILE_POSITION_TEXT || DRAW_NODE_ID_TEXT
 	qDeleteAll(textOverlayLayer->childItems());
 #endif
 
-	openTiles.clear();
 	if (placementTile->parentItem() != 0)
 		removeItem(placementTile);
 
@@ -297,7 +340,7 @@ void BoardGraphicsScene::displayNewGame(int callDepth)
 		QGraphicsRectItem * rect = new QGraphicsRectItem(-BOARD_TILE_SIZE / 2.0, -BOARD_TILE_SIZE / 2.0, BOARD_TILE_SIZE, BOARD_TILE_SIZE);
 		rect->setBrush(QBrush());
 		rect->setPen(QPen(imgFactory->getPlayerColor(i), BOARD_TILE_FRAME_WIDTH, Qt::SolidLine, Qt::FlatCap, Qt::RoundJoin));
-		rect->setOpacity(0.5);
+		rect->setOpacity(0.6);
 		frames.push_back(rect);
 	}
 
@@ -321,7 +364,7 @@ void BoardGraphicsScene::displayNewGame(int callDepth)
 			if (t == 0)
 				continue;
 
-#if DRAW_TILE_POSITION_TEXT && DEBUG_IDS
+#if DRAW_NODE_ID_TEXT && DEBUG_IDS
 			{
 				QGraphicsTextItem * text = new QGraphicsTextItem(QString("%1").arg(t->id));
 				text->setFont(QFont("sans", 50));
@@ -336,7 +379,7 @@ void BoardGraphicsScene::displayNewGame(int callDepth)
 				mapMeeplePoint(meeplePoint, TileMove(x, y, t->orientation));
 				QGraphicsTextItem * text = new QGraphicsTextItem(QString("%1(%2)").arg(t->getCNodes()[i]->id()).arg(t->getCNodes()[i]->realId()));
 				text->setFont(QFont("sans", 25));
-				text->setDefaultTextColor(Qt::blue);
+				text->setDefaultTextColor(Qt::magenta);
 				text->setPos(meeplePoint.x(), meeplePoint.y());
 				textOverlayLayer->addToGroup(text);
 			}
@@ -360,8 +403,31 @@ void BoardGraphicsScene::playerMoved(int player, const Tile * const tile, const 
 {
 	Q_ASSERT(tileFactory != 0);
 
-	DPMData * callData = new DPMData { player, tile, move.move };
+	DPMData * callData = new DPMData
+	{
+	        player,
+	        tile, move.move,
+#if DRAW_NODE_ID_TEXT && DEBUG_IDS
+	        game->getBoard()->getTiles(),
+	        game->getMoveHistory()
+#endif
+	};
 	displayPlayerMoved(callData);
+}
+
+void BoardGraphicsScene::undoneMove(const MoveHistoryEntry & move)
+{
+	Q_ASSERT(tileFactory != 0);
+
+	std::unique_lock<std::mutex> lck(lock);
+	running = -1;
+	lck.unlock();
+
+	if (move.move.tileMove.isNull())
+		return;
+
+	DUMData * callData = new DUMData { move };
+	displayUndoneMove(callData);
 }
 
 void BoardGraphicsScene::endGame()
@@ -372,6 +438,22 @@ void BoardGraphicsScene::endGame()
 Player *BoardGraphicsScene::clone() const
 {
 	return 0;
+}
+
+void BoardGraphicsScene::setRenderOpenTiles(bool render)
+{
+	renderOpenTiles = render;
+	placeOpen();
+}
+
+void BoardGraphicsScene::setRenderFrames(bool render)
+{
+	renderFrames = render;
+	if (!render)
+	{
+		for (auto * frame : frames)
+			tileLayer->removeFromGroup(frame);
+	}
 }
 
 void BoardGraphicsScene::displayPlayerMoved(void * data, int callDepth)
@@ -393,8 +475,7 @@ void BoardGraphicsScene::displayPlayerMoved(void * data, int callDepth)
 		}
 		return;
 	}
-	qDeleteAll(openLayer->childItems());
-	openTiles.clear();
+
 	if (items().contains(placementTile))
 		removeItem(placementTile);
 	qDeleteAll(meeplePlacementLayer->childItems());
@@ -402,24 +483,31 @@ void BoardGraphicsScene::displayPlayerMoved(void * data, int callDepth)
 	TileMove const & tileMove = d->move.tileMove;
 	MeepleMove const & meepleMove = d->move.meepleMove;
 	
-#if DRAW_TILE_POSITION_TEXT && DEBUG_IDS
+#if DRAW_NODE_ID_TEXT && DEBUG_IDS
+	qDeleteAll(textNodeOverlayLayer->childItems());
 	{
 		QGraphicsTextItem * text = new QGraphicsTextItem(QString("%1").arg(d->tile->id));
 		text->setFont(QFont("sans", 50));
 		text->setDefaultTextColor(Qt::yellow);
-		text->setPos(tileMove.x * BOARD_TILE_SIZE -BOARD_TILE_SIZE / 2.0,
-		             tileMove.y * BOARD_TILE_SIZE +BOARD_TILE_SIZE / 4.0);
+		text->setPos(tileMove.x * BOARD_TILE_SIZE - BOARD_TILE_SIZE / 2.0,
+					 tileMove.y * BOARD_TILE_SIZE + BOARD_TILE_SIZE / 4.0);
 		textOverlayLayer->addToGroup(text);
 	}
-	for (uchar i = 0; i < d->tile->getNodeCount(); ++i)
+	int tileOffset = (int)d->tiles.size() - (int)d->history.size();
+	for (uint j = 0; j < d->history.size(); ++j)
 	{
-		QPoint meeplePoint = imgFactory->getPoints(d->tile)[i];
-		mapMeeplePoint(meeplePoint, d->move.tileMove);
-		QGraphicsTextItem * text = new QGraphicsTextItem(QString("%1(%2)").arg(d->tile->getCNodes()[i]->id()).arg(d->tile->getCNodes()[i]->realId()));
-		text->setFont(QFont("sans", 25));
-		text->setDefaultTextColor(Qt::blue);
-		text->setPos(meeplePoint.x(), meeplePoint.y());
-		textOverlayLayer->addToGroup(text);
+		Tile const * t = d->tiles[j + tileOffset];
+		TileMove const & m = d->history[j].move.tileMove;
+		for (uchar i = 0; i < t->getNodeCount(); ++i)
+		{
+			QPoint meeplePoint = imgFactory->getPoints(t)[i];
+			mapMeeplePoint(meeplePoint, m);
+			QGraphicsTextItem * text = new QGraphicsTextItem(QString("%1(%2)").arg(t->getCNodes()[i]->id()).arg(t->getCNodes()[i]->realId()));
+			text->setFont(QFont("sans", 25));
+			text->setDefaultTextColor(Qt::magenta);
+			text->setPos(meeplePoint.x(), meeplePoint.y());
+			textNodeOverlayLayer->addToGroup(text);
+		}
 	}
 #endif
 	QPixmap const & img = imgFactory->getImage(d->tile);
@@ -434,7 +522,8 @@ void BoardGraphicsScene::displayPlayerMoved(void * data, int callDepth)
 	QGraphicsRectItem * frame = frames[d->player];
 	frame->setPos(item->pos());
 	tileLayer->removeFromGroup(frame);
-	tileLayer->addToGroup(frame);
+	if (renderFrames)
+		tileLayer->addToGroup(frame);
 
 	if (!meepleMove.isNull())
 	{
@@ -477,6 +566,52 @@ void BoardGraphicsScene::displayPlayerMoved(void * data, int callDepth)
 
 	placeOpen();
 	
+	delete d;
+}
+
+void BoardGraphicsScene::displayUndoneMove(void * data, int callDepth)
+{
+	DUMData * d = static_cast<DUMData *>(data);
+	// Execute update in GUI thread only.
+	if (!Util::isGUIThread())
+	{
+		Q_ASSERT(callDepth < 1);
+		if (callDepth < 2)
+		{
+			QMetaObject::invokeMethod(this, "displayUndoneMove", Qt::QueuedConnection,
+			                          Q_ARG(void *, data),
+			                          Q_ARG(int, callDepth+1));
+		}
+		else
+		{
+			delete d;
+		}
+		return;
+	}
+
+
+	if (items().contains(placementTile))
+		removeItem(placementTile);
+	qDeleteAll(meeplePlacementLayer->childItems());
+
+	for (auto frame = dynamic_cast<QGraphicsRectItem *>(tileLayer->childItems().last());
+	     frames.contains(frame);
+	     frame = dynamic_cast<QGraphicsRectItem *>(tileLayer->childItems().last()))
+	{
+//		tileLayer->removeFromGroup(frame);	//Apparently does not do what I want. Also sets frame's parents to 0, so it looks correct at first. Qt bug?
+		removeItem(frame);
+	}
+	delete tileLayer->childItems().last();
+
+	if (!d->move.move.meepleMove.isNull())
+		delete meepleLayer->childItems().last();
+
+	placeOpen();
+
+	std::unique_lock<std::mutex> lck(lock);
+	running = 0;
+	lck.unlock();
+
 	delete d;
 }
 
@@ -685,6 +820,12 @@ QGraphicsItemGroup *BoardGraphicsScene::createMeeple(Node const * n, QPoint & po
 
 void BoardGraphicsScene::placeOpen()
 {
+	qDeleteAll(openLayer->childItems());
+	openTiles.clear();
+
+	if (!renderOpenTiles)
+		return;
+
 	const Board * board = game->getBoard();
 	QList<QPoint> const & openPlaces = board->getOpenPlaces();
 	for (QPoint const & open : openPlaces)

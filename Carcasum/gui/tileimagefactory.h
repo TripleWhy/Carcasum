@@ -1,3 +1,20 @@
+/*
+	This file is part of Carcasum.
+
+	Carcasum is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Carcasum is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef TILEIMAGEFACTORY_H
 #define TILEIMAGEFACTORY_H
 
@@ -22,6 +39,7 @@ private:
 	QHash<jcz::Expansion, QList<jcz::XmlParser::XMLTile>> xmlTiles;
 	QByteArray zipData;
 	std::array<QColor, MAX_PLAYERS> playerColors = {{Qt::red, Qt::blue, Qt::yellow, Qt::darkGreen, Qt::black, Qt::gray}};
+	std::array<QString, MAX_PLAYERS> playerNames = {{"!Player 1", "!Player 2", "!Player 3", "!Player 4", "!Player 5", "!Player 6"}};
 
 public:
 	TileImageFactory(jcz::TileFactory * tileFactory);
@@ -35,6 +53,8 @@ public:
 	QString getMeepleOutlineSvgStanding() const;
 	void setPlayerColor(int player, QColor const & color);
 	QColor getPlayerColor(int player) const;
+	void setPlayerName(int player, QString const & name);
+	QString getPlayerName(int player) const;
 	QPixmap generateMeepleStanding(int size, QColor color);
 
 	QMap<uchar, QPoint> getPoints(Tile const * tile);

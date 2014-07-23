@@ -1,3 +1,20 @@
+/*
+	This file is part of Carcasum.
+
+	Carcasum is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Carcasum is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef MONTECARLOPLAYERUCT_H
 #define MONTECARLOPLAYERUCT_H
 
@@ -8,10 +25,10 @@
 #include "core/player.h"
 #include "jcz/tilefactory.h"
 
-template<class UtilityProvider = Utilities::ComplexUtilityNormalized, class Playout = Playouts::RandomPlayout>
+template<class UtilityProvider = Utilities::PortionUtility, class Playout = Playouts::RandomPlayout>
 class MonteCarloPlayerUCT : public Player
 {
-	constexpr static qreal Cp = 1;
+	constexpr static qreal Cp = 0.5;
 
 #ifndef TIMEOUT
  #ifdef QT_NO_DEBUG
@@ -31,7 +48,7 @@ private:
 	static Util::Math const & math;
 
 	QString typeName;
-	STATICCONSTEXPR Playout playoutPolicy = Playout();
+	Playout playoutPolicy = Playout();
 	UtilityProvider utilityProvider = UtilityProvider();
 	const int M;
 	const bool useTimeout;
@@ -47,7 +64,7 @@ public:
 	constexpr MonteCarloPlayerUCT(jcz::TileFactory * tileFactory, int m = 5000, bool mIsTimeout = true)
 #endif
 		: tileFactory(tileFactory),
-	      typeName(QString("MonteCarloPlayerUCT<%1, %2>").arg(UtilityProvider::name).arg(Playout::name)),
+	      typeName(QString("MonteCarloPlayerUCT<%1, %2>(m=%4, mIsTimeout=%5, Cp=%6)").arg(UtilityProvider::name).arg(Playout::name).arg(m).arg(mIsTimeout).arg(Cp)),
 	      M(m),
 		  useTimeout(mIsTimeout)
 	{
@@ -55,10 +72,11 @@ public:
 
 	virtual void newGame(int player, Game const * g);
 	virtual void playerMoved(int player, Tile const * tile, MoveHistoryEntry const & move);
+	virtual void undoneMove(MoveHistoryEntry const & move);
 	virtual TileMove getTileMove(int player, Tile const * tile, MoveHistoryEntry const & move, TileMovesType const & placements);
 	virtual MeepleMove getMeepleMove(int player, Tile const * tile, MoveHistoryEntry const & move, MeepleMovesType const & possible);
 	virtual void endGame();
-	virtual QString getTypeName() { return typeName; }
+	virtual QString getTypeName() const { return typeName; }
 	virtual Player * clone() const;
 
 private:

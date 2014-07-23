@@ -1,9 +1,27 @@
+/*
+	This file is part of Carcasum.
+
+	Carcasum is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Carcasum is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
 #include "static.h"
 #include "core/util.h"
 #include "core/game.h"
+#include "core/board.h"
 #include <string>
 
 namespace Utilities
@@ -234,9 +252,6 @@ public:
 
 class ComplexUtility
 {
-private:
-	Util::OffsetArray<qreal> utilityMap;
-
 public:
 	constexpr static char const * name = "ComplexUtility";
 	typedef int RewardType;
@@ -388,10 +403,10 @@ public:
 	}
 };
 
-class HeydensUtility
+class ScoreDifferenceUtility
 {
 public:
-	constexpr static char const * name = "HeydensUtility";
+	constexpr static char const * name = "ScoreDifferenceUtility";
 	typedef int RewardType;
 	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
 	inline void newGame(int /*player*/, Game const * /*g*/) {}
@@ -416,6 +431,476 @@ public:
 		return reward;
 	}
 };
+
+class HeydensEvaluationOld
+{
+	static constexpr qint64 scoreWeight          = 10000;
+	static constexpr qint64 meepleeWeight        =  1000;
+	static constexpr qint64 incompleteWeight     =  1000;
+	static constexpr qint64 incompleteCityWeight =   125;
+	static constexpr qint64 badFieldWeight       = -4000;
+
+public:
+	constexpr static char const * name = "HeydensEvaluationOld";
+	typedef qint64 RewardType;
+	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
+	inline void newGame(int /*player*/, Game const * /*g*/) {}
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * g) const
+	{
+		qint64 scoreDifference = 0;
+		qint64 meepleDifference = 0;
+		qint64 incompleteDifference = 0;
+		qint64 incompleteCityDifference = 0;
+		qint64 badFields = 0;
+
+		for (int i = 0; i < playerCount; ++i)
+		{
+			if (i == myIndex)
+			{
+				scoreDifference += scores[i];
+				meepleDifference += g->getPlayerMeeples(i);
+			}
+			else
+			{
+				scoreDifference -= scores[i];
+				meepleDifference -= g->getPlayerMeeples(i);
+			}
+		}
+
+		std::unordered_set<Node::NodeData const *> scored;
+		for (Tile const * tile : g->getBoard()->getTiles())
+		{
+			for (Node const * const * np = tile->getNodes(), * const * end = np + tile->getNodeCount(); np < end; ++np)
+			{
+				Node const * n = *np;
+				if (n->isOccupied() && n->getScored() == NotScored )
+				{
+					Node::NodeData const * data = n->getData();
+					if (scored.find(data) != scored.end())
+						continue;
+					scored.insert(data);
+
+					switch (n->getTerrain())
+					{
+						case None:
+							break;
+						case Cloister:
+						case Road:
+						{
+							int score = n->getScore();
+							for (int i = 0; i < playerCount; ++i)
+							{
+								if (data->meeples[i] != data->maxMeples)
+									continue;
+								if (i == myIndex)
+									incompleteDifference += score;
+								else
+									incompleteDifference -= score;
+							}
+							break;
+						}
+						case City:
+						{
+							int score = n->getScore();
+							for (int i = 0; i < playerCount; ++i)
+							{
+								if (data->meeples[i] != data->maxMeples)
+									continue;
+								if (i == myIndex)
+									incompleteCityDifference += score;
+								else
+									incompleteCityDifference -= score;
+							}
+							break;
+						}
+						case Field:
+						{
+							int const score = n->getScore();
+							int const cities = static_cast<FieldNode const *>(n)->countClosedCities();
+							if (cities < 3)
+							{
+								for (int i = 0; i < playerCount; ++i)
+								{
+									if (data->meeples[i] != data->maxMeples)
+										continue;
+									if (i == myIndex)
+									{
+										incompleteDifference += score;
+										++badFields;
+									}
+									else
+									{
+										incompleteDifference += score;
+										--badFields;
+									}
+								}
+							}
+							else
+							{
+								for (int i = 0; i < playerCount; ++i)
+								{
+									if (data->meeples[i] != data->maxMeples)
+										continue;
+									if (i == myIndex)
+									{
+										incompleteDifference += score;
+									}
+									else
+									{
+										incompleteDifference += score;
+									}
+								}
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		return scoreDifference * scoreWeight
+		        + meepleDifference * meepleeWeight
+		        + incompleteDifference * incompleteWeight
+		        + incompleteCityDifference * incompleteCityWeight
+		        + badFields * badFieldWeight;
+	}
+	RewardListType utilities(const int * scores, const int playerCount, Game const * g) const
+	{
+		//TODO I can't think about something much more efficient right now...
+		RewardListType reward(playerCount);
+		for (int i = 0; i < playerCount; ++i)
+			reward[i] = utility(scores, playerCount, i, g);
+		return reward;
+	}
+};
+
+// The description of this evaluation function is not completely clear... This probably makes more sense.
+class HeydensEvaluation
+{
+	static constexpr qint64 scoreWeight          = 1000;
+	static constexpr qint64 meepleeWeight        =  100;
+	static constexpr qint64 incompleteWeight     =  100;
+	static constexpr qint64 incompleteCityWeight =  125;
+	static constexpr qint64 badFieldWeight       = -400;
+
+public:
+	constexpr static char const * name = "HeydensEvaluation";
+	typedef qint64 RewardType;
+	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
+	inline void newGame(int /*player*/, Game const * /*g*/) {}
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * g) const
+	{
+		qint64 scoreDifference = 0;
+		qint64 meepleDifference = 0;
+		qint64 incompleteDifference = 0;
+		qint64 incompleteCityDifference = 0;
+		qint64 badFields = 0;
+
+		for (int i = 0; i < playerCount; ++i)
+		{
+			if (i == myIndex)
+			{
+				scoreDifference += scores[i];
+				meepleDifference += g->getPlayerMeeples(i);
+			}
+			else
+			{
+				scoreDifference -= scores[i];
+				meepleDifference -= g->getPlayerMeeples(i);
+			}
+		}
+
+		std::unordered_set<Node::NodeData const *> scored;
+		for (Tile const * tile : g->getBoard()->getTiles())
+		{
+			for (Node const * const * np = tile->getNodes(), * const * end = np + tile->getNodeCount(); np < end; ++np)
+			{
+				Node const * n = *np;
+				if (n->isOccupied() && n->getScored() == NotScored )
+				{
+					Node::NodeData const * data = n->getData();
+					if (scored.find(data) != scored.end())
+						continue;
+					scored.insert(data);
+
+					switch (n->getTerrain())
+					{
+						case None:
+							break;
+						case Cloister:
+						case Road:
+						{
+							int score = n->getScore();
+							for (int i = 0; i < playerCount; ++i)
+							{
+								if (data->meeples[i] != data->maxMeples)
+									continue;
+								if (i == myIndex)
+									incompleteDifference += score;
+								else
+									incompleteDifference -= score;
+							}
+							break;
+						}
+						case City:
+						{
+							int score = n->getScore();
+							for (int i = 0; i < playerCount; ++i)
+							{
+								if (data->meeples[i] != data->maxMeples)
+									continue;
+								if (i == myIndex)
+									incompleteCityDifference += score;
+								else
+									incompleteCityDifference -= score;
+							}
+							break;
+						}
+						case Field:
+						{
+							int const score = n->getScore();
+							int const cities = static_cast<FieldNode const *>(n)->countClosedCities();
+							if (cities < 3)
+							{
+								for (int i = 0; i < playerCount; ++i)
+								{
+									if (data->meeples[i] != data->maxMeples)
+										continue;
+									if (i == myIndex)
+									{
+										incompleteDifference += score;
+										++badFields;
+									}
+									else
+									{
+										incompleteDifference += score;
+										--badFields;
+									}
+								}
+							}
+							else
+							{
+								for (int i = 0; i < playerCount; ++i)
+								{
+									if (data->meeples[i] != data->maxMeples)
+										continue;
+									if (i == myIndex)
+									{
+										incompleteDifference += score;
+									}
+									else
+									{
+										incompleteDifference += score;
+									}
+								}
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		return scoreDifference * scoreWeight
+		        + meepleDifference * meepleeWeight
+		        + incompleteDifference * incompleteWeight
+		        + incompleteCityDifference * incompleteCityWeight
+		        + badFields * badFieldWeight;
+	}
+	RewardListType utilities(const int * scores, const int playerCount, Game const * g) const
+	{
+		//TODO I can't think about something much more efficient right now...
+		RewardListType reward(playerCount);
+		for (int i = 0; i < playerCount; ++i)
+			reward[i] = utility(scores, playerCount, i, g);
+		return reward;
+	}
+};
+
+class PortionUtility
+{
+public:
+	constexpr static char const * name = "PortionUtility";
+	typedef qreal RewardType;
+	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
+
+	inline void newGame(int /*player*/, Game const * /*g*/) {}
+
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * /*g*/) const
+	{
+		int sum = 0;
+		for (int i = 0; i < playerCount; ++i)
+			sum += scores[i];
+
+		if (sum == 0)
+			return 1.0 / qreal(playerCount);
+		else
+			return qreal(scores[myIndex]) / qreal(sum);
+	}
+
+	RewardListType utilities(const int * scores, const int playerCount, Game const * /*g*/) const
+	{
+		RewardListType reward(playerCount);
+
+		int sum = 0;
+		for (int i = 0; i < playerCount; ++i)
+			sum += scores[i];
+
+		if (sum == 0)
+		{
+			for (int i = 0; i < playerCount; ++i)
+				reward[i] = 1.0 / qreal(playerCount);
+		}
+		else
+		{
+			for (int i = 0; i < playerCount; ++i)
+				reward[i] = qreal(scores[i]) / qreal(sum);
+		}
+		return reward;
+	}
+};
+
+
+template<typename Utility>
+class NormalizedOld
+{
+public:
+	static QString const name;
+	typedef qreal RewardType;
+	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
+private:
+	typedef typename Utility::RewardType uRewardType;
+	typedef typename Utility::RewardListType uRewardListType;
+
+private:
+	Utility util;
+	uRewardType uBound = -1;
+	uRewardType lBound = 0;
+	qreal range = 0;
+
+public:
+	inline void newGame(int player, Game const * g)
+	{
+		util.newGame(player, g);
+		const int upperScoreBound = g->getUpperScoreBound();
+		const int playerCount = g->getPlayerCount();
+		uBound = utilityUpperBound(util, playerCount, upperScoreBound, g);
+		lBound = utilityLowerBound(util, playerCount, upperScoreBound, g);
+		range = (qreal)(uBound - lBound);
+	}
+
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * g) const
+	{
+		return qreal(util.utility(scores, playerCount, myIndex, g)) / range;
+	}
+
+	RewardListType utilities(const int * scores, const int playerCount, Game const * g) const
+	{
+		auto const & u = util.utilities(scores, playerCount, g);
+		RewardListType r(u.size());
+			for (int i = 0; i < u.size(); ++i)
+				r[i] = qreal(u[i]) / range;
+		return r;
+	}
+};
+template<typename Utility>
+QString const Utilities::NormalizedOld<Utility>::name = QString("NormalizedOld<%1>").arg(Utility::name);
+
+template<typename Utility>
+class Normalized
+{
+public:
+	static QString const name;
+	typedef qreal RewardType;
+	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
+private:
+	typedef typename Utility::RewardType uRewardType;
+	typedef typename Utility::RewardListType uRewardListType;
+
+private:
+	Utility util;
+	uRewardType uBound = -1;
+	uRewardType lBound = 0;
+	qreal range = 0;
+
+public:
+	inline void newGame(int player, Game const * g)
+	{
+		util.newGame(player, g);
+		const int upperScoreBound = g->getUpperScoreBound();
+		const int playerCount = g->getPlayerCount();
+		uBound = utilityUpperBound(util, playerCount, upperScoreBound, g);
+		lBound = utilityLowerBound(util, playerCount, upperScoreBound, g);
+		range = (qreal)(uBound - lBound);
+	}
+
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * g) const
+	{
+		auto r = qreal(util.utility(scores, playerCount, myIndex, g) - lBound) / range;
+		return r;
+	}
+
+	RewardListType utilities(const int * scores, const int playerCount, Game const * g) const
+	{
+		auto const & u = util.utilities(scores, playerCount, g);
+		RewardListType r(u.size());
+		for (int i = 0; i < u.size(); ++i)
+		{
+			r[i] = qreal(u[i] - lBound) / range;
+		}
+		return r;
+	}
+};
+template<typename Utility>
+QString const Utilities::Normalized<Utility>::name = QString("Normalized<%1>").arg(Utility::name);
+
+template<typename Utility>
+class NormalizedNeg
+{
+public:
+	static QString const name;
+	typedef qreal RewardType;
+	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
+private:
+	typedef typename Utility::RewardType uRewardType;
+	typedef typename Utility::RewardListType uRewardListType;
+
+private:
+	Utility util;
+	uRewardType uBound = -1;
+	uRewardType lBound = 0;
+	qreal range = 0;
+
+public:
+	inline void newGame(int player, Game const * g)
+	{
+		util.newGame(player, g);
+		const int upperScoreBound = g->getUpperScoreBound();
+		const int playerCount = g->getPlayerCount();
+		uBound = utilityUpperBound(util, playerCount, upperScoreBound, g);
+		lBound = utilityLowerBound(util, playerCount, upperScoreBound, g);
+		range = (qreal)(uBound - lBound);
+	}
+
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * g) const
+	{
+		auto r = (qreal(util.utility(scores, playerCount, myIndex, g) - lBound) / range) - 0.5;
+		return r;
+	}
+
+	RewardListType utilities(const int * scores, const int playerCount, Game const * g) const
+	{
+		auto const & u = util.utilities(scores, playerCount, g);
+		RewardListType r(u.size());
+		for (int i = 0; i < u.size(); ++i)
+		{
+			r[i] = (qreal(u[i] - lBound) / range) - 0.5;
+		}
+		return r;
+	}
+};
+template<typename Utility>
+QString const Utilities::NormalizedNeg<Utility>::name = QString("NormalizedNeg<%1>").arg(Utility::name);
 
 
 template<typename Utility>
@@ -494,7 +979,8 @@ public:
 template<typename Utility>
 QString const Utilities::EC<Utility>::name = QString("EC<%1>").arg(Utility::name);
 typedef EC<ComplexUtility> ComplexUtilityEC;
-typedef EC<HeydensUtility> HeydensUtilityEC;
+typedef EC<ScoreDifferenceUtility> ScoreDifferenceUtilityEC;
+
 
 class ComplexUtilityNormalizedEC
 {
@@ -529,6 +1015,135 @@ public:
 			return complex.utilities(scores, playerCount, g);
 	}
 };
+
+template<typename Utility, int div>
+class ECBonus
+{
+public:
+	static QString const name;
+	typedef qreal RewardType;
+	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
+private:
+	typedef typename Utility::RewardType uRewardType;
+	typedef typename Utility::RewardListType uRewardListType;
+
+private:
+	Utility util;
+	SimpleUtility simple;
+	uRewardType uBound = -1;
+	uRewardType lBound = 0;
+	qreal range = 0;
+
+public:
+	inline void newGame(int player, Game const * g)
+	{
+		util.newGame(player, g);
+		simple.newGame(player, g);
+		const int upperScoreBound = g->getUpperScoreBound();
+		const int playerCount = g->getPlayerCount();
+		uBound = utilityUpperBound(util, playerCount, upperScoreBound, g);
+		lBound = utilityLowerBound(util, playerCount, upperScoreBound, g);
+		range = uBound - lBound;
+	}
+
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * g) const
+	{
+		if (g->isTerminal())
+		{
+			auto s = simple.utility(scores, playerCount, myIndex, g);
+//			switch (s)
+//			{
+//				case -1:
+//				{
+//					auto c = qreal(util.utility(scores, playerCount, myIndex, g)) / range;
+//					return s - (1.0 - c);
+//				}
+//				case 0:
+//					break;
+//				case 1:
+//					break;
+//				default:
+//					Q_UNREACHABLE();
+//					return 0;
+//			}
+
+			auto c = qreal(util.utility(scores, playerCount, myIndex, g)) / range;
+			return s  +  ((c / range) / div);
+		}
+		else
+			return qreal(util.utility(scores, playerCount, myIndex, g)) / range;
+	}
+
+	RewardListType utilities(const int * scores, const int playerCount, Game const * g) const
+	{
+		auto const & u = util.utilities(scores, playerCount, g);
+		RewardListType r(u.size());
+		if (g->isTerminal())
+		{
+			auto const & s = simple.utilities(scores, playerCount, g);
+			for (int i = 0; i < u.size(); ++i)
+				r[i] = s[i]  +  ((qreal(u[i]) / range) / div);
+		}
+		else
+		{
+			for (int i = 0; i < u.size(); ++i)
+				r[i] = qreal(u[i]) / range;
+		}
+		return r;
+	}
+};
+template<typename Utility, int div>
+QString const Utilities::ECBonus<Utility, div>::name = QString("ECBonus<%1,%2>").arg(Utility::name).arg(div);
+
+template<typename Utility, int div>
+class Bonus
+{
+public:
+	static QString const name;
+	typedef qreal RewardType;
+	typedef typename VarLengthArrayWrapper<RewardType, MAX_PLAYERS>::type RewardListType;
+private:
+	typedef typename Utility::RewardType uRewardType;
+	typedef typename Utility::RewardListType uRewardListType;
+
+private:
+	Utility util;
+	SimpleUtility simple;
+	uRewardType uBound = -1;
+	uRewardType lBound = 0;
+	qreal range = 0;
+
+public:
+	inline void newGame(int player, Game const * g)
+	{
+		util.newGame(player, g);
+		simple.newGame(player, g);
+		const int upperScoreBound = g->getUpperScoreBound();
+		const int playerCount = g->getPlayerCount();
+		uBound = utilityUpperBound(util, playerCount, upperScoreBound, g);
+		lBound = utilityLowerBound(util, playerCount, upperScoreBound, g);
+		range = uBound - lBound;
+	}
+
+	RewardType utility(int const * scores, int const playerCount, int const myIndex, Game const * g) const
+	{
+		auto s = simple.utility(scores, playerCount, myIndex, g);
+		auto c = qreal(util.utility(scores, playerCount, myIndex, g)) / range;
+		return s  +  ((c / range) / div);
+	}
+
+	RewardListType utilities(const int * scores, const int playerCount, Game const * g) const
+	{
+		auto const & u = util.utilities(scores, playerCount, g);
+		RewardListType r(u.size());
+		auto const & s = simple.utilities(scores, playerCount, g);
+		for (int i = 0; i < u.size(); ++i)
+			r[i] = s[i]  +  ((qreal(u[i]) / range) / div);
+		return r;
+	}
+};
+template<typename Utility, int div>
+QString const Utilities::Bonus<Utility, div>::name = QString("Bonus<%1,%2>").arg(Utility::name).arg(div);
 
 }
 

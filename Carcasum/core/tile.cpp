@@ -1,8 +1,24 @@
+/*
+	This file is part of Carcasum.
+
+	Carcasum is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Carcasum is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "tile.h"
-
 #include "game.h"
-
 #include <unordered_map>
+#include <typeinfo>
 
 #if PRINT_CONNECTIONS
 #include <QDebug>
@@ -92,12 +108,8 @@ void Node::connect(Node * n, Game * g)
 //	for (Tile const * t : n->d->tiles)
 //		qDebug() << "    " << n->id() << t->id;
 #endif
-
-	if (isOccupied())
-		checkClose(g);
 	
 //	Q_ASSERT(n->d == &n->data);
-
 	for (Node * o : d->nodes)
 	{
 		if (o == this)
@@ -105,6 +117,9 @@ void Node::connect(Node * n, Game * g)
 		o->ds.push_back(d);
 		o->d = d;
 	}
+
+	if (isOccupied())
+		checkClose(g);
 }
 
 void Node::disconnect(Node * n, Game * g)	//only works in reverse order of connecting.
@@ -150,13 +165,6 @@ void Node::disconnect(Node * n, Game * g)	//only works in reverse order of conne
 		
 		for (auto const & t : n->d->tiles)
 			d->tiles.erase(d->tiles.find(t));
-		
-	//	for (Node ** & p : n->pointers)
-	//	{
-	//		*p = n;
-	//		pointers.pop_back();
-	////		p = ?;
-	//	}
 		
 #if PRINT_CONNECTIONS
 	//	qDebug() << "  disconnect:" << n->id() << "->" << id();
@@ -384,32 +392,11 @@ void CloisterNode::reset(const Tile * parent, const Game * g)
 #endif
 
 
-
-Tile::Tile(TileTypeType tileType)
-    : edges {None, None, None, None},
-	  tileType(tileType)
-{
-}
-
-Tile::Tile(TileTypeType tileType, TerrainType const edges[4])
-    : edges { edges[0], edges[1], edges[2], edges[3] },
-	  tileType(tileType)
-{
-	createEdgeList(left);
-	createEdgeList(up);
-	createEdgeList(right);
-	createEdgeList(down);
-}
-
 Tile::~Tile()
 {
 	for (int i = 0; i < nodeCount; ++i)
 		delete nodes[i];
 	delete[] nodes;
-	delete[] edgeNodes[left];
-	delete[] edgeNodes[up];
-	delete[] edgeNodes[right];
-	delete[] edgeNodes[down];
 }
 
 const TerrainType &Tile::getEdge(Tile::Side side) const
@@ -427,25 +414,27 @@ void Tile::connect(Tile::Side side, Tile * other, Game * game)
 #if PRINT_CONNECTIONS
 	qDebug() << "connect tile:" << id << "<->" << other->id;
 #endif
-	Tile::Side otherSide = (Tile::Side)((side + 2) % 4);
-	TerrainType t = getEdge(side);
+	Tile::Side otherSide = sideOpposite(side);
 
-	Q_ASSERT_X(t == other->getEdge(otherSide), "Tile::connect", "edges don't match");
+	Q_ASSERT_X(getEdge(side) == other->getEdge(otherSide), "Tile::connect", "edges don't match");
 //	if (t != other->getEdge(otherSide))
 //		return false;
 
 	EdgeType * nodeList = getEdgeNodes(side);
 	EdgeType * otherNodeList = other->getEdgeNodes(otherSide);
-	int const nodeCount = edgeNodeCount(t);
-	for (int i = 0; i < nodeCount; ++i)
+	for (int i = 0; i < EDGE_NODE_COUNT; ++i)
 	{
+		EdgeType thisNode = nodeList[EDGE_NODE_COUNT - 1 - i];
+		if (isNull(thisNode))
+			continue;
 		EdgeType otherNode = otherNodeList[i];
-		EdgeType thisNode = nodeList[nodeCount - i - 1];
 
-#if NODE_VARIANT
+#if NODE_VARIANT == 1
 		(*thisNode)->connect(*otherNode, game);
-#else
+#elif NODE_VARIANT == 0
 		thisNode->connect(otherNode, game);
+#elif NODE_VARIANT == 2
+		nodes[thisNode]->connect(other->nodes[otherNode], game);
 #endif
 	}
 	
@@ -460,30 +449,30 @@ void Tile::disconnect(Tile::Side side, Tile * other, Game * game)
 #if PRINT_CONNECTIONS
 	qDebug() << "disconnect tile:" << id << "<->" << other->id;
 #endif
-	Tile::Side otherSide = (Tile::Side)((side + 2) % 4);
-	TerrainType t = getEdge(side);
+	Tile::Side otherSide = sideOpposite(side);
 
-	Q_ASSERT_X(t == other->getEdge(otherSide), "Tile::connect", "edges don't match");
+	Q_ASSERT_X(getEdge(side) == other->getEdge(otherSide), "Tile::connect", "edges don't match");
 	
 	if (other->cloister != 0)
 		other->cloister->removeSurroundingTile(game);
 	if (cloister != 0)
 		cloister->removeSurroundingTile(game);
-	
-	int const nodeCount = edgeNodeCount(t);
+
 	EdgeType * nodeList = getEdgeNodes(side);
 	EdgeType * otherNodeList = other->getEdgeNodes(otherSide);
-	for (int i = 0; i < nodeCount; ++i)
+	for (int i = 0; i < EDGE_NODE_COUNT; ++i)
 	{
-		EdgeType otherNode = otherNodeList[nodeCount - i - 1];
 		EdgeType thisNode = nodeList[i];
-//		EdgeType otherNode = otherNodeList[i];
-//		EdgeType thisNode = nodeList[nodeCount - i - 1];
-		
-#if NODE_VARIANT
+		if (isNull(thisNode))
+			continue;
+		EdgeType otherNode = otherNodeList[EDGE_NODE_COUNT - 1 - i];
+
+#if NODE_VARIANT == 1
 		(*thisNode)->disconnect(*otherNode, game);
-#else
+#elif NODE_VARIANT == 0
 		thisNode->disconnect(otherNode, game);
+#elif NODE_VARIANT == 2
+		nodes[thisNode]->disconnect(other->nodes[otherNode], game);
 #endif
 	}
 }
@@ -512,26 +501,24 @@ Tile * Tile::clone(const Game * g)	//TODO? This process only works on unconnecte
 	copy->nodeCount = nodeCount;
 	copy->nodes = new Node*[nodeCount];
 
-	std::unordered_map<EdgeType, EdgeType> nodeMap;
+	std::unordered_map<Node *, Node *> nodeMap;
 	for (int i = 0; i < nodeCount; ++i)
 	{
 		copy->nodes[i] = nodes[i]->clone(copy, g);
 //		copy->nodes[i]->pointers.push_back(copy->nodes + i);
-#if NODE_VARIANT
-		nodeMap[nodes + i] = copy->nodes + i;
-#else
 		nodeMap[nodes[i]] = copy->nodes[i];
-#endif
 	}
 	
 	for (int i = 0; i < 4; ++i)
 	{
-		int const enc = edgeNodeCount(edges[i]);
-		for (int j = 0; j < enc; ++j)
-#if NODE_VARIANT
-			copy->edgeNodes[(Side)i][j] = nodeMap[edgeNodes[(Side)i][j]];
-#else
+		for (int j = 0; j < EDGE_NODE_COUNT; ++j)
+#if NODE_VARIANT == 1
+			if (edgeNodes[i][j] != 0)
+				copy->edgeNodes[i][j] = copy->nodes + ( edgeNodes[i][j] - nodes );
+#elif NODE_VARIANT == 0
 			copy->setEdgeNode((Side)i, j, nodeMap[edgeNodes[(Side)i][j]]);
+#elif NODE_VARIANT == 2
+			copy->edgeNodes[i][j] = edgeNodes[i][j];
 #endif
 	}
 	
@@ -572,35 +559,65 @@ Tile::EdgeType * Tile::getEdgeNodes(Tile::Side side)
 	return edgeNodes[(4 + side - orientation) % 4];
 }
 
+Tile::EdgeType *Tile::getEdgeNodes(Tile::Side side, Tile::Side orientation)
+{
+	return edgeNodes[(4 + side - orientation) % 4];
+}
+
+const Tile::EdgeType *Tile::getEdgeNodes(Tile::Side side) const
+{
+	return edgeNodes[(4 + side - orientation) % 4];
+}
+
+const Tile::EdgeType *Tile::getEdgeNodes(Tile::Side side, Tile::Side orientation) const
+{
+	return edgeNodes[(4 + side - orientation) % 4];
+}
+
 void Tile::setEdgeNode(Tile::Side side, int index, Node * n)
 {
-#if NODE_VARIANT
-	for (int i = 0; i < nodeCount; ++i)
+#if NODE_VARIANT == 1
+	if (n == 0)
+		edgeNodes[side][index] = 0;
+	else
 	{
-		if (nodes[i] == n)
+		for (int i = 0; i < nodeCount; ++i)
 		{
-			edgeNodes[side][index] = nodes + i;
-			break;
+			if (nodes[i] == n)
+			{
+				edgeNodes[side][index] = nodes + i;
+				break;
+			}
 		}
 	}
-#else
+#elif NODE_VARIANT == 0
 	edgeNodes[side][index] = n;
 //	n->pointers.push_back(&(edgeNodes[side][index]));
+#elif NODE_VARIANT == 2
+	if (n == 0)
+		edgeNodes[side][index] = -1;
+	else
+	{
+		for (uchar i = 0; i < nodeCount; ++i)
+		{
+			if (nodes[i] == n)
+			{
+				edgeNodes[side][index] = i;
+				break;
+			}
+		}
+		Q_ASSERT(edgeNodes[side][index] != -1);
+	}
 #endif
 }
 
-void Tile::createEdgeList(Side side)
-{
-	edgeNodes[side] = new EdgeType[edgeNodeCount(edges[side])];
-}
-
-void Tile::printSides(Node * n)
-{
-	for (int i = 0; i < 4; ++i)
-		for (int j = 0; j < edgeNodeCount(getEdge((Side)i)); ++j)
-			if (getEdgeNodes((Side)i)[j] == n)
-				qDebug() << "\t" << (Side)i << j;
-}
+//void Tile::printSides(Node * n)
+//{
+//	for (int i = 0; i < 4; ++i)
+//		for (int j = 0; j < EDGE_NODE_COUNT; ++j)
+//			if (getEdgeNodes((Side)i)[j] == n)
+//				qDebug() << "\t" << (Side)i << j;
+//}
 
 bool Tile::equals(const Tile & other, Game const * g) const
 {

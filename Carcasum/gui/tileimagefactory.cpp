@@ -1,6 +1,23 @@
+/*
+	This file is part of Carcasum.
+
+	Carcasum is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Carcasum is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "tileimagefactory.h"
 #include "boardgraphicsscene.h"
-
+#include "core/util.h"
 #include <QtSvg/QSvgRenderer>
 #include <QPainter>
 #include <QDir>
@@ -83,6 +100,22 @@ QColor TileImageFactory::getPlayerColor(int player) const
 		return Qt::magenta;
 	else
 		return playerColors[player];
+}
+
+void TileImageFactory::setPlayerName(int player, const QString & name)
+{
+	if (player < 0 || player >= (int)playerNames.size())
+		return;
+	else
+		playerNames[player] = name;
+}
+
+QString TileImageFactory::getPlayerName(int player) const
+{
+	if (player < 0 || player >= (int)playerNames.size())
+		return QString("Player %1").arg(player);
+	else
+		return playerNames[player];
 }
 
 QPixmap TileImageFactory::generateMeepleStanding(int size, QColor color)

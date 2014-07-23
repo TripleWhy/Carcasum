@@ -1,16 +1,29 @@
+/*
+	This file is part of Carcasum.
+
+	Carcasum is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Carcasum is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "board.h"
-#include "game.h"
 
 Board::Board(Game * game, const uint s)
 	: game(game),
-	  size(s * 2 - 1)//,
-//	  offset(s - 1)
+	  size(s * 2 + 1)
 {
 	board = new Tile ** [size];
 	for (uint y = 0; y < size; ++y)
 		board[y] = new Tile * [size]();
-
-	//	board[offset][offset] = tiles.takeFirst();
 }
 
 Board::~Board()
@@ -28,11 +41,12 @@ void Board::setStartTile(Tile * tile)
 {
 	int offset = size / 2;
 	board[offset][offset] = tile;
+	tiles.push_back(tile);
 
-	open.insert(QPoint(offset - 1, offset), TerrainWrapper(None, None, tile->getEdge(Tile::left), None));
-	open.insert(QPoint(offset + 1, offset), TerrainWrapper(tile->getEdge(Tile::right), None, None, None));
-	open.insert(QPoint(offset, offset - 1), TerrainWrapper(None, None, None, tile->getEdge(Tile::up)));
-	open.insert(QPoint(offset, offset + 1), TerrainWrapper(None, tile->getEdge(Tile::down), None, None));
+	open.insert(QPoint(offset - 1, offset), EdgeMask(None, None, tile->getEdge(Tile::left), None));
+	open.insert(QPoint(offset + 1, offset), EdgeMask(tile->getEdge(Tile::right), None, None, None));
+	open.insert(QPoint(offset, offset - 1), EdgeMask(None, None, None, tile->getEdge(Tile::up)));
+	open.insert(QPoint(offset, offset + 1), EdgeMask(None, tile->getEdge(Tile::down), None, None));
 //	open.insert(QPoint(-1,  0));
 //	open.insert(QPoint(+1,  0));
 //	open.insert(QPoint( 0, -1));
@@ -78,6 +92,8 @@ void Board::addTile(Tile * tile, TileMove const & move)
 		board[x - 1][y + 1]->connectDiagonal(tile, game);
 	if (board[x + 1][y + 1])
 		board[x + 1][y + 1]->connectDiagonal(tile, game);
+
+	tiles.push_back(tile);
 }
 
 void Board::removeTile(const TileMove & move)
@@ -88,6 +104,12 @@ void Board::removeTile(const TileMove & move)
 	Q_ASSERT_X(board[x][y] != 0, "removeTile", "position empty");
 
 	Tile * tile = board[x][y];
+
+	auto it = std::find(tiles.rbegin(), tiles.rend(), tile);
+	Q_ASSERT(it == tiles.rbegin());
+	Q_ASSERT(it != tiles.rend());
+	if (it != tiles.rend())
+		tiles.erase( --(it.base()) );
 	
 	if (board[x + 1][y + 1])
 		board[x + 1][y + 1]->disconnectDiagonal(tile, game);
@@ -99,11 +121,11 @@ void Board::removeTile(const TileMove & move)
 		board[x - 1][y - 1]->disconnectDiagonal(tile, game);
 	
 	
-	TerrainWrapper & tw = open[QPoint(x, y)];
+	EdgeMask & tw = open[QPoint(x, y)];
 	if (board[x][y + 1] == 0)
 	{
 		QPoint const & p = QPoint(x,  y + 1);
-		TerrainWrapper & t = open[p];
+		EdgeMask & t = open[p];
 		t.t[Tile::up] = None;
 		if (t.t[0] == None && t.t[1] == None && t.t[2] == None && t.t[3] == None)
 			open.remove(p);
@@ -118,7 +140,7 @@ void Board::removeTile(const TileMove & move)
 	if (board[x][y - 1] == 0)
 	{
 		QPoint const & p = QPoint(x,  y - 1);
-		TerrainWrapper & t = open[p];
+		EdgeMask & t = open[p];
 		t.t[Tile::down] = None;
 		if (t.t[0] == None && t.t[1] == None && t.t[2] == None && t.t[3] == None)
 			open.remove(p);
@@ -133,7 +155,7 @@ void Board::removeTile(const TileMove & move)
 	if (board[x + 1][y] == 0)
 	{
 		QPoint const & p = QPoint(x + 1,  y);
-		TerrainWrapper & t = open[p];
+		EdgeMask & t = open[p];
 		t.t[Tile::left] = None;
 		if (t.t[0] == None && t.t[1] == None && t.t[2] == None && t.t[3] == None)
 			open.remove(p);
@@ -148,7 +170,7 @@ void Board::removeTile(const TileMove & move)
 	if (board[x - 1][y] == 0)
 	{
 		QPoint const & p = QPoint(x - 1,  y);
-		TerrainWrapper & t = open[p];
+		EdgeMask & t = open[p];
 		t.t[Tile::right] = None;
 		if (t.t[0] == None && t.t[1] == None && t.t[2] == None && t.t[3] == None)
 			open.remove(p);
@@ -180,6 +202,7 @@ void Board::clear()
 		}
 	}
 	open.clear();
+	tiles.clear();
 }
 
 void Board::reset()
@@ -192,6 +215,7 @@ void Board::reset()
 		}
 	}
 	open.clear();
+	tiles.clear();
 }
 
 TileMovesType Board::getPossibleTilePlacements(const Tile * tile) const
@@ -212,7 +236,7 @@ TileMovesType Board::getPossibleTilePlacements(const Tile * tile) const
 			if (r == rotations[i])
 				goto hell2;
 
-		for (QHash<QPoint, TerrainWrapper>::const_iterator it = open.constBegin(); it != open.constEnd(); ++it)
+		for (QHash<QPoint, EdgeMask>::const_iterator it = open.constBegin(); it != open.constEnd(); ++it)
 		{
 			TerrainType const (&openTypes)[4] = it.value().t;
 			for (int i = 0; i < 4; ++i)
@@ -235,7 +259,7 @@ QList<QPoint> Board::getOpenPlaces() const
 	return open.keys();
 }
 
-QPoint Board::positionOf(Tile * t) const
+QPoint Board::positionOf(Tile const * t) const
 {
 	for (uint y = 0; y < size; ++y)
 		for (uint x = 0; x < size; ++x)
@@ -246,44 +270,26 @@ QPoint Board::positionOf(Tile * t) const
 
 void Board::scoreEndGame()
 {
-//	qDebug() << "SCORE END" << this << game;
-	for (uint y = 0; y < size; ++y)
-	{
-		for (uint x = 0; x < size; ++x)
+	for (Tile * tile : tiles)
+		for (Node * const * n = tile->getNodes(), * const * end = n + tile->getNodeCount(); n < end; ++n)
 		{
-			if (board[x][y])
+			if ((*n)->isOccupied())
 			{
-				for (Node * const * n = board[x][y]->getNodes(), * const * end = n + board[x][y]->getNodeCount(); n < end; ++n)
-				{
-					if ((*n)->isOccupied())
-					{
-						game->scoreNodeEndGame(*n);
-					}
-				}
+				game->scoreNodeEndGame(*n);
 			}
 		}
-	}
 }
 
 void Board::unscoreEndGame()
 {
-//	qDebug() << "UNSCORE END" << this << game;
-	for (uint y = 0; y < size; ++y)
-	{
-		for (uint x = 0; x < size; ++x)
+	for (Tile * tile : tiles)
+		for (Node * const * n = tile->getNodes(), * const * end = n + tile->getNodeCount(); n < end; ++n)
 		{
-			if (board[x][y])
+			if ((*n)->isOccupied())
 			{
-				for (Node * const * n = board[x][y]->getNodes(), * const * end = n + board[x][y]->getNodeCount(); n < end; ++n)
-				{
-					if ((*n)->isOccupied())
-					{
-						game->unscoreNodeEndGame(*n);
-					}
-				}
+				game->unscoreNodeEndGame(*n);
 			}
 		}
-	}
 }
 
 std::vector<int> Board::countUnscoredMeeples() const
@@ -292,27 +298,21 @@ std::vector<int> Board::countUnscoredMeeples() const
 	for (uint i = 0; i < game->getPlayerCount(); ++i)
 		meeples.push_back(0);
 	std::unordered_set<Node::NodeData const *> nodeIds;
-	for (uint y = 0; y < size; ++y)
+	for (Tile * tile : tiles)
 	{
-		for (uint x = 0; x < size; ++x)
+		for (Node * const * n = tile->getNodes(), * const * end = n + tile->getNodeCount(); n < end; ++n)
 		{
-			if (board[x][y] != 0)
+			if ((*n)->getScored() == NotScored && nodeIds.find((*n)->getData()) == nodeIds.end())
 			{
-				for (Node * const * n = board[x][y]->getNodes(), * const * end = n + board[x][y]->getNodeCount(); n < end; ++n)
+				nodeIds.insert((*n)->getData());
+
+				QString s;
+				for (uint i = 0; i < game->getPlayerCount(); ++i)
 				{
-					if ((*n)->getScored() == NotScored && nodeIds.find((*n)->getData()) == nodeIds.end())
-					{
-						nodeIds.insert((*n)->getData());
-						
-						QString s;
-						for (uint i = 0; i < game->getPlayerCount(); ++i)
-						{
-							meeples[i] += (*n)->getMeeples()[i];
-							s = s + ", " + QString::number((*n)->getMeeples()[i]);
-						}
-//						qDebug() << "unscored" << (*n)->getTerrain() << "\t" << (*n)->id() << "on tile" << board[x][y]->id << "\t" << s;
-					}
+					meeples[i] += (*n)->getMeeples()[i];
+					s = s + ", " + QString::number((*n)->getMeeples()[i]);
 				}
+//				qDebug() << "unscored" << (*n)->getTerrain() << "\t" << (*n)->id() << "on tile" << tile->id << "\t" << s;
 			}
 		}
 	}
@@ -321,6 +321,7 @@ std::vector<int> Board::countUnscoredMeeples() const
 
 bool Board::equals(const Board & other) const
 {
+	QMap<Tile *, Tile *> tileMap;
 	if (size != other.size)
 		return false;
 	for (uint y = 0; y < size; ++y)
@@ -329,11 +330,20 @@ bool Board::equals(const Board & other) const
 		{
 			if ((board[x][y] == 0) != (other.board[x][y] == 0))
 				return false;
-			if (board[x][y] != 0 && !board[x][y]->equals(*other.board[x][y], game))
-				return false;
+			if (board[x][y] != 0)
+			{
+				if (!board[x][y]->equals(*other.board[x][y], game))
+					return false;
+				tileMap[board[x][y]] = other.board[x][y];
+			}
 		}
 	}
 	if (open != other.open)
 		return false;
+	if (tiles.size() != other.tiles.size())
+		return false;
+	for (uint i = 0; i < tiles.size(); ++i)
+		if (tileMap[tiles[i]] != other.tiles[i])
+			return false;
 	return true;
 }

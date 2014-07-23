@@ -1,3 +1,20 @@
+/*
+	This file is part of Carcasum.
+
+	Carcasum is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Carcasum is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef UTIL_H
 #define UTIL_H
 
@@ -14,6 +31,13 @@
 #include <map>
 #include <thread>
 #include <chrono>
+#include <atomic>
+
+#if USE_BOOST_THREAD_TIMER
+#include <boost/chrono/thread_clock.hpp>
+#else
+#include <QElapsedTimer>
+#endif
 
 namespace Util
 {
@@ -31,12 +55,6 @@ namespace Util
 	{
 		if (isGUIThread())
 			QCoreApplication::processEvents();
-	}
-
-	inline bool isNodeFree(Node const * n)
-	{
-//		return true;
-		return !n->isOccupied();
 	}
 
 	inline void sleep(int millis)
@@ -105,8 +123,15 @@ namespace Util
 		return u;
 	}
 
+	template<typename Container, typename Content>
+	inline bool contains(Container container, Content item)
+	{
+		return std::find(container.cbegin(), container.cend(), item) != container.cend();
+	}
+
 	void syncGamesFast(Game const & from, Game & to);
 	void syncGames(Game const & from, Game & to);
+	void setupNewGame(Game const & from, Game & to, jcz::TileFactory * tileFactory);
 
 	template<typename T>
 	class OffsetArray
@@ -211,6 +236,35 @@ namespace Util
 		}
 	};
 
+	class InterruptableThread : public QThread
+	{
+	private:
+		std::atomic<bool> interruptionRequested;
+
+	public:
+		InterruptableThread(QObject * parent = 0) : QThread(parent), interruptionRequested(false) {}
+
+		void interrupt()
+		{
+			interruptionRequested = true;
+		}
+
+		bool isInterrupted()
+		{
+			return interruptionRequested;
+		}
+
+		void clearInterrupt()
+		{
+			interruptionRequested = false;
+		}
+
+		static InterruptableThread * currentInterruptableThread()
+		{
+			return dynamic_cast<InterruptableThread *>(QThread::currentThread());
+		}
+	};
+
 
 	// From http://qt-project.org/forums/viewthread/23849/#110462
 	template <typename T, typename U>
@@ -226,6 +280,40 @@ namespace Util
 	    unsigned mFlags;
 	    unsigned mFlag;
 	};
+
+#if USE_BOOST_THREAD_TIMER
+	class ThreadTimer
+	{
+	private:
+		boost::chrono::thread_clock::time_point begin;
+
+	public:
+		constexpr ThreadTimer() = default;
+
+		void start()
+		{
+			begin = boost::chrono::thread_clock::now();
+		}
+
+		boost::chrono::thread_clock::duration elapsedDuration() const BOOST_NOEXCEPT
+		{
+			return boost::chrono::thread_clock::now() - begin;
+		}
+
+		typename boost::chrono::milliseconds elapsed() const BOOST_NOEXCEPT
+		{
+			return (boost::chrono::duration_cast<boost::chrono::milliseconds>(elapsedDuration()));
+		}
+
+		bool hasExpired(qint64 timeout) const BOOST_NOEXCEPT
+		{
+			return elapsedDuration() > boost::chrono::milliseconds(timeout);
+		}
+	};
+	typedef ThreadTimer ExpireTimer;
+#else
+	typedef QElapsedTimer ExpireTimer;
+#endif
 }
 
 #endif // UTIL_H
