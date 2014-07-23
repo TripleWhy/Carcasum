@@ -1,4 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+    This file is part of Carcasum.
+
+    Carcasum is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Carcasum is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
 <ui version="4.0">
  <class>PlayerInfoView</class>
  <widget class="QWidget" name="PlayerInfoView">
@@ -32,16 +49,16 @@
    <item row="2" column="1">
     <layout class="QHBoxLayout" name="infoLayout">
      <item>
-      <widget class="QLabel" name="label_2">
+      <widget class="QLabel" name="label_11">
        <property name="text">
-        <string>Points:</string>
+        <string>Meeples:</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="pointsLabel">
+      <widget class="QLabel" name="meeplesLabel">
        <property name="text">
-        <string notr="true">0</string>
+        <string notr="true">7</string>
        </property>
       </widget>
      </item>
@@ -62,16 +79,16 @@
       </spacer>
      </item>
      <item>
-      <widget class="QLabel" name="label_11">
+      <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>Meeples:</string>
+        <string>Points:</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="meeplesLabel">
+      <widget class="QLabel" name="pointsLabel">
        <property name="text">
-        <string notr="true">7</string>
+        <string notr="true">0</string>
        </property>
       </widget>
      </item>
@@ -110,7 +127,7 @@
     </widget>
    </item>
    <item row="0" column="0" rowspan="3">
-    <widget class="QLabel" name="iconLabel"/>
+    <widget class="PIVLabel" name="iconLabel"/>
    </item>
    <item row="1" column="1">
     <layout class="QHBoxLayout" name="meepleLayout">
@@ -136,10 +153,17 @@
     </layout>
    </item>
    <item row="0" column="2" rowspan="3">
-    <widget class="QLabel" name="tileLabel"/>
+    <widget class="PIVLabel" name="tileLabel"/>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PIVLabel</class>
+   <extends>QLabel</extends>
+   <header>gui/playerinfoview.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

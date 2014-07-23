@@ -1,3 +1,20 @@
+/*
+	This file is part of Carcasum.
+
+	Carcasum is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Carcasum is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "mainwindow.h"
 #include <QApplication>
 
@@ -13,12 +30,18 @@
 #include <QLibraryInfo>
 #include <QSettings>
 
+#if !MAIN_RENDER_STATES
 int main(int argc, char *argv[])
 {
 	QApplication app(argc, argv);
 	QSettings::setDefaultFormat(QSettings::IniFormat);
 	QCoreApplication::setOrganizationName(APP_ORGANIZATION);
 	QCoreApplication::setApplicationName(APP_NAME);
+
+	qDebug() << "Qt build version:  " << QT_VERSION_STR;
+	qDebug() << "Qt runtime version:" << qVersion();
+	qDebug() << "Git revision:" << APP_REVISION_STR;
+	qDebug() << "QStandardPaths::DataLocation:" << QStandardPaths::writableLocation(QStandardPaths::DataLocation);
 
 	QTranslator qtTranslator;
 	qtTranslator.load("qt_" + QLocale::system().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath));
@@ -31,12 +54,6 @@ int main(int argc, char *argv[])
 	QTranslator appTranslator;
 	appTranslator.load("carcasum_" + QLocale::system().name());
 	app.installTranslator(&appTranslator);
-
-
-	qDebug() << "Qt build version:  " << QT_VERSION_STR;
-	qDebug() << "Qt runtime version:" << qVersion();
-	qDebug() << "Git revision:" << APP_REVISION_STR;
-	qDebug() << "QStandardPaths::DataLocation:" << QStandardPaths::writableLocation(QStandardPaths::DataLocation);
 
 #ifndef CLASSIC_TILES
 	QDir dir = QDir(QCoreApplication::applicationDirPath());
@@ -68,3 +85,44 @@ int main(int argc, char *argv[])
 	return app.exec();
 	return 0;
 }
+
+#else
+#include "player/randomplayer.h"
+#include "gui/playerinfoview.h"
+int main(int argc, char *argv[])
+{
+	QApplication app(argc, argv);
+	QSettings::setDefaultFormat(QSettings::IniFormat);
+	QCoreApplication::setOrganizationName(APP_ORGANIZATION);
+	QCoreApplication::setApplicationName(APP_NAME);
+
+	qDebug() << "Qt build version:  " << QT_VERSION_STR;
+	qDebug() << "Qt runtime version:" << qVersion();
+	qDebug() << "Git revision:" << APP_REVISION_STR;
+	qDebug() << "QStandardPaths::DataLocation:" << QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+
+	if (false)
+	{
+		auto history = Game::loadFromFile("game1");
+		MainWindow::renderBoardCompleteGame(history, "./game1-render/", false, false, false, false, 3);
+		return 0;
+	}
+
+	QDir dir("../../Carcasum/states/");
+	dir.mkdir("render");
+	QString path = dir.filePath("render");
+
+	QStringList filters;
+	filters << "state*";
+
+	QStringList const & files = dir.entryList(filters);
+	qDebug() << "count:" << files.size();
+
+	for (QString const & s : files)
+	{
+		QString const & file = dir.filePath(s);
+		qDebug() << file;
+		MainWindow::renderBoard(file, QString("%1/%2.png").arg(path).arg(s), 1, false, false, true, true);
+	}
+}
+#endif

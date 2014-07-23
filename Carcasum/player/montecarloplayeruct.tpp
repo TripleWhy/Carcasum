@@ -1,6 +1,23 @@
+/*
+	This file is part of Carcasum.
+
+	Carcasum is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Carcasum is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "montecarloplayeruct.h"
 #include "randomplayer.h"
-#include <QElapsedTimer>
+#include "core/util.h"
 
 #define MCU_T template<class UtilityProvider, class Playout>
 #define MCU_TU <UtilityProvider, Playout>
@@ -20,6 +37,7 @@ void MonteCarloPlayerUCT MCU_TU::newGame(int player, const Game * g)
 		simGame->addPlayer(&RandomPlayer::instance);
 	simGame->newGame(g->getTileSets(), tileFactory, g->getMoveHistory());
 	utilityProvider.newGame(player, g);
+	playoutPolicy.newGame(player, g);
 }
 
 MCU_T
@@ -29,9 +47,15 @@ void MonteCarloPlayerUCT MCU_TU::playerMoved(int /*player*/, const Tile * /*tile
 }
 
 MCU_T
+void MonteCarloPlayerUCT MCU_TU::undoneMove(const MoveHistoryEntry & /*move*/)
+{
+	Util::syncGames(*game, *simGame);
+}
+
+MCU_T
 TileMove MonteCarloPlayerUCT MCU_TU::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & possible)
 {
-	QElapsedTimer timer;
+	Util::ExpireTimer timer;
 	if (useTimeout)
 		timer.start();
 
@@ -49,8 +73,8 @@ TileMove MonteCarloPlayerUCT MCU_TU::getTileMove(int player, const Tile * /*tile
 	auto rewards2 = typename VarLengthArrayWrapper<typename VarLengthArrayWrapper<RewardType, 16>::type, 128>::type(possibleSize);
 	auto playoutCount2 = VarLengthArrayWrapper<VarLengthArrayWrapper<uint, 16>::type, 128>::type(possibleSize);
 	{
-		Tile * simTile = simGame->getTiles()[move.tile];
-		simGame->simPartStepChance(move.tile);
+		simGame->simPartStepChance(move.tileIndex);
+		Tile * simTile = simGame->simTile;
 		for (int i = 0; i < possibleSize; ++i)
 		{
 			TileMove const & tm = possible[i];
@@ -162,7 +186,7 @@ void MonteCarloPlayerUCT MCU_TU::endGame()
 MCU_T
 Player * MonteCarloPlayerUCT MCU_TU::clone() const
 {
-	return new MonteCarloPlayerUCT(tileFactory);
+	return new MonteCarloPlayerUCT(tileFactory, M, useTimeout);
 }
 
 MCU_T

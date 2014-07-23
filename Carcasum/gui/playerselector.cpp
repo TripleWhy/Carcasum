@@ -1,3 +1,20 @@
+/*
+	This file is part of Carcasum.
+
+	Carcasum is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Carcasum is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "playerselector.h"
 #include "ui_playerselector.h"
 #include "player/randomplayer.h"
@@ -5,6 +22,10 @@
 #include "player/montecarloplayer2.h"
 #include "player/montecarloplayeruct.h"
 #include "player/mctsplayer.h"
+#include "player/simpleplayer.h"
+#include "player/simpleplayer2.h"
+#include "player/simpleplayer3.h"
+#include "jcz/jczplayer.h"
 
 PlayerSelector::PlayerSelector(jcz::TileFactory * tileFactory, QWidget *parent)
     : QDialog(parent),
@@ -44,6 +65,14 @@ Player *PlayerSelector::createPlayer()
 	{
 		case PlayerTypeRandom:
 			return new RandomPlayer();
+		case PlayerSimple:
+			return new SimplePlayer();
+		case PlayerSimple2:
+			return new SimplePlayer2();
+		case PlayerSimple3:
+			return new SimplePlayer3();
+		case PlayerTypeJCZ:
+			return new jcz::JCZPlayer(tileFactory);
 		case PlayerTypeMonteCarlo:
 		{
 			switch (utility)
@@ -58,14 +87,14 @@ Player *PlayerSelector::createPlayer()
 							return new MonteCarloPlayer<Utilities::SimpleUtility, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
 					}
 				}
-				case UtilityTypeHeyden:
+				case UtilityTypeScoreDiff:
 				{
 					switch (playout)
 					{
 						case PlayoutTypeRandom:
-							return new MonteCarloPlayer<Utilities::HeydensUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout);
+							return new MonteCarloPlayer<Utilities::ScoreDifferenceUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout);
 						case PlayoutTypeEarlyCutoff:
-							return new MonteCarloPlayer<Utilities::HeydensUtilityEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
+							return new MonteCarloPlayer<Utilities::ScoreDifferenceUtilityEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
 					}
 				}
 				case UtilityTypeComplex:
@@ -88,6 +117,16 @@ Player *PlayerSelector::createPlayer()
 							return new MonteCarloPlayer<Utilities::ComplexUtilityNormalizedEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
 					}
 				}
+				case UtilityTypePortion:
+				{
+					switch (playout)
+					{
+						case PlayoutTypeRandom:
+							return new MonteCarloPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout);
+						case PlayoutTypeEarlyCutoff:
+							return new MonteCarloPlayer<Utilities::EC<Utilities::PortionUtility>, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
+					}
+				}
 			}
 			break;
 		}
@@ -105,14 +144,14 @@ Player *PlayerSelector::createPlayer()
 							return new MonteCarloPlayer2<Utilities::SimpleUtility, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
 					}
 				}
-				case UtilityTypeHeyden:
+				case UtilityTypeScoreDiff:
 				{
 					switch (playout)
 					{
 						case PlayoutTypeRandom:
-							return new MonteCarloPlayer2<Utilities::HeydensUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout);
+							return new MonteCarloPlayer2<Utilities::ScoreDifferenceUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout);
 						case PlayoutTypeEarlyCutoff:
-							return new MonteCarloPlayer2<Utilities::HeydensUtilityEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
+							return new MonteCarloPlayer2<Utilities::ScoreDifferenceUtilityEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
 					}
 				}
 				case UtilityTypeComplex:
@@ -135,6 +174,16 @@ Player *PlayerSelector::createPlayer()
 							return new MonteCarloPlayer2<Utilities::ComplexUtilityNormalizedEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
 					}
 				}
+				case UtilityTypePortion:
+				{
+					switch (playout)
+					{
+						case PlayoutTypeRandom:
+							return new MonteCarloPlayer2<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout);
+						case PlayoutTypeEarlyCutoff:
+							return new MonteCarloPlayer2<Utilities::EC<Utilities::PortionUtility>, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
+					}
+				}
 			}
 			break;
 		}
@@ -152,14 +201,14 @@ Player *PlayerSelector::createPlayer()
 							return new MonteCarloPlayerUCT<Utilities::SimpleUtility, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
 					}
 				}
-				case UtilityTypeHeyden:
+				case UtilityTypeScoreDiff:
 				{
 					switch (playout)
 					{
 						case PlayoutTypeRandom:
-							return new MonteCarloPlayerUCT<Utilities::HeydensUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout);
+							return new MonteCarloPlayerUCT<Utilities::ScoreDifferenceUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout);
 						case PlayoutTypeEarlyCutoff:
-							return new MonteCarloPlayerUCT<Utilities::HeydensUtilityEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
+							return new MonteCarloPlayerUCT<Utilities::ScoreDifferenceUtilityEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
 					}
 				}
 				case UtilityTypeComplex:
@@ -182,6 +231,16 @@ Player *PlayerSelector::createPlayer()
 							return new MonteCarloPlayerUCT<Utilities::ComplexUtilityNormalizedEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
 					}
 				}
+				case UtilityTypePortion:
+				{
+					switch (playout)
+					{
+						case PlayoutTypeRandom:
+							return new MonteCarloPlayerUCT<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout);
+						case PlayoutTypeEarlyCutoff:
+							return new MonteCarloPlayerUCT<Utilities::EC<Utilities::PortionUtility>, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout);
+					}
+				}
 			}
 			break;
 		}
@@ -194,19 +253,19 @@ Player *PlayerSelector::createPlayer()
 					switch (playout)
 					{
 						case PlayoutTypeRandom:
-							return new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout, Cp);
+							return new MCTSPlayer<Utilities::SimpleUtility, Playouts::RandomPlayout>(tileFactory, false, limit, useTimeout, Cp);
 						case PlayoutTypeEarlyCutoff:
-							return new MCTSPlayer<Utilities::SimpleUtility, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout, Cp);
+							return new MCTSPlayer<Utilities::SimpleUtility, Playouts::EarlyCutoff<>>(tileFactory, false, limit, useTimeout, Cp);
 					}
 				}
-				case UtilityTypeHeyden:
+				case UtilityTypeScoreDiff:
 				{
 					switch (playout)
 					{
 						case PlayoutTypeRandom:
-							return new MCTSPlayer<Utilities::HeydensUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout, Cp);
+							return new MCTSPlayer<Utilities::ScoreDifferenceUtility, Playouts::RandomPlayout>(tileFactory, false, limit, useTimeout, Cp);
 						case PlayoutTypeEarlyCutoff:
-							return new MCTSPlayer<Utilities::HeydensUtilityEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout, Cp);
+							return new MCTSPlayer<Utilities::ScoreDifferenceUtilityEC, Playouts::EarlyCutoff<>>(tileFactory, false, limit, useTimeout, Cp);
 					}
 				}
 				case UtilityTypeComplex:
@@ -214,9 +273,9 @@ Player *PlayerSelector::createPlayer()
 					switch (playout)
 					{
 						case PlayoutTypeRandom:
-							return new MCTSPlayer<Utilities::ComplexUtility, Playouts::RandomPlayout>(tileFactory, limit, useTimeout, Cp);
+							return new MCTSPlayer<Utilities::ComplexUtility, Playouts::RandomPlayout>(tileFactory, false, limit, useTimeout, Cp);
 						case PlayoutTypeEarlyCutoff:
-							return new MCTSPlayer<Utilities::ComplexUtilityEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout, Cp);
+							return new MCTSPlayer<Utilities::ComplexUtilityEC, Playouts::EarlyCutoff<>>(tileFactory, false, limit, useTimeout, Cp);
 					}
 				}
 				case UtilityTypeComplexNormalized:
@@ -224,9 +283,19 @@ Player *PlayerSelector::createPlayer()
 					switch (playout)
 					{
 						case PlayoutTypeRandom:
-							return new MCTSPlayer<Utilities::ComplexUtilityNormalized, Playouts::RandomPlayout>(tileFactory, limit, useTimeout, Cp);
+							return new MCTSPlayer<Utilities::ComplexUtilityNormalized, Playouts::RandomPlayout>(tileFactory, false, limit, useTimeout, Cp);
 						case PlayoutTypeEarlyCutoff:
-							return new MCTSPlayer<Utilities::ComplexUtilityNormalizedEC, Playouts::EarlyCutoff<>>(tileFactory, limit, useTimeout, Cp);
+							return new MCTSPlayer<Utilities::ComplexUtilityNormalizedEC, Playouts::EarlyCutoff<>>(tileFactory, false, limit, useTimeout, Cp);
+					}
+				}
+				case UtilityTypePortion:
+				{
+					switch (playout)
+					{
+						case PlayoutTypeRandom:
+							return new MCTSPlayer<Utilities::PortionUtility, Playouts::RandomPlayout>(tileFactory, false, limit, useTimeout, Cp);
+						case PlayoutTypeEarlyCutoff:
+							return new MCTSPlayer<Utilities::EC<Utilities::PortionUtility>, Playouts::EarlyCutoff<>>(tileFactory, false, limit, useTimeout, Cp);
 					}
 				}
 			}
@@ -246,6 +315,10 @@ void PlayerSelector::on_typeList_currentRowChanged(int currentRow)
 	switch (playerData[currentRow].type)
 	{
 		case PlayerTypeRandom:
+		case PlayerSimple:
+		case PlayerSimple2:
+		case PlayerSimple3:
+		case PlayerTypeJCZ:
 			ui->optionsWidget->setVisible(false);
 			break;
 		case PlayerTypeMCTS:

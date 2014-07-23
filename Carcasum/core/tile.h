@@ -1,3 +1,20 @@
+/*
+	This file is part of Carcasum.
+
+	Carcasum is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Carcasum is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef TILE_H
 #define TILE_H
 
@@ -17,6 +34,7 @@ class TileFactory;
 class Tile;
 class Game;
 
+#define TERRAIN_TYPE_SIZE 5
 enum TerrainType { None = 0, Field, City, Road, Cloister };
 enum Scored { NotScored, ScoredMidGame, ScoredEndGame };
 typedef quint8 TileTypeType;
@@ -35,10 +53,9 @@ public:
 	{
 		TerrainType t;
 		TilesType tiles;
-//		PointersType pointers;
 		uchar * const meeples; // Number of meeples on this node per player.
-		uchar maxMeples = 0;
-		void * dd = 0;
+		uchar maxMeples = 0; // argmax(meeples[player])
+		void * dd = 0; // Used by derived classes to store type specific data.
 		Scored scored = NotScored;
 		std::unordered_multiset<Node *> nodes; // This may actually also work faster in a linked version.
 #if DEBUG_IDS
@@ -64,11 +81,11 @@ public:
 	Node(TerrainType t, Tile const * parent, Game const * g);
 	virtual ~Node();
 
-	inline void addMeeple(int player, Game * g) { if (++d->meeples[player] > d->maxMeples) d->maxMeples = d->meeples[player]; checkClose(g); }
 	void removeMeeple(int player, Game * g);
 	inline bool isOccupied() const { return d->maxMeples; }
 	inline uchar getMaxMeeples() const { return d->maxMeples; }
 	inline uchar const * getMeeples() const { return d->meeples; }
+	inline uchar getPlayerMeeples(int player) const { return d->meeples[player]; }
 	inline TerrainType getTerrain() const { return d->t; }
 	inline Scored getScored() const { return d->scored; }
 	inline void setScored(Scored s) { d->scored = s; }
@@ -78,15 +95,21 @@ public:
 	virtual void disconnect(Node * n, Game * g);
 	virtual void checkClose(Game * g) = 0;
 	virtual void checkUnclose(Game * g) = 0;
-	virtual int getScore() = 0;
+	virtual int getScore() const = 0;
 	virtual Node * clone(Tile const * parent, Game const * g) const = 0;
 #if USE_RESET
 	virtual void reset(Tile const * parent, Game const * g);
 #endif
 	
-	inline int uniqueTileCount()
+	inline void addMeeple(int player, Game * g)
 	{
-		int uniqueTiles = 0;
+		if (++d->meeples[player] > d->maxMeples)
+			d->maxMeples = d->meeples[player];
+		checkClose(g);
+	}
+	inline uint uniqueTileCount() const
+	{
+		uint uniqueTiles = 0;
 		Tile const * last = 0;
 		for (Tile const * t : d->tiles)
 		{
@@ -136,7 +159,7 @@ public:
 #if USE_RESET
 	virtual void reset(Tile const * parent, Game const * g);
 #endif
-	inline virtual int getScore()
+	inline virtual int getScore() const
 	{
 		return uniqueTileCount() + getCityData()->bonus;
 	}
@@ -194,17 +217,21 @@ public:
 #if USE_RESET
 	virtual void reset(Tile const * parent, Game const * g);
 #endif
-	inline virtual int getScore()
+	inline virtual int getScore() const
+	{
+		return countClosedCities() * 3;
+	}
+	virtual Node * clone(Tile const * parent, Game const * g) const
+	{
+		return new FieldNode(parent, g);
+	}
+	inline int countClosedCities() const
 	{
 		std::unordered_set<NodeData const *> closedCities;
 		for (CityNode * c : getFieldData()->cities)
 			if (c->isClosed())
 				closedCities.insert(c->getData());
-		return (int)closedCities.size() * 3;
-	}
-	virtual Node * clone(Tile const * parent, Game const * g) const
-	{
-		return new FieldNode(parent, g);
+		return (int)closedCities.size();
 	}
 	
 	virtual bool equals(Node const & other, Game const * g) const
@@ -246,7 +273,7 @@ public:
 	virtual void connect(Node * n, Game * g);
 	virtual void disconnect(Node * n, Game * g);
 	virtual void checkClose(Game * g);
-	inline virtual int getScore() { return uniqueTileCount(); }
+	inline virtual int getScore() const { return uniqueTileCount(); }
 	virtual void checkUnclose(Game * g);
 #if USE_RESET
 	virtual void reset(Tile const * parent, Game const * g);
@@ -254,6 +281,10 @@ public:
 	virtual Node * clone(Tile const * parent, Game const * g) const
 	{
 		return new RoadNode(parent, g, getRoadData()->open);
+	}
+	inline int getOpen() const
+	{
+		return getRoadData()->open;
 	}
 	
 	virtual bool equals(Node const & other, Game const * g) const
@@ -281,7 +312,7 @@ public:
 	virtual void connect(Node * /*n*/, Game * /*g*/) { Q_ASSERT(false); }
 	virtual void disconnect(Node * /*n*/, Game * /*g*/) { Q_ASSERT(false); }
 	virtual void checkClose(Game * g);
-	inline virtual int getScore() { return surroundingTiles; }
+	inline virtual int getScore() const { return surroundingTiles; }
 	virtual void checkUnclose(Game * g);
 #if USE_RESET
 	virtual void reset(Tile const * parent, Game const * g);
@@ -314,26 +345,40 @@ public:
 	}
 };
 
+#define EDGE_NODE_COUNT 3
 class Tile
 {
 	friend class jcz::TileFactory;
 
 public:
 	enum Side { left = 0, up = 1, right = 2, down = 3 };
+	//TODO might be faster using switch
+	static inline Side sideOpposite(Side const & side) { return (Tile::Side)((side + 2) % 4); }
+	static inline Side sideRotateCW(Side const & side) { return (Tile::Side)((side + 1) % 4); }
+	static inline Side sideRotateCCW(Side const & side) { return (Tile::Side)((side + 4 - 1) % 4); }
+
 	enum TileSet { BaseGame = 1 << 0 };
 //	struct TileType { TileSet set; int type; };
 	Q_DECLARE_FLAGS(TileSets, TileSet)
-#if NODE_VARIANT
+#if NODE_VARIANT == 1
 	typedef Node ** EdgeType;
-#else
+#elif NODE_VARIANT == 0
 	typedef Node * EdgeType;
+#elif NODE_VARIANT == 2
+	typedef qint8 EdgeType;
 #endif
+
 
 private:
 	TerrainType edges[4];    // array of edge types
 	uchar nodeCount = 0;     // length of nodes
 	Node ** nodes = 0;       // array of node pointers
-	EdgeType * edgeNodes[4]; // 4 arrays of edge connectors
+	EdgeType edgeNodes[4][EDGE_NODE_COUNT] = // 4 arrays of edge connectors
+#if NODE_VARIANT == 2
+	{{-1, -1, -1}, {-1, -1, -1}, {-1, -1, -1}, {-1, -1, -1}};
+#else
+	{};
+#endif
 	CloisterNode * cloister = 0;
 #if DEBUG_IDS
 public:
@@ -347,10 +392,13 @@ public:
 	TileTypeType tileType;
 
 private:
-	Tile(TileTypeType tileType);
-
+	constexpr Tile(TileTypeType tileType)
+	    : edges {None, None, None, None},
+	      tileType(tileType) {}
 public:
-	Tile(TileTypeType tileType, TerrainType const edges[4]);
+	constexpr Tile(TileTypeType tileType, TerrainType const edges[4])
+	    : edges { edges[0], edges[1], edges[2], edges[3] },
+	      tileType(tileType) {}
 	Tile(const Tile & t) = delete; // I don't want implicit copies. Use clone() instead.
 	Tile (Tile&& t) = delete; // I don't actually want this to happen.
 	~Tile();
@@ -369,23 +417,17 @@ public:
 
 private:
 	EdgeType * getEdgeNodes(Side side);
+	EdgeType * getEdgeNodes(Side side, Side orientation);
+	EdgeType const * getEdgeNodes(Side side) const;
+	EdgeType const * getEdgeNodes(Side side, Side orientation) const;
 	void setEdgeNode(Side side, int index, Node * n);
-	void createEdgeList(Side side);
-
-	static inline int edgeNodeCount(TerrainType t)
+	inline bool isNull(EdgeType const & et) const
 	{
-		switch (t)
-		{
-			case Field:
-			case City:
-				return 1;
-			case Road:
-				return 3;
-			case None:
-			case Cloister:
-				break;
-		}
-		return 0;
+#if NODE_VARIANT == 2
+		return et == -1;
+#else
+		return et == 0;
+#endif
 	}
 
 public:
@@ -395,8 +437,96 @@ public:
 	inline Node const * const * getNodes() const { return nodes; }
 	inline Node * getNode(int idx) { return nodes[idx]; }
 	inline Node const * getNode(int idx) const { return nodes[idx]; }
+	inline Node const * getFeatureNode(Side const & side) const { return getEdgeNode(side, 1); }
+	inline Node const * getFeatureNode(Side const & side, Side orientation) const { return getEdgeNode(side, 1, orientation); }
+	inline Node const * getFeatureNodeAndIndex(Side const & side, uchar & nodeIndex) const { return getEdgeNodeAndIndex(side, 1, nodeIndex); }
+	inline Node const * getFeatureNodeAndIndex(Side const & side, uchar & nodeIndex, Side orientation) const { return getEdgeNodeAndIndex(side, 1, nodeIndex, orientation); }
+	inline Node const * getFieldNode(Side side, int index) const { return (getEdge(side) == Field) ? getFeatureNode(side) : getEdgeNode(side, index); }
+	inline Node const * getFieldNode(Side side, int index, Side orientation) const { return (getEdge(side) == Field) ? getFeatureNode(side, orientation) : getEdgeNode(side, index, orientation); }
+	inline Node const * getCloisterNode() const { return cloister; }
 
-	void printSides(Node * n);
+	inline Node const * getEdgeNode(Side side, int index) const
+	{
+		EdgeType const & e = getEdgeNodes(side)[index];
+#if NODE_VARIANT == 0
+		return e;
+#elif NODE_VARIANT == 1
+		if (isNull(e))
+			return 0;
+		return *e;
+#elif NODE_VARIANT == 2
+		if (isNull(e))
+			return 0;
+		return nodes[e];
+#endif
+	}
+	inline Node const * getEdgeNode(Side side, int index, Side orientation) const
+	{
+		EdgeType const & e = getEdgeNodes(side, orientation)[index];
+#if NODE_VARIANT == 0
+		return e;
+#elif NODE_VARIANT == 1
+		if (isNull(e))
+			return 0;
+		return *e;
+#elif NODE_VARIANT == 2
+		if (isNull(e))
+			return 0;
+		return nodes[e];
+#endif
+	}
+
+	inline Node const * getEdgeNodeAndIndex(Side side, int index, uchar & nodeIndex) const
+	{
+#if NODE_VARIANT == 0
+		Node * n = getEdgeNodes(side)[index];
+		nodeIndex = -1;
+		for (uchar i = 0; i < nodeCount; ++i)
+			if (nodes[i] == n)
+			{
+				nodeIndex = i;
+				break;
+			}
+		return n;
+#elif NODE_VARIANT == 1
+		EdgeType p = getEdgeNodes(side)[index];
+		Q_ASSERT(!isNull(p));
+		if (isNull(p))
+			nodeIndex = -1;
+		else
+			nodeIndex = p - nodes;
+		return *p;
+#elif NODE_VARIANT == 2
+		return nodes[ (nodeIndex = getEdgeNodes(side)[index]) ];
+#endif
+	}
+
+	inline Node const * getEdgeNodeAndIndex(Side side, int index, uchar & nodeIndex, Side orientation) const
+	{
+#if NODE_VARIANT == 0
+		Node * n = getEdgeNodes(side, orientation)[index];
+		nodeIndex = -1;
+		for (uchar i = 0; i < nodeCount; ++i)
+			if (nodes[i] == n)
+			{
+				nodeIndex = i;
+				break;
+			}
+		return n;
+#elif NODE_VARIANT == 1
+		EdgeType p = getEdgeNodes(side, orientation)[index];
+		Q_ASSERT(!isNull(p));
+		if (isNull(p))
+			nodeIndex = -1;
+		else
+			nodeIndex = p - nodes;
+		return *p;
+#elif NODE_VARIANT == 2
+		return nodes[nodeIndex = getEdgeNodes(side, orientation)[index]];
+#endif
+	}
+
+//	void printSides(Node * n);
 	bool equals(Tile const & other, const Game * g) const;
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(Tile::TileSets)

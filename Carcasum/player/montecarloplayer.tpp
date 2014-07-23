@@ -1,6 +1,23 @@
+/*
+	This file is part of Carcasum.
+
+	Carcasum is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Carcasum is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "montecarloplayer.h"
 #include "randomplayer.h"
-#include <QElapsedTimer>
+#include "core/util.h"
 
 #define MC_T template<class UtilityProvider, class Playout>
 #define MC_TU <UtilityProvider, Playout>
@@ -16,6 +33,7 @@ void MonteCarloPlayer MC_TU::newGame(int player, const Game * g)
 		simGame->addPlayer(&RandomPlayer::instance);
 	simGame->newGame(game->getTileSets(), tileFactory, g->getMoveHistory());
 	utilityProvider.newGame(player, g);
+	playoutPolicy.newGame(player, g);
 }
 
 MC_T
@@ -25,9 +43,15 @@ void MonteCarloPlayer MC_TU::playerMoved(int /*player*/, const Tile * /*tile*/, 
 }
 
 MC_T
+void MonteCarloPlayer MC_TU::undoneMove(const MoveHistoryEntry & /*move*/)
+{
+	Util::syncGames(*game, *simGame);
+}
+
+MC_T
 TileMove MonteCarloPlayer MC_TU::getTileMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const TileMovesType & possible)
 {
-	QElapsedTimer timer;
+	Util::ExpireTimer timer;
 	if (useTimeout)
 		timer.start();
 
@@ -60,7 +84,7 @@ TileMove MonteCarloPlayer MC_TU::getTileMove(int player, const Tile * /*tile*/, 
 #else
 //			simGame->simStep(move.tile, tileMove, player, &RandomPlayer::instance);
 			// Hm, this looks a bit ugly.
-			simGame->simPartStepChance(move.tile);
+			simGame->simPartStepChance(move.tileIndex);
 			simGame->simPartStepTile(tileMove);
 			MeepleMove meepleMove;
 			if (simGame->getPlayerMeeples(player) > 0)
@@ -108,7 +132,7 @@ TileMove MonteCarloPlayer MC_TU::getTileMove(int player, const Tile * /*tile*/, 
 MC_T
 MeepleMove MonteCarloPlayer MC_TU::getMeepleMove(int player, const Tile * /*tile*/, const MoveHistoryEntry & move, const MeepleMovesType & possible)
 {
-	QElapsedTimer timer;
+	Util::ExpireTimer timer;
 	if (useTimeout)
 		timer.start();
 
@@ -147,7 +171,7 @@ MeepleMove MonteCarloPlayer MC_TU::getMeepleMove(int player, const Tile * /*tile
 			utilities[moveIndex] += utility(simGame->getScores(), playerCount, player, simGame);
 			
 			for (int i = 0; i < steps; ++i)
-				simGame->undo();
+				simGame->simUndo();
 //			Q_ASSERT(game->equals(g));
 #endif
 			++moveIndex;
@@ -191,5 +215,5 @@ void MonteCarloPlayer MC_TU::endGame()
 MC_T
 Player * MonteCarloPlayer MC_TU::clone() const
 {
-	return new MonteCarloPlayer(tileFactory);
+	return new MonteCarloPlayer(tileFactory, M, useTimeout);
 }

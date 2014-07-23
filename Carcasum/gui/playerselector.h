@@ -1,3 +1,20 @@
+/*
+	This file is part of Carcasum.
+
+	Carcasum is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Carcasum is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef PLAYERSELECTOR_H
 #define PLAYERSELECTOR_H
 
@@ -17,8 +34,8 @@ class PlayerSelector : public QDialog
 	Q_OBJECT
 
 private:
-	enum PlayerType { PlayerTypeRandom, PlayerTypeMonteCarlo, PlayerTypeMonteCarlo2, PlayerTypeMonteCarloUCT, PlayerTypeMCTS };
-	enum UtilityType { UtilityTypeSimple, UtilityTypeHeyden, UtilityTypeComplex, UtilityTypeComplexNormalized };
+	enum PlayerType { PlayerTypeRandom, PlayerTypeMonteCarlo, PlayerTypeMonteCarlo2, PlayerTypeMonteCarloUCT, PlayerTypeMCTS, PlayerTypeJCZ, PlayerSimple, PlayerSimple2, PlayerSimple3 };
+	enum UtilityType { UtilityTypeSimple, UtilityTypeScoreDiff, UtilityTypeComplex, UtilityTypeComplexNormalized, UtilityTypePortion };
 	enum PlayoutType { PlayoutTypeRandom, PlayoutTypeEarlyCutoff };
 
 	struct PlayerData
@@ -40,16 +57,22 @@ private:
 		QString toolTip;
 	};
 
-	const std::array<PlayerData, 5> playerData = {{ {PlayerTypeRandom, "Random", ""},
+	const std::array<PlayerData, 9> playerData = {{ {PlayerTypeRandom, "Random", ""},
+	                                                {PlayerSimple, "SimplePlayer v1", ""},
+	                                                {PlayerSimple2, "SimplePlayer v2", ""},
+	                                                {PlayerSimple3, "SimplePlayer v3", ""},
+	                                                {PlayerTypeJCZ, "JCloisterZone AI", ""},
 	                                                {PlayerTypeMonteCarlo, "Monte Carlo", ""},
 	                                                {PlayerTypeMonteCarlo2, "Monte Carlo 2", ""},
 	                                                {PlayerTypeMonteCarloUCT, "Monte Carlo UCB1", ""},
 	                                                {PlayerTypeMCTS, "MCTS", ""}
 	                                              }};
-	const std::array<UtilityData, 4> utilityData = {{ {UtilityTypeSimple, "Simple", ""},
-	                                                  {UtilityTypeHeyden, "Heyden", ""},
-	                                                  {UtilityTypeComplex, "Complex", ""},
-	                                                  {UtilityTypeComplexNormalized, "Complex Normalized", ""}
+	const std::array<UtilityData, 5> utilityData = {{
+	                                                    {UtilityTypePortion, "Portion", ""},
+	                                                    {UtilityTypeSimple, "Simple", ""},
+	                                                    {UtilityTypeScoreDiff, "Score Difference", ""},
+	                                                    {UtilityTypeComplex, "Complex", ""},
+	                                                    {UtilityTypeComplexNormalized, "Complex Normalized", ""},
 	                                                }};
 	const std::array<PlayoutData, 2> playoutData = {{ {PlayoutTypeRandom, "Random", ""},
 	                                                  {PlayoutTypeEarlyCutoff, "Early Cutoff", ""}

@@ -1,8 +1,27 @@
+/*
+	This file is part of Carcasum.
+
+	Carcasum is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Carcasum is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "game.h"
 #include "board.h"
 #include "player.h"
+#include "util.h"
 #include "jcz/tilefactory.h"
 #include <QFile>
+#include <QFileInfo>
 
 Game::Game(NextTileProvider * ntp, bool const view)
     : view(view),
@@ -28,6 +47,12 @@ void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)
 	playerMeeples = new int[playerCount];
 	for (int i = 0; i < playerCount; ++i)
 		playerMeeples[i] = MEEPLE_COUNT;
+	for (int i = 1; i < TERRAIN_TYPE_SIZE; ++i)
+	{
+		playerScoresDetail[i] = new int[playerCount]();
+		playerMeeplesPlacedDetailCurrent[i] = new int[playerCount]();
+		playerMeeplesPlacedDetailAll[i] = new int[playerCount]();
+	}
 	
 	active = true;
 	nextPlayer = 0;
@@ -55,6 +80,7 @@ void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory)
 #if !USE_RESET
 	this->tileFactory = tileFactory;
 #endif
+	assertDetails();
 }
 
 void Game::newGame(Tile::TileSets tileSets, jcz::TileFactory * tileFactory, const std::vector<MoveHistoryEntry> & history, bool informPlayers)
@@ -96,6 +122,12 @@ void Game::restartGame()
 	memset(returnMeeples, 0, sizeof(*returnMeeples) * playerCount);
 	for (int i = 0; i < playerCount; ++i)
 		playerMeeples[i] = MEEPLE_COUNT;
+	for (int i = 1; i < TERRAIN_TYPE_SIZE; ++i)
+	{
+		memset(playerScoresDetail[i], 0, sizeof(*playerScoresDetail[i]) * playerCount);
+		memset(playerMeeplesPlacedDetailCurrent[i], 0, sizeof(*playerScoresDetail[i]) * playerCount);
+		memset(playerMeeplesPlacedDetailAll[i], 0, sizeof(*playerScoresDetail[i]) * playerCount);
+	}
 
 	active = true;
 	nextPlayer = 0;
@@ -108,6 +140,7 @@ void Game::restartGame()
 	for (Tile * t : tiles)
 		++tileCount[t->tileType];
 	assertTileCount();
+	assertDetails();
 }
 
 
@@ -195,8 +228,9 @@ bool Game::step()
 #endif
 
 	MoveHistoryEntry entry;
-	entry.tile = nextTile();
-	Tile * tile = tiles[entry.tile];
+	entry.tileIndex = nextTile();
+	Tile * tile = tiles[entry.tileIndex];
+	entry.tileType = tile->tileType;
 	TileMovesType && placements = board->getPossibleTilePlacements(tile);
 	if (placements.size() == 0)
 	{
@@ -209,7 +243,7 @@ bool Game::step()
  #endif
 #endif
 		moveHistory.push_back(entry);
-		tiles.removeAt(entry.tile);
+		tiles.removeAt(entry.tileIndex);
 		--tileCount[tile->tileType];
 		assertTileCount();
 
@@ -241,8 +275,12 @@ bool Game::step()
 			break;
 		else
 		{
+			auto * it = Util::InterruptableThread::currentInterruptableThread();
+			if (tileMove.isNull() && it != 0 && it->isInterrupted())
+				return false;
+
 			qWarning("Player returned invalid move!");
-//			Q_ASSERT_X(false, "Game::step()", "Player returned invalid tile move!");
+			Q_ASSERT_X(false, "Game::step()", "Player returned invalid tile move!");
 			endGame();
 			return false;
 		}
@@ -294,13 +332,14 @@ bool Game::step()
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
 	for (uint i = 0; i < getPlayerCount(); ++i)
 		Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT);
+	assertDetails();
 #endif
 #if WATCH_SCORES
 	for (uint i = 0; i < getPlayerCount(); ++i)
 		Q_ASSERT(playerScores[i] >= oldScores[i]);
 #endif
 
-	tiles.removeAt(entry.tile);
+	tiles.removeAt(entry.tileIndex);
 	--tileCount[tile->tileType];
 	assertTileCount();
 	moveHistory.push_back(entry);
@@ -330,8 +369,9 @@ bool Game::simStep(Player * player)
 #endif
 	{
 		MoveHistoryEntry entry;
-		entry.tile = simNextTile();
-		Tile * tile = tiles[entry.tile];
+		entry.tileIndex = simNextTile();
+		Tile * tile = tiles[entry.tileIndex];
+		entry.tileType = tile->tileType;
 		TileMovesType && placements = board->getPossibleTilePlacements(tile);
 		if (placements.size() == 0)
 		{
@@ -357,7 +397,7 @@ bool Game::simStep(Player * player)
 			}
 			setNextPlayer();
 		}
-		tiles.removeAt(entry.tile);
+		tiles.removeAt(entry.tileIndex);
 		--tileCount[tile->tileType];
 		assertTileCount();
 		moveHistory.push_back(std::move(entry));
@@ -371,6 +411,7 @@ bool Game::simStep(Player * player)
 		Q_ASSERT_X((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT, "Game::simStep(Player * player)", QString("Player meeples incorrect: player %1: meeples %2, unscored: %3, return: %4)").arg(i).arg(playerMeeples[i]).arg(unscoredMeeples[i]).arg(returnMeeples[i]).toStdString().c_str());
 		Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]+returnMeeples[i]) == MEEPLE_COUNT);
 	}
+	assertDetails();
 #endif
 #if WATCH_SCORES
 	for (uint i = 0; i < getPlayerCount(); ++i)
@@ -393,8 +434,9 @@ bool Game::simStep(int tileIndex, const TileMove & tileMove, int playerIndex, Pl
 #endif
 	{
 		MoveHistoryEntry entry;
-		entry.tile = tileIndex;
-		Tile * tile = tiles[entry.tile];
+		entry.tileIndex = tileIndex;
+		Tile * tile = tiles[entry.tileIndex];
+		entry.tileType = tile->tileType;
 
 		Move & move = entry.move;
 		move.tileMove = tileMove;
@@ -412,13 +454,12 @@ bool Game::simStep(int tileIndex, const TileMove & tileMove, int playerIndex, Pl
 		}
 		setNextPlayer();
 
-		tiles.removeAt(entry.tile);
+		tiles.removeAt(entry.tileIndex);
 		--tileCount[tile->tileType];
-		assertTileCount();
 		moveHistory.push_back(std::move(entry));
 	}
 	
-
+	assertTileCount();
 #if WATCH_SCORES
 		for (uint i = 0; i < getPlayerCount(); ++i)
 			Q_ASSERT(playerScores[i] >= oldScores[i]);
@@ -438,7 +479,7 @@ bool Game::simStep(const MoveHistoryEntry & entry)
 		oldScores.push_back(playerScores[i]);
 #endif
 	
-	Tile * tile = tiles[entry.tile];
+	Tile * tile = tiles[entry.tileIndex];
 	if (entry.move.tileMove.isNull())
 	{
 		discardedTiles.push_back(tile);
@@ -450,10 +491,12 @@ bool Game::simStep(const MoveHistoryEntry & entry)
 		moveMeeple(tile, nextPlayer, move.meepleMove);
 		setNextPlayer();
 	}
-	moveHistory.push_back(entry);
-	tiles.removeAt(entry.tile);
+	moveHistory.emplace_back(entry);
+	moveHistory.back().tileType = tile->tileType;
+	tiles.removeAt(entry.tileIndex);
 	--tileCount[tile->tileType];
 	assertTileCount();
+	assertDetails();
 
 #if WATCH_SCORES
 	for (uint i = 0; i < getPlayerCount(); ++i)
@@ -469,8 +512,9 @@ void Game::simPartStepChance(int index)
 	Q_ASSERT(simState++ == 0);
 #endif
 
-	simEntry.tile = index;
 	simTile = tiles[index];
+	simEntry.tileIndex = index;
+	simEntry.tileType = simTile->tileType;
 }
 
 void Game::simPartStepTile(TileMove const & tileMove)
@@ -511,11 +555,15 @@ void Game::simPartStepMeeple(const MeepleMove & meepleMove)
 	if (!simEntry.move.tileMove.isNull())
 	{
 		moveMeeple(simTile, nextPlayer, meepleMove);
+
+		//back up returnMeeples, otherwise I cannot restore the original state
+		memcpy(simReturnMeeples, returnMeeples, sizeof(simReturnMeeples[0]) * playerCount);
+
 		returnMeeplesToPlayers();
 		setNextPlayer();
 	}
 
-	tiles.removeAt(simEntry.tile);
+	tiles.removeAt(simEntry.tileIndex);
 	--tileCount[simTile->tileType];
 	moveHistory.push_back(std::move(simEntry));
 	simEntry = MoveHistoryEntry();
@@ -524,12 +572,26 @@ void Game::simPartStepMeeple(const MeepleMove & meepleMove)
 #endif
 
 	assertMeepleCount();
+	assertDetails();
 
 	if (tiles.isEmpty())
 		endGame();
 }
 
-void Game::undo()
+bool Game::undo()
+{
+	if (moveHistory.size() == 0)
+		return false;
+
+	MoveHistoryEntry e = moveHistory.back();	//copy because it gets erased in simUndo();
+	simUndo();
+	for (Player * p : allPlayers)
+		p->undoneMove(e);
+
+	return e.move.tileMove.isNull();
+}
+
+void Game::simUndo()
 {
 #if CHECK_SIM_STATE
 	Q_ASSERT(simState == 0);
@@ -554,9 +616,8 @@ void Game::undo()
 	{
 		Tile * t = discardedTiles.back();
 		discardedTiles.pop_back();
-		tiles.insert(entry.tile, t);
+		tiles.insert(entry.tileIndex, t);
 		++tileCount[t->tileType];
-		assertTileCount();
 
 #if PRINT_STEPS
 		qDebug() << (moveHistory.size() + 1) << "discarded Tile" << t->tileType << "total:" << discardedTiles.size();
@@ -579,16 +640,20 @@ void Game::undo()
 	{
 		auto nodes = tile->getNodes();
 		Node * n = nodes[meepleMove.nodeIndex];
-		++playerMeeples[playerIndex];
 		n->removeMeeple(playerIndex, this);
-		Q_ASSERT(playerMeeples[playerIndex] <= MEEPLE_COUNT);
+		--playerMeeplesPlacedDetailCurrent[n->getTerrain()][playerIndex];
+		--playerMeeplesPlacedDetailAll[n->getTerrain()][playerIndex];
+		++playerMeeples[playerIndex];
 	}
 
 	board->removeTile(tileMove);
+	returnMeeplesToPlayers();
+	Q_ASSERT(playerMeeples[playerIndex] <= MEEPLE_COUNT);
 
-	tiles.insert(entry.tile, tile);
+	tiles.insert(entry.tileIndex, tile);
 	++tileCount[tile->tileType];
 	assertTileCount();
+	assertDetails();
 
 	moveHistory.pop_back();
 
@@ -612,6 +677,7 @@ void Game::undo()
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
 	for (uint i = 0; i < getPlayerCount(); ++i)
 		Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT);
+	assertDetails();
 #endif
 #if WATCH_SCORES
 		for (uint i = 0; i < getPlayerCount(); ++i)
@@ -625,7 +691,8 @@ void Game::simPartUndoChance()
 	Q_ASSERT(simState-- == 1);
 #endif
 
-	simEntry.tile = -1;
+	simEntry.tileIndex = -1;
+	simEntry.tileType = -1;
 #ifndef QT_NO_DEBUG
 	simTile = 0;
 #endif
@@ -645,6 +712,7 @@ void Game::simPartUndoTile()
 	else
 	{
 		board->removeTile(tileMove);
+		returnMeeplesToPlayers();
 	}
 	tileMove = TileMove();
 
@@ -681,11 +749,20 @@ void Game::simPartUndoMeeple()
 		int const playerIndex = nextPlayer;
 		MeepleMove & meepleMove = move.meepleMove;
 
+		// Restore return meeples. Since I add meeples to the system, I need to remove them somewhere else.
+		for (int i = 0, e = getPlayerCount(); i < e; ++i)
+		{
+			playerMeeples[i] += returnMeeples[i] - simReturnMeeples[i];
+			returnMeeples[i] = simReturnMeeples[i];
+		}
+
 		if (!meepleMove.isNull())
 		{
 			auto nodes = tile->getNodes();
 			Node * n = nodes[meepleMove.nodeIndex];
 			++playerMeeples[playerIndex];
+			--playerMeeplesPlacedDetailAll[n->getTerrain()][playerIndex];
+			--playerMeeplesPlacedDetailCurrent[n->getTerrain()][playerIndex];
 			n->removeMeeple(playerIndex, this);
 
 			meepleMove = MeepleMove();
@@ -693,7 +770,7 @@ void Game::simPartUndoMeeple()
 	}
 	simTile = tile;
 
-	tiles.insert(simEntry.tile, tile);
+	tiles.insert(simEntry.tileIndex, tile);
 	++tileCount[tile->tileType];
 	assertTileCount();
 	assertMeepleCount();
@@ -707,19 +784,24 @@ void Game::storeToFile(const QString & path)
 void Game::storeToFile(const QString & path, const std::vector<MoveHistoryEntry> & history)
 {
 	QFile file(path);
-	file.open(QIODevice::WriteOnly | QIODevice::Truncate);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+	{
+		qWarning() << "Opening file" << path << "failed.";
+		return;
+	}
 
 	QDataStream out(&file);
 
 	// file format version
-	out << (quint32)1;
+	out << (quint32)2;
 
 	// history size
 	out << (quint32)history.size();
 
 	for (MoveHistoryEntry const & e : history)
 	{
-		out << (qint32)e.tile;
+		out << (qint32)e.tileIndex;
+		out << (qint32)e.tileType;
 
 		Move const & move = e.move;
 		TileMove const & tileMove = move.tileMove;
@@ -738,7 +820,13 @@ std::vector<MoveHistoryEntry> Game::loadFromFile(const QString & path)
 {
 	std::vector<MoveHistoryEntry> history;
 
-	QFile file(path);
+	QString abs = QFileInfo(path).absoluteFilePath();
+	QFile file(abs);
+	if (!file.exists())
+	{
+		qWarning() << "File" << abs << "does not exist.";
+		return history;
+	}
 	file.open(QIODevice::ReadOnly);
 
 	QDataStream in(&file);
@@ -746,7 +834,7 @@ std::vector<MoveHistoryEntry> Game::loadFromFile(const QString & path)
 	// file format version
 	quint32 version;
 	in >> version;
-	if (version != 1)
+	if (version > 2)
 		return history;
 
 	// history size
@@ -763,7 +851,9 @@ std::vector<MoveHistoryEntry> Game::loadFromFile(const QString & path)
 
 		MoveHistoryEntry &e = history[i];
 		in >> i32;
-		e.tile = (int)i32;
+		e.tileIndex = (int)i32;
+		in >> i32;
+		e.tileType = (TileTypeType)i32;
 
 		Move & move = e.move;
 		TileMove & tileMove = move.tileMove;
@@ -774,6 +864,12 @@ std::vector<MoveHistoryEntry> Game::loadFromFile(const QString & path)
 		in >> u8;
 		tileMove.orientation = (Tile::Side)u8;
 
+		if (version < 2)
+		{
+			++tileMove.x;
+			++tileMove.y;
+		}
+
 		MeepleMove & meepleMove = move.meepleMove;
 		in >> u8;
 		meepleMove.nodeIndex = (uchar)u8;
@@ -781,6 +877,45 @@ std::vector<MoveHistoryEntry> Game::loadFromFile(const QString & path)
 
 	file.close();
 	return history;
+}
+
+uint Game::getPossibleTileCount(const EdgeMask & mask) const
+{
+	uint fitCount = 0;
+	TileTypeType lastType = -1;
+	bool lastFit = false;
+	for (Tile const * t : tiles) //TODO In theory I don't need to iterate over all tiles, tileCounts should be enough.
+	{
+		if (lastType == t->tileType)
+		{
+			if (lastFit)
+				++fitCount;
+		}
+		else
+		{
+			lastType = t->tileType;
+			for (int orientation = 0; orientation < 4; ++orientation)
+			{
+				lastFit = true;
+				for (int i = 0; i < 4; ++i)
+				{
+					if (mask.t[i] == None)
+						continue;
+					if (mask.t[i] != t->getEdge((Tile::Side)i, (Tile::Side)orientation))
+					{
+						lastFit = false;
+						break;
+					}
+				}
+				if (lastFit)
+				{
+					++fitCount;
+					break;
+				}
+			}
+		}
+	}
+	return fitCount;
 }
 
 void Game::cityClosed(CityNode * n)
@@ -838,6 +973,7 @@ void Game::scoreNodeEndGame(Node * n)
 	{
 		scoreNode(n, score);
 		n->setScored(ScoredEndGame);
+		assertDetails();
 	}
 }
 
@@ -845,6 +981,7 @@ void Game::scoreNodeMidGame(Node * n, const int score)
 {
 	scoreNode(n, score);
 	n->setScored(ScoredMidGame);
+	assertDetails();
 }
 
 void Game::unscoreNodeEndGame(Node * n)
@@ -871,8 +1008,12 @@ void Game::scoreNode(Node * n, int const score)
 	for (uchar const * m = n->getMeeples(), * end = m + getPlayerCount(); m < end; ++m, ++player)
 	{
 		if (*m == meepleCount)
+		{
 			playerScores[player] += score;
+			playerScoresDetail[n->getTerrain()][player] += score;
+		}
 		returnMeeples[player] += *m;
+		playerMeeplesPlacedDetailCurrent[n->getTerrain()][player] -= *m;
 	}
 	
 	if (view)
@@ -883,6 +1024,7 @@ void Game::scoreNode(Node * n, int const score)
 void Game::unscoreNode(Node * n, const int score)
 {
 	Q_ASSERT(score >= 0);
+	Q_ASSERT(n->getScored() != NotScored);
 	uchar meepleCount = n->getMaxMeeples();
 	int player = 0;
 	for (uchar const * m = n->getMeeples(), * end = m + getPlayerCount(); m < end; ++m, ++player)
@@ -890,19 +1032,22 @@ void Game::unscoreNode(Node * n, const int score)
 		if (*m == meepleCount)
 		{
 			playerScores[player] -= score;
+			playerScoresDetail[n->getTerrain()][player] -= score;
 			Q_ASSERT(playerScores[player] >= 0);
 		}
-		playerMeeples[player] -= *m;
-		Q_ASSERT(playerMeeples[player] >= 0);
+		returnMeeples[player] -= *m;
+		playerMeeplesPlacedDetailCurrent[n->getTerrain()][player] += *m;
+//		Q_ASSERT(returnMeeples[player] >= 0);
 	}
 	n->setScored(NotScored);
+//	assertDetails();
 }
 
 void Game::simEndGame()
 {
+	active = false;
 	board->scoreEndGame();
 	returnMeeplesToPlayers();
-	active = false;
 
 #if PRINT_STEPS || !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
 	auto && unscoredMeeples = board->countUnscoredMeeples();
@@ -915,6 +1060,7 @@ void Game::simEndGame()
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
 	for (uint i = 0; i < getPlayerCount(); ++i)
 		Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]) == MEEPLE_COUNT);
+	assertDetails();
 #endif
 }
 
@@ -935,10 +1081,13 @@ void Game::moveTile(Tile * tile, const TileMove & tileMove)
 {
 	Q_ASSERT(!tileMove.isNull());
 	board->addTile(tile, tileMove);
+	assertDetails();
 }
 
 int Game::calcUpperScoreBound(QList<Tile *> const & tiles)
 {
+	// I calculated a higher bound in my thesis, but lets be honest: Even this score is impossible.
+
 	int roads = 0;
 	int cities = 0;
 	int tinyCities = 0;
@@ -975,6 +1124,11 @@ int Game::calcUpperScoreBound(QList<Tile *> const & tiles)
 
 bool Game::equals(Game const & other) const
 {
+	// MCTS needs this to not be checked.
+//#if CHECK_SIM_STATE
+//	if (simState != other.simState)
+//		return false;
+//#endif
 	if (active != other.active)
 		return false;
 	if (nextPlayer != other.nextPlayer)
@@ -1015,6 +1169,16 @@ bool Game::equals(Game const & other) const
 				return false;
 			if (playerScores[i] != other.playerScores[i])
 				return false;
+
+			for (int j = 1; j < TERRAIN_TYPE_SIZE; ++j)
+			{
+				if (playerScoresDetail[j][i] != other.playerScoresDetail[j][i])
+					return false;
+				if (playerMeeplesPlacedDetailCurrent[j][i] != other.playerMeeplesPlacedDetailCurrent[j][i])
+					return false;
+				if (playerMeeplesPlacedDetailAll[j][i] != other.playerMeeplesPlacedDetailAll[j][i])
+					return false;
+			}
 		}
 	}
 	for (size_t i = 0; i < moveHistory.size(); ++i)
@@ -1025,6 +1189,132 @@ bool Game::equals(Game const & other) const
 	
 	return true;
 }
+
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+void Game::assertTileCount()
+{
+	int sum = 0;
+	for (int c : tileCount)
+		sum += c;
+	Q_ASSERT(sum == tiles.size());
+}
+
+void Game::assertDetails() const
+{
+	VarLengthArrayWrapper<int, MAX_PLAYERS>::type realPlacedAll[TERRAIN_TYPE_SIZE]{};
+	VarLengthArrayWrapper<int, MAX_PLAYERS>::type realPlacedCurrent[TERRAIN_TYPE_SIZE];
+	VarLengthArrayWrapper<int, MAX_PLAYERS>::type realScore[TERRAIN_TYPE_SIZE];
+	for (int i = 1; i < TERRAIN_TYPE_SIZE; ++i)
+	{
+		realPlacedAll[i].resize(playerCount);
+		realPlacedCurrent[i].resize(playerCount);
+		realScore[i].resize(playerCount);
+		for (uint j = 0; j < playerCount; ++j)
+		{
+			realPlacedAll[i][j] = 0;
+			realPlacedCurrent[i][j] = 0;
+			realScore[i][j] = 0;
+		}
+	}
+
+	QSet<Node::NodeData const *> counted;
+	uint const size = board->getInternalSize();
+	for (uint y = 0; y < size; ++y)
+	{
+		for (uint x = 0; x < size; ++x)
+		{
+			Tile const * t = board->getTile(x, y);
+			if (t)
+			{
+				for (Node const * const * np = t->getCNodes(), * const * end = np + t->getNodeCount(); np < end; ++np)
+				{
+					Node const * n = *np;
+
+					if (counted.contains(n->getData()))
+						continue;
+					counted.insert(n->getData());
+
+					TerrainType const & terrain = n->getTerrain();
+					uchar const * meeples = n->getMeeples();
+
+					if (n->getScored() == NotScored)
+					{
+						for (uint player = 0; player < playerCount; ++player)
+						{
+							uchar const m = meeples[player];
+							if (m != 0)
+							{
+								realPlacedAll[terrain][player] += m;
+								realPlacedCurrent[terrain][player] += m;
+							}
+						}
+					}
+					else
+					{
+						int maxMeeples = n->getMaxMeeples();
+						int score = n->getScore();
+						switch (terrain)
+						{
+							case None:
+							case Road:
+							case Cloister:
+								break;
+							case City:
+								if (score > 2 && static_cast<CityNode const *>(n)->isClosed())
+									score *= 2;
+								break;
+							case Field:
+								if (!isFinished())
+									score = 0;
+								break;
+						}
+
+						for (uint player = 0; player < playerCount; ++player)
+						{
+							uchar const m = meeples[player];
+							if (m != 0)
+							{
+								realPlacedAll[terrain][player] += m;
+
+								if (m == maxMeeples)
+									realScore[terrain][player] += score;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	int placedAllSum[MAX_PLAYERS] = {};
+	int placedCurrentSum[MAX_PLAYERS] = {};
+	int scoreSum[MAX_PLAYERS] = {};
+	for (uint p = 0; p < playerCount; ++p)
+	{
+		for (int t = 1; t < TERRAIN_TYPE_SIZE; ++t)
+		{
+			placedAllSum[p] += playerMeeplesPlacedDetailAll[t][p];
+			placedCurrentSum[p] += playerMeeplesPlacedDetailCurrent[t][p];
+			scoreSum[p] += playerScoresDetail[t][p];
+		}
+		Q_ASSERT(placedCurrentSum[p] == getPlacedMeeples(p) - returnMeeples[p]);
+		Q_ASSERT(scoreSum[p] == getPlayerScore(p));
+	}
+
+	for (int t = 1; t < TERRAIN_TYPE_SIZE; ++t)
+	{
+		TerrainType terrain = (TerrainType)t;
+		Q_UNUSED(terrain);
+		for (uint p = 0; p < playerCount; ++p)
+		{
+			Q_ASSERT(playerMeeplesPlacedDetailAll[t][p] == realPlacedAll[t][p]);
+			Q_ASSERT(playerMeeplesPlacedDetailCurrent[t][p] == realPlacedCurrent[t][p]);
+			Q_ASSERT(playerScoresDetail[t][p] == realScore[t][p]);
+		}
+	}
+
+}
+#endif
 
 void Game::cleanUp()
 {
@@ -1042,6 +1332,13 @@ void Game::cleanUp()
 	delete[] playerScores;
 	delete[] playerMeeples;
 	delete[] returnMeeples;
+
+	for (int i = 1; i < TERRAIN_TYPE_SIZE; ++i)
+	{
+		delete[] playerScoresDetail[i];
+		delete[] playerMeeplesPlacedDetailCurrent[i];
+		delete[] playerMeeplesPlacedDetailAll[i];
+	};
 }
 
 void Game::applyHistory(const std::vector<MoveHistoryEntry> & history, bool informPlayers)
@@ -1055,7 +1352,7 @@ void Game::applyHistory(const std::vector<MoveHistoryEntry> & history, bool info
 #endif
 
 			int playerIndex = nextPlayer;
-			Tile const * tile = tiles[e.tile];
+			Tile const * tile = tiles[e.tileIndex];
 			simStep(e);
 			returnMeeplesToPlayers();
 			for (Player * p : allPlayers)
@@ -1073,9 +1370,9 @@ void Game::applyHistory(const std::vector<MoveHistoryEntry> & history, bool info
 }
 
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
-void Game::assertMeepleCount()
+void Game::assertMeepleCount() const
 {
-	auto && unscoredMeeples = board->countUnscoredMeeples();
+	auto const & unscoredMeeples = board->countUnscoredMeeples();
 	for (uint i = 0; i < getPlayerCount(); ++i)
 //		Q_ASSERT_X((playerMeeples[i]+unscoredMeeples[i]+returnMeeples[i]) == MEEPLE_COUNT, "Game::assertMeepleCount()", QString("Player meeples incorrect: player %1: meeples %2, unscored: %3, return: %4)").arg(i).arg(playerMeeples[i]).arg(unscoredMeeples[i]).arg(returnMeeples[i]).toStdString().c_str());
 		Q_ASSERT((playerMeeples[i]+unscoredMeeples[i]+returnMeeples[i]) == MEEPLE_COUNT);

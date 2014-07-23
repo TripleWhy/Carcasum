@@ -1,3 +1,20 @@
+/*
+	This file is part of Carcasum.
+
+	Carcasum is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Carcasum is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "tilefactory.h"
 #include "core/util.h"
 
@@ -333,21 +350,25 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 		xml.skipCurrentElement();
 	}
 
+	tile->nodeCount = (uchar)nodes.size();
+	tile->nodes = new Node *[tile->nodeCount];
+	for (int i = 0; i < tile->nodeCount; ++i)
+		tile->nodes[i] = nodes.at(i);
+
 	for (int i = 0; i < 4; ++i)
 	{
 		Tile::Side side = (Tile::Side)i;
 
-		tile->createEdgeList(side);
 		switch (edges[i])
 		{
 			case None:
 				qWarning() << "Not all sides specified";
 				break;
 			case Field:
-				tile->setEdgeNode(side, 0, edgeConnectors[i][0]);
+				tile->setEdgeNode(side, 1, edgeConnectors[i][0]);
 				break;
 			case City:
-				tile->setEdgeNode(side, 0, edgeConnectors[i][1]);
+				tile->setEdgeNode(side, 1, edgeConnectors[i][1]);
 				break;
 			case Road:
 				tile->setEdgeNode(side, 0, edgeConnectors[i][0]);
@@ -358,11 +379,6 @@ void jcz::TileFactory::readXMLTile(QXmlStreamReader & xml, Tile::TileSet set, Ga
 				break;
 		}
 	}
-
-	tile->nodeCount = (uchar)nodes.size();
-	tile->nodes = new Node *[tile->nodeCount];
-	for (int i = 0; i < tile->nodeCount; ++i)
-		tile->nodes[i] = nodes.at(i);
 
 	tileTemplates[set].append(tile);
 	tileMetaData[tile] = data;

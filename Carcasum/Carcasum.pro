@@ -1,6 +1,19 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2014-02-09T23:35:48
+#    This file is part of Carcasum.
+
+#    Carcasum is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+
+#    Carcasum is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+
+#    You should have received a copy of the GNU Affero General Public License
+#    along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
 #
 #-------------------------------------------------
 
@@ -23,7 +36,7 @@ core {
 #	DEFINES += QT_NO_WARNING_OUTPUT
 
 } else:tournament {
-	TARGET = carcasum_turnement
+	TARGET = carcasum_tournament
 
 	CONFIG   += console
 	CONFIG   -= app_bundle
@@ -47,7 +60,8 @@ core {
 		gui/remainingtilesview.cpp \
 		gui/remainingtileview.cpp \
 		gui/downloader.cpp \
-		gui/playerselector.cpp
+		gui/playerselector.cpp \
+		gui/renderoptionsdialog.cpp
 
 	HEADERS  += gui/mainwindow.h \
 		gui/tileimagefactory.h \
@@ -58,14 +72,16 @@ core {
 		gui/remainingtileview.h \
 		gui/guiIncludes.h \
 		gui/downloader.h \
-		gui/playerselector.h
+		gui/playerselector.h \
+		gui/renderoptionsdialog.h
 
 	FORMS    += gui/mainwindow.ui \
 		gui/playerinfoview.ui \
 		gui/remainingtilesview.ui \
 		gui/remainingtileview.ui \
 		gui/downloader.ui \
-		gui/playerselector.ui
+		gui/playerselector.ui \
+		gui/renderoptionsdialog.ui
 
 	classicTiles {
 		DEFINES += CLASSIC_TILES
@@ -103,8 +119,14 @@ SOURCES += core/tile.cpp \
     player/montecarloplayer2.tpp \
     player/montecarloplayeruct.tpp \
     player/mctsplayer.tpp \
+#    player/mctsplayer1.tpp \
     player/playouts.cpp \
-    player/utilities.cpp
+    player/utilities.cpp \
+    jcz/jczplayer.cpp \
+    player/simpleplayer.cpp \
+    player/simpleplayer2.cpp \
+    player/simpleplayer3.cpp \
+    player/specialplayers.cpp
 
 HEADERS += \
 	core/tile.h \
@@ -122,10 +144,16 @@ HEADERS += \
     core/random.h \
     core/nexttileprovider.h \
     player/mctsplayer.h \
+#    player/mctsplayer1.h \
     player/montecarloplayer2.h \
     player/montecarloplayeruct.h \
     player/playouts.h \
-    player/utilities.h
+    player/utilities.h \
+    jcz/jczplayer.h \
+    player/simpleplayer.h \
+    player/simpleplayer2.h \
+    player/simpleplayer3.h \
+    player/specialplayers.h
 
 RESOURCES += \
 	jcz/jcz.qrc
@@ -135,6 +163,15 @@ DEFINES += APP_REVISION=$$REVISION
 
 CONFIG += c++11
 QMAKE_CXXFLAGS_WARN_ON += -Wextra -Werror=switch -Werror=return-type -Werror=delete-non-virtual-dtor -Wconversion
+QMAKE_CFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops
+QMAKE_CXXFLAGS_RELEASE += -O3 -march=native -mtune=native -funroll-loops
+QMAKE_LFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops
+#QMAKE_CFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops -fprofile-generate
+#QMAKE_CXXFLAGS_RELEASE += -O3 -march=native -mtune=native -funroll-loops -fprofile-generate
+#QMAKE_LFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops -fprofile-generate
+#QMAKE_CFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops -fprofile-use
+#QMAKE_CXXFLAGS_RELEASE += -O3 -march=native -mtune=native -funroll-loops -fprofile-use
+#QMAKE_LFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops -fprofile-use
 
 #DEFINES += QT_FORCE_ASSERTS
 #QMAKE_CXXFLAGS_RELEASE += -g
@@ -156,3 +193,6 @@ QMAKE_CXXFLAGS_WARN_ON += -Wextra -Werror=switch -Werror=return-type -Werror=del
 #
 #QMAKE_EXTRA_COMPILERS += updateqm
 #PRE_TARGETDEPS += compiler_updateqm_make_all
+
+#unix|win32: LIBS += -lboost_system -lboost_timer -lboost_chrono
+unix|win32: LIBS += -lboost_system -lboost_chrono

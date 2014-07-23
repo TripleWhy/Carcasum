@@ -1,3 +1,20 @@
+/*
+	This file is part of Carcasum.
+
+	Carcasum is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	Carcasum is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+
+	You should have received a copy of the GNU Affero General Public License
+	along with Carcasum.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "remainingtileview.h"
 #include "ui_remainingtileview.h"
 #include <QPainter>
@@ -10,7 +27,6 @@ RemainingTileView::RemainingTileView(TileTypeType type, int count, TileImageFact
     ui(new Ui::RemainingTileView)
 {
 	ui->setupUi(this);
-	effect.setColor(Qt::black);
 
 	QPixmap const & p = imgFactory->getImage(type);
 	pxNormal = p.scaled(RTILE_TILE_SIZE, RTILE_TILE_SIZE, Qt::KeepAspectRatio, Qt::SmoothTransformation);
@@ -33,7 +49,10 @@ RemainingTileView::~RemainingTileView()
 void RemainingTileView::setCount(int count)
 {
 	if (count == 0)
-		ui->tileLabel->setGraphicsEffect(&effect);
+	{
+		if (ui->tileLabel->graphicsEffect() == 0)
+			ui->tileLabel->setGraphicsEffect(newColorEffect());	// Widget takes ownership, so we need a new effect for every widget.
+	}
 	else
 		ui->tileLabel->setGraphicsEffect(0);
 
@@ -47,4 +66,11 @@ void RemainingTileView::setCount(int count)
 void RemainingTileView::setHighlight(bool hl)
 {
 	ui->tileLabel->setPixmap(hl ? pxHl : pxNormal);
+}
+
+QGraphicsColorizeEffect *RemainingTileView::newColorEffect()
+{
+	QGraphicsColorizeEffect * effect = new QGraphicsColorizeEffect();
+	effect->setColor(Qt::black);
+	return effect;
 }
