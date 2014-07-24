@@ -163,15 +163,16 @@ DEFINES += APP_REVISION=$$REVISION
 
 CONFIG += c++11
 QMAKE_CXXFLAGS_WARN_ON += -Wextra -Werror=switch -Werror=return-type -Werror=delete-non-virtual-dtor -Wconversion
+win32{
+# -O3 seems to trigger a bug on Windows.
+QMAKE_CFLAGS_RELEASE   += -O2 -march=native -mtune=native -funroll-loops
+QMAKE_CXXFLAGS_RELEASE += -O2 -march=native -mtune=native -funroll-loops
+QMAKE_LFLAGS_RELEASE   += -O2 -march=native -mtune=native -funroll-loops
+} else {
 QMAKE_CFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops
 QMAKE_CXXFLAGS_RELEASE += -O3 -march=native -mtune=native -funroll-loops
 QMAKE_LFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops
-#QMAKE_CFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops -fprofile-generate
-#QMAKE_CXXFLAGS_RELEASE += -O3 -march=native -mtune=native -funroll-loops -fprofile-generate
-#QMAKE_LFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops -fprofile-generate
-#QMAKE_CFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops -fprofile-use
-#QMAKE_CXXFLAGS_RELEASE += -O3 -march=native -mtune=native -funroll-loops -fprofile-use
-#QMAKE_LFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops -fprofile-use
+}
 
 #DEFINES += QT_FORCE_ASSERTS
 #QMAKE_CXXFLAGS_RELEASE += -g
@@ -194,5 +195,12 @@ QMAKE_LFLAGS_RELEASE   += -O3 -march=native -mtune=native -funroll-loops
 #QMAKE_EXTRA_COMPILERS += updateqm
 #PRE_TARGETDEPS += compiler_updateqm_make_all
 
-#unix|win32: LIBS += -lboost_system -lboost_timer -lboost_chrono
-unix|win32: LIBS += -lboost_system -lboost_chrono
+win32{
+CONFIG(release, debug|release): LIBS += -L$$PWD/../../boost_1_55_0/stage/lib/ -lboost_system-mgw48-mt-1_55 -lboost_chrono-mgw48-mt-1_55
+CONFIG(debug, debug|release): LIBS += -L$$PWD/../../boost_1_55_0/stage/lib/ -lboost_system-mgw48-mt-d-1_55 -lboost_chrono-mgw48-mt-d-1_55
+
+INCLUDEPATH += $$PWD/../../boost_1_55_0
+DEPENDPATH += $$PWD/../../boost_1_55_0
+} else {
+unix: LIBS += -lboost_system -lboost_chrono
+}
